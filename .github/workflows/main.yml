@@ -14,8 +14,6 @@ jobs:
     if: ${{ github.event.inputs.actions == 'deploy' }}
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          echo "testinput: ${{ github.event.inputs.testinput }}"
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.6.8 # This is the action
         with:
@@ -42,4 +40,8 @@ jobs:
           heroku_app_name: ${{secrets.APP_NAME}} #Must be unique in Heroku
           heroku_email: ${{secrets.EMAIL}}
           justlogin: true
-      - run: heroku auth:whoami
+      - run: |
+          echo ${{ github.event.inputs.actions }}
+          if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then echo "stop" && echo "dd"; fi
+          if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then echo "start" && echo "dd"; fi
+          heroku auth:whoami
