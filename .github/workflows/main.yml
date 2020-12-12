@@ -42,7 +42,7 @@ jobs:
           justlogin: true
       - run: |
           echo ${{ github.event.inputs.actions }}
-          if [[ ${{ github.event.inputs.actions1 }} == '' ]]; then echo "actions1 is empty"; fi
+          if [[ ${{ github.event.inputs.actions1 == '' }} ]]; then echo "actions1 is empty"; fi
           if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then echo "stop" && echo "dd"; fi
           if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then echo "start" && echo "dd"; fi
           heroku auth:whoami
