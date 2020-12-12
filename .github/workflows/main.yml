@@ -14,7 +14,7 @@ env:
 
 jobs:
   heroku-deploy:
-    if: ${{ $actions == 'deploy' }}
+    if: ${{ env.actions == 'deploy' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -33,7 +33,7 @@ jobs:
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
   stop:
-    if: ${{ $actions  == 'start' || $actions  == 'stop' }}
+    if: ${{ env.actions  == 'start' || env.actions  == 'stop' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -44,7 +44,7 @@ jobs:
           heroku_email: ${{secrets.EMAIL}}
           justlogin: true
       - run: |
-          echo ${{ actions }}
-          if [[ ${{ actions }} == 'stop' ]]; then echo "stop" && echo "dd"; fi
-          if [[ ${{ actions }} == 'start' ]]; then echo "start" && echo "dd"; fi
+          echo ${{ env.actions }}
+          if [[ ${{ env.actions }} == 'stop' ]]; then echo "stop" && echo "dd"; fi
+          if [[ ${{ env.actions }} == 'start' ]]; then echo "start" && echo "dd"; fi
           heroku auth:whoami
