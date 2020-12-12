@@ -9,12 +9,9 @@ on:
         description: "deploy/stop/start"
         default: "deploy"
 
-env:
-  actions: ${{ github.event.inputs.actions }}
-
 jobs:
   heroku-deploy:
-    if: ${{ env.actions == 'deploy' }}
+    if: ${{ github.event.inputs.actions == 'deploy' || github.event.inputs.actions == ''}}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -33,7 +30,7 @@ jobs:
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
   stop:
-    if: ${{ env.actions  == 'start' || env.actions  == 'stop' }}
+    if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -44,7 +41,8 @@ jobs:
           heroku_email: ${{secrets.EMAIL}}
           justlogin: true
       - run: |
-          echo ${{ env.actions }}
-          if [[ ${{ env.actions }} == 'stop' ]]; then echo "stop" && echo "dd"; fi
-          if [[ ${{ env.actions }} == 'start' ]]; then echo "start" && echo "dd"; fi
+          echo ${{ github.event.inputs.actions }}
+          if [[ ${{ github.event.inputs.actions1 }} == '' ]]; then echo "actions1 is empty"; fi
+          if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then echo "stop" && echo "dd"; fi
+          if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then echo "start" && echo "dd"; fi
           heroku auth:whoami
