@@ -9,9 +9,12 @@ on:
         description: "deploy/stop/start"
         default: "deploy"
 
+env:
+  actions: ${{ github.event.inputs.actions }}
+
 jobs:
   heroku-deploy:
-    if: ${{ github.event.inputs.actions == 'deploy' }}
+    if: ${{ actions == 'deploy' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -30,7 +33,7 @@ jobs:
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
   stop:
-    if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' }}
+    if: ${{ actions  == 'start' || actions  == 'stop' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -41,7 +44,7 @@ jobs:
           heroku_email: ${{secrets.EMAIL}}
           justlogin: true
       - run: |
-          echo ${{ github.event.inputs.actions }}
-          if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then echo "stop" && echo "dd"; fi
-          if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then echo "start" && echo "dd"; fi
+          echo ${{ actions }}
+          if [[ ${{ actions }} == 'stop' ]]; then echo "stop" && echo "dd"; fi
+          if [[ ${{ actions }} == 'start' ]]; then echo "start" && echo "dd"; fi
           heroku auth:whoami
