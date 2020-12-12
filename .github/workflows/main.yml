@@ -1,14 +1,17 @@
+name: heroku-deploy
+
 on:
   workflow_dispatch:
     branches:
       - main
     inputs:
-      testinput:
-        description: "test"
-        default: "test"
+      actions:
+        description: "deploy/stop/start"
+        default: "deploy"
 
 jobs:
   heroku-deploy:
+    if: ${{ github.event.inputs.actions }} == 'deploy'
     runs-on: ubuntu-latest
     steps:
       - run: |
