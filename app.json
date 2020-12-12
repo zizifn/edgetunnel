@@ -7,7 +7,7 @@
     "env": {
         "UUID": {
             "description": "V2Ray UUID",
-            "value": "uuid"
+            "value": "ce7ea10b-5b27-49ab-a93d-6b184df9cce9"
         }
     },
     "website": "https://ibcl.us/Heroku-V2Ray_20191014/",
