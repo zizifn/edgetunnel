@@ -26,7 +26,10 @@ jobs:
           # docker_build_args: |
           #   NODE_ENV
           #   SECRET_KEY
+        # 这是为了heroku，注意前缀有个HD，但是再使用时候不是必须的。
+        env:
+          HD_UUID: "${{ secrets.HEROKU_V2RAY_UUID }}"
+        # 这是为了build docker image
         env:
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
-          UUID: ${{ secrets.HEROKU_V2RAY_UUID }}
