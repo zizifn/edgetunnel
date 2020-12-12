@@ -1,4 +1,4 @@
-name: heroku-deploy
+name: heroku
 
 on:
   workflow_dispatch:
@@ -31,3 +31,15 @@ jobs:
           HD_UUID: ${{ secrets.HEROKU_V2RAY_UUID }} # UUID for v2ray user, 为了安全，一定要放入github action token中
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
+  stop:
+    if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: akhileshns/heroku-deploy@v3.7.8 # This is the action
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: ${{secrets.APP_NAME}} #Must be unique in Heroku
+          heroku_email: ${{secrets.EMAIL}}
+          justlogin: true
+      - run: heroku auth:whoami
