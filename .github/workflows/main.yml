@@ -14,7 +14,7 @@ env:
 
 jobs:
   heroku-deploy:
-    if: ${{ actions == 'deploy' }}
+    if: ${{ $actions == 'deploy' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -33,7 +33,7 @@ jobs:
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
   stop:
-    if: ${{ actions  == 'start' || actions  == 'stop' }}
+    if: ${{ $actions  == 'start' || $actions  == 'stop' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
