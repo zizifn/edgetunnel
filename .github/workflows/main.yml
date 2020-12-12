@@ -1,12 +1,18 @@
 on:
-  push:
+  workflow_dispatch:
     branches:
-      - master
+      - main
+    inputs:
+      testinput:
+        description: "test"
+        default: "test"
 
 jobs:
   heroku-deploy:
     runs-on: ubuntu-latest
     steps:
+      - run: |
+        echo "testinput: ${{ github.event.inputs.testinput }}"
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.7.8 # This is the action
         with:
