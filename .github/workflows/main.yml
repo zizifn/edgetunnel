@@ -11,7 +11,7 @@ on:
 
 jobs:
   heroku-deploy:
-    if: ${{ github.event.inputs.actions }} == 'deploy'
+    if: ${{ github.event.inputs.actions == 'deploy' }}
     runs-on: ubuntu-latest
     steps:
       - run: |
