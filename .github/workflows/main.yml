@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-        echo "testinput: ${{ github.event.inputs.testinput }}"
+         echo "testinput: "${{ github.event.inputs.testinput }}"
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.7.8 # This is the action
         with:
