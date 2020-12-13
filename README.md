@@ -76,4 +76,13 @@ Actions
 
 ## 建立 cloudflare worker
 
-可以参考
+可以参考 开头的视频。代码如下。
+
+```javascript
+addEventListener("fetch", (event) => {
+  let url = new URL(event.request.url);
+  url.hostname = "你的heroku的hostname";
+  let request = new Request(url, event.request);
+  event.respondWith(fetch(request));
+});
+```
