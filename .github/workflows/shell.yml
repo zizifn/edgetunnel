@@ -14,8 +14,8 @@ jobs:
         run: |
           echo "Run a multi-line script"
       - id: foo
-        uses: ./github/actions/action.yml
-       with:
-         who-to-greet: 'Mona the Octocat'
+        uses: ./.github/actions/action.yml
+        with:
+          who-to-greet: "Mona the Octocat"
       - run: echo random-number ${{ steps.foo.outputs.random-number }}
-       shell: bash
+        shell: bash
