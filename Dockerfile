@@ -10,7 +10,7 @@ FROM v2fly/v2fly-core:latest
 ARG UUID
 ENV UUID=$UUID
 
-RUN cat > /usr/local/etc/v2ray/config.json <<'EOF' \
+RUN cat > /etc/v2ray/config.json <<'EOF' \
 { \
     "inbounds": [\
         {\
