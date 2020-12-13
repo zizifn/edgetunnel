@@ -29,7 +29,7 @@ jobs:
           HD_UUID: ${{ secrets.HEROKU_V2RAY_UUID }} # UUID for v2ray user, 为了安全，一定要放入github action token中
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
-  stop:
+  stop-start:
     if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' }}
     runs-on: ubuntu-latest
     steps:
@@ -41,8 +41,7 @@ jobs:
           heroku_email: ${{secrets.EMAIL}}
           justlogin: true
       - run: |
-          echo ${{ github.event.inputs.actions }}
-          if [[ ${{ github.event.inputs.actions1 == '' }} ]]; then echo "actions1 is empty"; fi
-          if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then echo "stop" && echo "dd"; fi
-          if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then echo "start" && echo "dd"; fi
-          heroku auth:whoami
+          echo action is ${{ github.event.inputs.actions }}
+          if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
+          if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
+          heroku ps -a ${{secrets.APP_NAME}}
