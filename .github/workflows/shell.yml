@@ -19,11 +19,12 @@ jobs:
           who-to-greet: "Mona the Octocat"
       - run: echo random-number ${{ steps.foo.outputs.random-number }}
         shell: bash
-      - run: ls -l
+      - run: ls -al
         shell: bash
       - run: heroku
         shell: bash
       - name: run pwsh
+        shell: pwsh
         run: |
           . ./.github/actions/module.ps1
           Show-Calendar
