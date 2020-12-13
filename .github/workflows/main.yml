@@ -6,9 +6,8 @@ on:
       - main
     inputs:
       actions:
-        - deploy
-        - stop
-        - start
+        description: "deploy/stop/start"
+        default: "deploy"
 
 jobs:
   heroku-deploy:
