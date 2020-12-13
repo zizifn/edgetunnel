@@ -22,7 +22,8 @@ jobs:
       - run: ls -al
         shell: bash
       - run: heroku
-        shell: |
+        shell: bash
+        run: |
           sudo apt install tree
           tree -al .
       - name: run pwsh
