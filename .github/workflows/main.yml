@@ -9,8 +9,6 @@ on:
         - deploy
         - stop
         - start
-        description: "deploy/stop/start"
-
 
 jobs:
   heroku-deploy:
