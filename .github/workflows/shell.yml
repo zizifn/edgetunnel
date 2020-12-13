@@ -21,7 +21,7 @@ jobs:
         shell: bash
       - run: ls -al
         shell: bash
-      - run: heroku
+      - name: show dir
         shell: bash
         run: |
           sudo apt install tree
