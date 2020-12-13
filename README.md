@@ -1,11 +1,79 @@
 # v2ray-heroku
 
+首先查看别人的 [youtube 教程](https://www.youtube.com/watch?v=xHZyDsFYdvA)，了解怎么配置 v2ray-heroku。如果你还想自动化你的 heroku，请查看下面的教程。
+
+本项目是包含，
+
+- 一键部署 V2ray 到 heroku。
+- 利用 Github action 实现 重新部署/停止/启动。
+- 利用 cloudflare CDN 进行加速。
+
+```text
+项目Dockerfile是基于V2fly 官方镜像制作。仅仅增加生产配置文件的脚本。后续，可以通过Actions 实现更新。
+```
+
 ## 一键部署
 
-## github actions 管理
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://dashboard.heroku.com/new?template=https://github.com/zizifn/v2ray-heroku/tree/main)
+
+## Github Actions 管理
+
+请 Fork 本项目到自己的账户下。 Actions 需要以下 Secrets 才能正常工作，这些 Secrets 会被 workflow 中的 [akhileshns/heroku-deploy](./https://github.com/AkhileshNS/heroku-deploy) 使用。
+
+具体实现细节，请查看 [workflow 配置文件](./github/workflows/main.yml).
+
+| Name              | Description                                |
+| ----------------- | ------------------------------------------ |
+| APP_NAME          | 就是你 heroku 项目的名字                   |
+| EMAIL             | heroku 账户的 email                        |
+| HEROKU_API_KEY    | heroku API key， 在 account 设置下可以找到 |
+| HEROKU_V2RAY_UUID | V2rayUUID                                  |
+
+### Github Secrets
+
+路径
+
+```text
+项目Setting-->Secrets
+```
+
+![Secrets](./readme-data/GithubSecrets.gif)
+
+### Heroku API key
+
+路径
+
+```text
+heroku Account settings-->API key
+```
+
+![Secrets](./readme-data/herokuapikey.gif)
+
+### Github Actions 界面
+
+```text
+Actions
+```
+
+![Actions](./readme-data/githubactions.gif)
 
 ### 重新部署
 
+点击 `Run workflow`, 输入 deploy。 然后就会重新 deploy。
+
+![deploy](./readme-data/deploy.jpg)
+
 ### 停止
 
+点击 `Run workflow`, 输入 stop。 然后就会 stop，不在计入小时数。
+![stop](./readme-data/stop.jpg)
+
 ### 启动
+
+点击 `Run workflow`, 输入 start。 然后就会启动。
+
+![start](./readme-data/start.jpg)
+
+## 建立 cloudflare worker
+
+可以参考
