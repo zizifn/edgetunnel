@@ -17,11 +17,11 @@ runs:
     - id: random-number-generator
       run: echo "::set-output name=random-id::$(echo $RANDOM)"
       shell: bash
-    - id: set-variable
-      run: test1=1 && echo test1 is $test1
-      shell: bash
     - id: get-variable
-      run: echo test111 is $test1
+      run: echo github.action_path is ${{github.action_path}}
+      shell: bash
+    - name: copy files
+      run: cp ${{ github.action_path }}/goodbye.sh .
       shell: bash
     - run: ${{ github.action_path }}/goodbye.sh
       shell: bash
