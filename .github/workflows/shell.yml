@@ -1,0 +1,21 @@
+name: shell-test
+
+on:
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  shell-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run a multi-line script
+        run: |
+          echo "Run a multi-line script"
+      - id: foo
+        uses: actions/hello-world-composite-run-steps-action@v1
+       with:
+         who-to-greet: 'Mona the Octocat'
+      - run: echo random-number ${{ steps.foo.outputs.random-number }}
+       shell: bash
