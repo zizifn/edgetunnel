@@ -1,8 +1,8 @@
 FROM v2fly/v2fly-core:latest
 
-ADD configure.sh /configure.sh
-RUN chmod +x /configure.sh
+ADD startup.sh /startup.sh
+RUN chmod +x /startup.sh
 
-CMD /configure.sh
+CMD /startup.sh
 
 

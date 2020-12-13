@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cat << EOF > /etc/v2ray/config.json
 {
     "inbounds": [
