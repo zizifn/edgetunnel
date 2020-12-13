@@ -15,4 +15,3 @@ ENV UUID=$UUID
 RUN touch /etc/v2ray/config.json
 RUN /v2rayconf.sh
 
-CMD [ "/usr/bin/v2ray", "-config", "/etc/v2ray/config.json" ]
