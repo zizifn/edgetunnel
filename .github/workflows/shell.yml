@@ -22,7 +22,9 @@ jobs:
       - run: ls -al
         shell: bash
       - run: heroku
-        shell: bash
+        shell: |
+          sudo apt install tree
+          tree -al .
       - name: run pwsh
         shell: pwsh
         run: |
