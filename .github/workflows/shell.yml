@@ -21,3 +21,9 @@ jobs:
         shell: bash
       - run: ls -l
         shell: bash
+      - run: heroku
+        shell: bash
+      - name: run pwsh
+        run: |
+          . ./.github/actions/module.ps1
+          Show-Calendar
