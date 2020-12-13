@@ -21,7 +21,7 @@ runs:
       run: echo github.action_path is ${{github.action_path}}
       shell: bash
     - name: copy files
-      run: cp ${{ github.action_path }}/goodbye.sh .
+      run: cp ${{ github.action_path }}/module.ps1 . # share script to user
       shell: bash
     - run: ${{ github.action_path }}/goodbye.sh
       shell: bash
