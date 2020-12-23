@@ -33,6 +33,20 @@
 | HEROKU_API_KEY    | heroku API key， 在 account 设置下可以找到 |
 | HEROKU_V2RAY_UUID | V2rayUUID                                  |
 
+> 请务必生成新的 UUID。使用已有的 UUID 会使自己 V2ray 暴露在危险之下。
+
+PowerShell:
+
+```powershell
+PS C:\Users\> New-Guid
+```
+
+Shell:
+
+```bash
+xxx@xxx:/mnt/c/Users/$ uuidgen
+```
+
 ### Github Secrets
 
 路径
