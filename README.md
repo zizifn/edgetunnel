@@ -1,5 +1,7 @@
 # v2ray-heroku
 
+> 遇到问题，请开 issue。
+
 首先查看别人的 [youtube 教程](https://www.youtube.com/watch?v=xHZyDsFYdvA)，了解怎么配置 v2ray-heroku。如果你还想自动化你的 heroku，请查看下面的教程。
 
 本项目是包含，
@@ -9,8 +11,10 @@
 - 利用 cloudflare CDN 进行加速。
 
 ```text
-项目Dockerfile是基于V2fly 官方镜像制作。仅仅增加生产配置文件的脚本。后续，可以通过Actions 实现更新。
+项目Dockerfile是基于V2fly 官方镜像制作。仅仅增加生产配置文件的脚本。重新部署就可以更新到最新的v2ray。
 ```
+
+> 保持安全最简单的方式就是，保持软件更新。
 
 ## 一键部署
 
@@ -86,3 +90,6 @@ addEventListener("fetch", (event) => {
   event.respondWith(fetch(request));
 });
 ```
+
+为 worker 选择速度更快的 IP。
+https://github.com/badafans/better-cloudflare-ip
