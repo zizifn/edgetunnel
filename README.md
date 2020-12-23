@@ -1,6 +1,6 @@
 # v2ray-heroku
 
-> 遇到问题，请开 issue。
+> 遇到问题，请开 issue/discussions。
 
 首先查看别人的 [youtube 教程](https://www.youtube.com/watch?v=xHZyDsFYdvA)，了解怎么配置 v2ray-heroku。如果你还想自动化你的 heroku，请查看下面的教程。
 
