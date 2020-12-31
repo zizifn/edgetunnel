@@ -2,6 +2,8 @@
 
 > 遇到问题，请开 issue/discussions。
 
+> update new VLESS 协议。 具体客户端配置请看 config 章节。
+
 首先查看别人的 [youtube 教程](https://www.youtube.com/watch?v=xHZyDsFYdvA)，了解怎么配置 v2ray-heroku。如果你还想自动化你的 heroku，请查看下面的教程。
 
 本项目是包含，
@@ -19,6 +21,38 @@
 ## 一键部署
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://dashboard.heroku.com/new?template=https://github.com/zizifn/v2ray-heroku/tree/main)
+
+## VLESS 客户端配置
+
+```json
+"outbounds": [
+        {
+            "protocol": "vless",
+            "settings": {
+                "vnext": [
+                    {
+                        "address": "***.herokuapp.com", // heroku app URL 或者 cloudflare worker url/ip
+                        "port": 443,
+                        "users": [
+                            {
+                                "id": "", // 填写你的 UUID
+                                "encryption": "none"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "ws",
+                "security": "tls",
+                "tlsSettings": {
+                    "serverName": "***.herokuapp.com" // heroku app host 或者 cloudflare worker host
+                }
+              }
+            }
+        }
+    ]
+```
 
 ## Github Actions 管理
 
