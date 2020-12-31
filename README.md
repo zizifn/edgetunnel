@@ -22,7 +22,7 @@
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://dashboard.heroku.com/new?template=https://github.com/zizifn/v2ray-heroku/tree/main)
 
-## VLESS 客户端配置
+## VLESS websocket 客户端配置
 
 ```json
 "outbounds": [
