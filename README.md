@@ -49,8 +49,7 @@
                     "serverName": "***.herokuapp.com" // heroku app host 或者 cloudflare worker host
                 }
               }
-            }
-        }
+          }
     ]
 ```
 
