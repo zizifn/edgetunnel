@@ -5,7 +5,7 @@
 > 切换到最新的 VLESS 协议。具体客户端配置请看 config 章节。
 
 首先查看别人的 [youtube 教程](https://www.youtube.com/watch?v=xHZyDsFYdvA)，了解怎么配置 v2ray-heroku。**本项目使用最新 VLESS 协议，请再客户端配置选择 VLESS**。
-[客户端配置](#VLESS websocket 客户端配置) 。
+[客户端配置](#一键部署) 。
 如果你还想自动化你的 heroku，请查看下面的教程。
 
 本项目是包含，
