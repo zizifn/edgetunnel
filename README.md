@@ -149,9 +149,8 @@ https://github.com/badafans/better-cloudflare-ip
     ]
 ```
 
-### QV2ray
+### v2rayN
 
-![QV2ray](/readme-data/QV2ray.jpg)
+由于 QV2ray 项目不维护了，换成 [V2rayN](./https://github.com/2dust/v2rayN)
 
-别忘记开启 TLS。
-![QV2ray](/readme-data/QV2ray2.jpg)
+![v2rayN](/readme-data/V2rayN.jpg)
