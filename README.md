@@ -153,4 +153,6 @@ https://github.com/badafans/better-cloudflare-ip
 
 由于 QV2ray 项目不维护了，换成 [V2rayN](./https://github.com/2dust/v2rayN)
 
+别人的配置教程参考，https://v2raytech.com/v2rayn-config-tutorial/.
+
 ![v2rayN](/readme-data/V2rayN.jpg)
