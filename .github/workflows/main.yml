@@ -30,6 +30,8 @@ jobs:
           HD_UUID: ${{ secrets.HEROKU_V2RAY_UUID }} # UUID for v2ray user, 为了安全，一定要放入github action token中
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
+      - run: |
+          echo APP_NAME is ${{secrets.APP_NAME}}
   stop-start:
     if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' }}
     runs-on: ubuntu-latest
