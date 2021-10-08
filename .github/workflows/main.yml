@@ -7,7 +7,7 @@ on:
         description: "action: deploy/stop/start"
         default: "deploy"
       env:
-        description: "environment: "
+        description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
 
 jobs:
