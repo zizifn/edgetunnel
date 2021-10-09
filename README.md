@@ -1,6 +1,6 @@
 # v2ray-heroku
 
-> 貌似新建的app都需要科学访问，请使用cloudflare CDN 套一层。
+> 貌似新建的app都需要科学访问，请使用cloudflare worker CDN 套一层。
 
 > 遇到问题，请开 issue/discussions。
 
