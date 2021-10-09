@@ -2,18 +2,21 @@ name: heroku-deploy-stop-start
 
 on:
   workflow_dispatch:
-    branches:
-      - main
     inputs:
       actions:
-        description: "deploy/stop/start"
+        description: "action: deploy/stop/start"
         default: "deploy"
+      env:
+        description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
+        default: ""
 
 jobs:
   heroku-deploy:
     if: ${{ github.event.inputs.actions == 'deploy' || github.event.inputs.actions == ''}}
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.env }}
     steps:
+      - run: echo APP_NAME is ${{secrets.APP_NAME}}
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.6.8 # This is the action
         with:
