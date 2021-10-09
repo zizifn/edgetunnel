@@ -1,5 +1,7 @@
 # v2ray-heroku
 
+> 貌似新建的app都需要科学访问，请使用cloudflare CDN 套一层。
+
 > 遇到问题，请开 issue/discussions。
 
 > 切换到最新的 VLESS 协议。具体客户端配置请看 config 章节。
@@ -15,6 +17,7 @@
 
 - 一键部署 V2ray 到 heroku。
 - 利用 Github action 实现 重新部署/停止/启动。
+- 支持多app和多账户 重新部署/停止/启动。
 - 利用 cloudflare CDN 进行加速。
 
 ```text
@@ -100,6 +103,7 @@ Actions
 
 ![start](./readme-data/start.jpg)
 
+
 ## 建立 cloudflare worker
 
 可以参考 开头的视频。代码如下。
@@ -115,6 +119,21 @@ addEventListener("fetch", (event) => {
 
 为 worker 选择速度更快的 IP。
 https://github.com/badafans/better-cloudflare-ip
+
+## 使用 Environments 实现 多账户/多app Secrets 管理
+
+文档介绍： https://docs.github.com/en/actions/deployment/using-environments-for-deployment
+
+### 建立 Environments, 并添加 Secrets
+
+1. 创建 Environments
+![Environments](./readme-data/Environments.png)
+2. 添加 Secrets
+![EnvironmentsSercet](./readme-data/EnvironmentsSercet.png)
+
+### 输入环境名字
+**一定要确保环境名字是对的，要不然就会用主的Secrets。**
+![EnvironmentsDeploy](./readme-data/EnvironmentsDeploy.png)
 
 ## VLESS websocket 客户端配置
 
