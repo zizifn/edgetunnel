@@ -34,6 +34,7 @@ jobs:
   stop-start:
     if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' }}
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.env }}
     steps:
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.7.8 # This is the action
