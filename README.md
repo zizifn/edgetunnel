@@ -15,7 +15,7 @@
 
 - 一键部署 V2ray 到 heroku。
 - 利用 Github action 实现 重新部署/停止/启动。
-- 支持多app和多账户 重新部署/停止/启动。
+- **支持多app和多账户 重新部署/停止/启动。**
 - 利用 cloudflare CDN 进行加速。
 
 ```text
