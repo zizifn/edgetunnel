@@ -1,6 +1,6 @@
 # v2ray-heroku
 
-> 貌似新建的app都需要科学访问，请使用cloudflare worker CDN 套一层。
+> 貌似新建的app有些需要科学访问，如果需要，请使用cloudflare worker CDN 套一层。
 
 > 切换到最新的 VLESS 协议。具体客户端配置请看 config 章节。
 
@@ -102,7 +102,9 @@ Actions
 ![start](./readme-data/start.jpg)
 
 
-## 建立 cloudflare worker
+## 建立 cloudflare worker （可选）
+
+如果遇到创建的app在正常网络下不能方法，请尝试这个。
 
 可以参考 开头的视频。代码如下。
 
