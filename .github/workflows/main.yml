@@ -6,6 +6,11 @@ on:
       actions:
         description: "action: deploy/stop/start"
         default: "deploy"
+      auto-start-stop:
+        description: 'if this is true, then action will run auto stop on 2:00AM and auto start on 5:00AM beijing time'
+        default: "true"
+        required: true
+        type: boolean
       env:
         description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
