@@ -17,6 +17,9 @@ on:
         default: "true"
         required: true
         type: boolean
+env:
+  auto-start-stop: true
+  test-env: true
 
 jobs:
   jobenv:
@@ -28,10 +31,10 @@ jobs:
       herokuEnv: ${{ github.event.inputs.env }} # todo
     steps:
       - id: isStopHeroku
-        if: ${{ (github.event.schedule == '0 18 * * *' && github.event.inputs.auto-start-stop) || github.event.inputs.actions  == 'stop'}}
+        if: ${{ (github.event.schedule == '0 18 * * *' && env.auto-start-stop) || github.event.inputs.actions  == 'stop'}}
         run: echo "::set-output name=action::true"
       - id: isStartHeroku
-        if: ${{ (github.event.schedule == '0 21 * * *' && github.event.inputs.auto-start-stop) || github.event.inputs.actions  == 'start'}}
+        if: ${{ (github.event.schedule == '0 21 * * *' && env.auto-start-stop) || github.event.inputs.actions  == 'start'}}
         run: echo "::set-output name=action::true"
       - id: isDeployHeroku # TODO
         # if: ${{ github.event.inputs.actions  == 'start'}}
@@ -40,7 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: jobenv
     steps:
-      - run: echo needs.jobenv.outputs.deploy is ${{needs.jobenv.outputs.deploy}}
+      - id: test-env
+        if: ${{ env.test-env }}
+        run: echo needs.jobenv.outputs.deploy is ${{needs.jobenv.outputs.deploy}}
       - run: echo needs.jobenv.outputs.stop is ${{needs.jobenv.outputs.stop}}
       - run: echo needs.jobenv.outputs.start is ${{needs.jobenv.outputs.start}}
   heroku-deploy:
