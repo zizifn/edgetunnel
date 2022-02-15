@@ -29,10 +29,10 @@ jobs:
     steps:
       - id: isStopHeroku
         if: ${{ (github.event.schedule == '0 18 * * *' && github.event.inputs.auto-start-stop) || github.event.inputs.actions  == 'stop'}}
-        run: echo "::set-output name=action::true"
+        run: echo "::set-output name=action::stop"
       - id: isStartHeroku
         if: ${{ (github.event.schedule == '0 21 * * *' && github.event.inputs.auto-start-stop) || github.event.inputs.actions  == 'start'}}
-        run: echo "::set-output name=action::true"
+        run: echo "::set-output name=action::start"
       - id: isDeployHeroku # TODO
         # if: ${{ github.event.inputs.actions  == 'start'}}
         run: echo "::set-output name=action::false"
