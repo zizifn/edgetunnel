@@ -32,6 +32,7 @@ jobs:
         run: echo "::set-output name=action::true"
       - id: isStartHeroku
         if: ${{ (github.event.schedule == '0 21 * * *' && github.event.inputs.auto-start-stop) || github.event.inputs.actions  == 'start'}}
+        run: echo "::set-output name=action::true"
       - id: isDeployHeroku # TODO
         # if: ${{ github.event.inputs.actions  == 'start'}}
         run: echo "::set-output name=action::false"
