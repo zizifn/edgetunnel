@@ -70,6 +70,6 @@ jobs:
           justlogin: true
       - run: |
           echo action is ${{ github.event.inputs.actions }}
-          if [[ ${{ needs.jobenv.outputs.stop == 'true' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
-          if [[ ${{ needs.jobenv.outputs.start == 'true' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
+          if [[ ${{ needs.jobenv.outputs.stop }} == 'true' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
+          if [[ ${{ needs.jobenv.outputs.start }} == 'true' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
           heroku ps -a ${{secrets.APP_NAME}}
