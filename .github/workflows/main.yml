@@ -12,13 +12,8 @@ on:
       env:
         description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
-      auto-start-stop:
-        description: "only support in main secrets, if this is selected, then action will run auto stop heroku app on 2:00AM and auto start heroku app on 5:00AM beijing time"
-        default: "true"
-        required: true
-        type: boolean
 env:
-  auto-start-stop: true
+  auto-start-stop: true #only support in main secrets, if this is selected, then action will run auto stop heroku app on 2:00AM and auto start heroku app on 5:00AM beijing time
   test-env: true
 
 jobs:
