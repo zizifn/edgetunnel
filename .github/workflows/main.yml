@@ -29,15 +29,16 @@ jobs:
     steps:
       - id: isStopHeroku
         if: ${{ (github.event.schedule == '0 18 * * *' && github.event.inputs.auto-start-stop) || github.event.inputs.actions  == 'stop'}}
-        run: echo "::set-output name=action::stop"
+        run: echo "::set-output name=action::true"
       - id: isStartHeroku
         if: ${{ (github.event.schedule == '0 21 * * *' && github.event.inputs.auto-start-stop) || github.event.inputs.actions  == 'start'}}
-        run: echo "::set-output name=action::start"
+        run: echo "::set-output name=action::true"
       - id: isDeployHeroku # TODO
         # if: ${{ github.event.inputs.actions  == 'start'}}
         run: echo "::set-output name=action::false"
   output:
     runs-on: ubuntu-latest
+    needs: jobenv
     steps:
       - run: echo needs.jobenv.outputs.deploy is ${{needs.jobenv.outputs.deploy}}
       - run: echo needs.jobenv.outputs.stop is ${{needs.jobenv.outputs.stop}}
@@ -45,6 +46,7 @@ jobs:
   heroku-deploy:
     if: ${{ github.event.inputs.actions == 'deploy' || needs.jobenv.outputs.deploy == 'true' }}
     runs-on: ubuntu-latest
+    needs: jobenv
     environment: ${{ github.event.inputs.env }}
     steps:
       - run: echo APP_NAME is ${{secrets.APP_NAME}}
@@ -65,6 +67,7 @@ jobs:
   stop-start:
     if: ${{ needs.jobenv.outputs.stop == 'true' || needs.jobenv.outputs.start == 'true' }}
     runs-on: ubuntu-latest
+    needs: jobenv
     environment: ${{ github.event.inputs.env }}
     steps:
       - uses: actions/checkout@v2
