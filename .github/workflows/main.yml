@@ -1,23 +1,42 @@
 name: heroku-deploy-stop-start
 
 on:
+  schedule:
+    - cron: "0 18 * * *" # UTC time, stop
+    - cron: "0 21 * * *" # UTC time, start
   workflow_dispatch:
     inputs:
       actions:
         description: "action: deploy/stop/start"
         default: "deploy"
-      auto-start-stop:
-        description: 'if this is true, then action will run auto stop on 2:00AM and auto start on 5:00AM beijing time'
-        default: "true"
-        required: true
-        type: boolean
       env:
         description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
+      auto-start-stop:
+        description: "only support in main secrets, if this is selected, then action will run auto stop heroku app on 2:00AM and auto start heroku app on 5:00AM beijing time"
+        default: "true"
+        required: true
+        type: boolean
 
 jobs:
+  jobenv:
+    runs-on: ubuntu-latest
+    outputs:
+      stop: ${{ steps.isStopHeroku.outputs.action }}
+      start: ${{ steps.isStartHeroku.outputs.action }}
+      deploy: ${{ steps.isDeployHeroku.outputs.action }}
+      herokuEnv: ${{ github.event.inputs.env }} # todo
+    steps:
+      - id: isStopHeroku
+        if: ${{ (github.event.schedule == '0 18 * * *' && github.event.inputs.auto-start-stop) || github.event.inputs.actions  == 'stop'}}
+        run: echo "::set-output name=action::true"
+      - id: isStartHeroku
+        if: ${{ (github.event.schedule == '0 21 * * *' && github.event.inputs.auto-start-stop) || github.event.inputs.actions  == 'start'}}
+      - id: isDeployHeroku # TODO
+        # if: ${{ github.event.inputs.actions  == 'start'}}
+        run: echo "::set-output name=action::false"
   heroku-deploy:
-    if: ${{ github.event.inputs.actions == 'deploy' || github.event.inputs.actions == ''}}
+    if: ${{ github.event.inputs.actions == 'deploy' || needs.jobenv.outputs.deploy == 'true' }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}
     steps:
@@ -37,7 +56,7 @@ jobs:
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
   stop-start:
-    if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' }}
+    if: ${{ needs.jobenv.outputs.stop == 'true' || needs.jobenv.outputs.start == 'true' }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}
     steps:
@@ -50,6 +69,6 @@ jobs:
           justlogin: true
       - run: |
           echo action is ${{ github.event.inputs.actions }}
-          if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
-          if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
+          if [[ ${{ needs.jobenv.outputs.stop == 'true' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
+          if [[ ${{ needs.jobenv.outputs.start == 'true' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
           heroku ps -a ${{secrets.APP_NAME}}
