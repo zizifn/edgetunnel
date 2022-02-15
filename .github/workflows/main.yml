@@ -22,9 +22,9 @@ jobs:
   jobenv:
     runs-on: ubuntu-latest
     outputs:
-      stop: ${{ steps.isStopHeroku.outputs.action }}
-      start: ${{ steps.isStartHeroku.outputs.action }}
-      deploy: ${{ steps.isDeployHeroku.outputs.action }}
+      stop: ${{ steps.isStopHeroku.outputs.action || 'false' }}
+      start: ${{ steps.isStartHeroku.outputs.action || 'false' }}
+      deploy: ${{ steps.isDeployHeroku.outputs.action || 'false' }}
       herokuEnv: ${{ github.event.inputs.env }} # todo
     steps:
       - id: isStopHeroku
@@ -79,6 +79,6 @@ jobs:
           justlogin: true
       - run: |
           echo action is ${{ github.event.inputs.actions }}
-          if [[ ${{ needs.jobenv.outputs.stop }} == 'true' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
-          if [[ ${{ needs.jobenv.outputs.start }} == 'true' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
+          if [[ ${{ needs.jobenv.outputs.stop}} == 'true' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
+          if [[ ${{ needs.jobenv.outputs.start}} == 'true' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
           heroku ps -a ${{secrets.APP_NAME}}
