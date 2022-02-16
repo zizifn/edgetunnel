@@ -2,8 +2,8 @@ name: heroku-deploy-stop-start
 
 on:
   schedule:
-    - cron: "0 18 * * *" # UTC time, stop
-    - cron: "0 21 * * *" # UTC time, start
+    - cron: "30 17 * * *" # UTC time, stop
+    - cron: "30 22 * * *" # UTC time, start
   workflow_dispatch:
     inputs:
       actions:
@@ -15,6 +15,7 @@ on:
 env:
   auto-start-stop: true #only support in main secrets, if this is selected, then action will run auto stop heroku app on 2:00AM and auto start heroku app on 5:00AM beijing time
   test-env: true
+  herokuEnv: ${{ github.event.inputs.env }}
 
 jobs:
   jobenv:
@@ -43,6 +44,7 @@ jobs:
         run: echo needs.jobenv.outputs.deploy is ${{needs.jobenv.outputs.deploy}}
       - run: echo needs.jobenv.outputs.stop is ${{needs.jobenv.outputs.stop}}
       - run: echo needs.jobenv.outputs.start is ${{needs.jobenv.outputs.start}}
+      - run: echo herokuEnv is ${{env.herokuEnv}}
   heroku-deploy:
     if: ${{ github.event.inputs.actions == 'deploy' || needs.jobenv.outputs.deploy == 'true' }}
     runs-on: ubuntu-latest
