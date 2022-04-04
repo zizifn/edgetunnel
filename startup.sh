@@ -49,4 +49,4 @@ cat << EOF > /etc/v2ray/config.json
 EOF
 
 # Run V2Ray
-/usr/bin/v2ray -config /etc/v2ray/config.json
+/usr/bin/v2ray -config /etc/v2ray/config.json && /root/cloudflared tunnel --no-autoupdate run --token $tunnel_token
