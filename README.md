@@ -120,12 +120,12 @@ addEventListener("fetch", (event) => {
 });
 ```
 
+为 worker 选择速度更快的 IP。
+https://github.com/badafans/better-cloudflare-ip
+
 ## 建立 cloudflare tunnel （可选）
 
 项目集成 cloudflare tunnel， 在配置 Secrets `HEROKU_TUNNEL_TOKEN` 之后生效。具体怎么配置，请查看 [cloudflare tunnel](./cloudflared-tunnel.md)。
-
-为 worker 选择速度更快的 IP。
-https://github.com/badafans/better-cloudflare-ip
 
 ## 使用 Environments 实现 多账户/多app Secrets 管理
 
