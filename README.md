@@ -17,6 +17,7 @@
 - 利用 Github action 实现 重新部署/停止/启动。
 - **支持多app和多账户 重新部署/停止/启动。**
 - 利用 cloudflare CDN 进行加速。
+- **利用 [cloudflare tunnel](https://www.cloudflare.com/products/tunnel/) 进行加速。**
 
 ```text
 项目Dockerfile是基于V2fly 官方镜像制作。仅仅增加生产配置文件的脚本。重新部署就可以更新到最新的v2ray。
@@ -38,11 +39,15 @@
 | Name              | Description                                |
 | ----------------- | ------------------------------------------ |
 | APP_NAME          | 就是你 heroku 项目的名字                   |
-| EMAIL             | heroku 账户的 email                        |
-| HEROKU_API_KEY    | heroku API key， 在 account 设置下可以找到 |
-| HEROKU_V2RAY_UUID | V2rayUUID                                  |
+| EMAIL             | heroku 账户的 email                      |
+| HEROKU_API_KEY    | heroku API key，在 account 设置下可以找到 |
+| HEROKU_V2RAY_UUID | V2rayUUID                                |
+| HEROKU_TUNNEL_TOKEN | **可选** cloudflare tunnel 的 token    |
+
+HEROKU_TUNNEL_TOKEN 是可选项，可以忽略. 详细说明，请查看章节 《建立-cloudflare-tunnel-（可选）》
 
 > 请务必生成新的 UUID。使用已有的 UUID 会使自己 V2ray 暴露在危险之下。
+
 
 PowerShell:
 
@@ -119,6 +124,10 @@ addEventListener("fetch", (event) => {
 
 为 worker 选择速度更快的 IP。
 https://github.com/badafans/better-cloudflare-ip
+
+## 建立 cloudflare tunnel （可选）
+
+项目集成 cloudflare tunnel， 在配置 Secrets `HEROKU_TUNNEL_TOKEN` 之后生效。具体怎么配置，请查看 [cloudflare tunnel](./cloudflared-tunnel.md)。
 
 ## 使用 Environments 实现 多账户/多app Secrets 管理
 
