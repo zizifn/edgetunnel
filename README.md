@@ -39,13 +39,15 @@
 | Name              | Description                                |
 | ----------------- | ------------------------------------------ |
 | APP_NAME          | 就是你 heroku 项目的名字                   |
-| EMAIL             | heroku 账户的 email                        |
+| EMAIL             | heroku 账户的 email                      |
 | HEROKU_API_KEY    | heroku API key，在 account 设置下可以找到 |
-| HEROKU_V2RAY_UUID | V2rayUUID                                  |
-| HEROKU_TUNNEL_TOKEN | **可选** TUNNEL_TOKEN               |
+| HEROKU_V2RAY_UUID | V2rayUUID                                |
+| HEROKU_TUNNEL_TOKEN | **可选** cloudflare tunnel 的 token    |
+
+HEROKU_TUNNEL_TOKEN 是可选项，可以忽略. 详细说明，请查看章节 《建立-cloudflare-tunnel-（可选）》
 
 > 请务必生成新的 UUID。使用已有的 UUID 会使自己 V2ray 暴露在危险之下。
-> HEROKU_TUNNEL_TOKEN 是可选项，可以忽略
+
 
 PowerShell:
 
