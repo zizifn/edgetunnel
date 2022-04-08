@@ -52,5 +52,5 @@ jobs:
           echo action is ${{ github.event.inputs.actions }}
           if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
           if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
-          if [[ ${{ github.event.inputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{secrets.APP_NAME}} --confirm && echo "destroy app"; fi
+          if [[ ${{ github.event.inputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{secrets.APP_NAME}} --confirm ${{secrets.APP_NAME}} && echo "destroy app"; fi
           heroku ps -a ${{secrets.APP_NAME}}
