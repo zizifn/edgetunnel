@@ -28,7 +28,8 @@ jobs:
     steps:
       - id: herokuAppName # TODO check atcion doc for usage
         # if: ${{ github.event.inputs.actions  == 'start'}}
-        run: echo "::set-output name=name::${{ github.event.inputs.heroku-app-name }}"
+        # run: echo "::set-output name=name::${{ github.event.inputs.heroku-app-name || secrets.APP_NAME }}"
+        run: echo "::set-output name=name::${{ secrets.APP_NAME }}"
       - id: isDeployHeroku # TODO check atcion doc for usage
         # if: ${{ github.event.inputs.actions  == 'start'}}
         run: echo "::set-output name=action::false"
