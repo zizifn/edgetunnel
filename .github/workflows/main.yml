@@ -10,12 +10,14 @@ on:
         description: "us or eu. 如果你的app已经创建，切换到不同的region，需要先删除app"
         default: "us"
       heroku-app-name:
-        description: "如果输入，则会覆盖 Secrets 里面配置的 APP_NAME"
+        description: "可选，如果输入，则会覆盖 Secrets 里面配置的 APP_NAME"
         default: ""
         required: false
       env:
         description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
+env:
+  heroku-app-name: ${{ github.event.inputs.heroku-app-name || secrets.APP_NAME }}
 
 jobs:
   heroku-deploy:
@@ -23,12 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}
     steps:
-      - run: echo APP_NAME is ${{secrets.APP_NAME}}
+      - run: echo APP_NAME is ${{env.heroku-app-name}}
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: ${{secrets.APP_NAME}} #Must be unique in Heroku
+          heroku_app_name: ${{env.heroku-app-name}} #Must be unique in Heroku
           heroku_email: ${{secrets.EMAIL}}
           usedocker: true
           region: ${{github.event.inputs.heroku-region || 'us'}}
@@ -49,12 +51,12 @@ jobs:
       - uses: akhileshns/heroku-deploy@v3.7.8 # This is the action
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: ${{secrets.APP_NAME}} #Must be unique in Heroku
+          heroku_app_name: ${{env.heroku-app-name}} #Must be unique in Heroku
           heroku_email: ${{secrets.EMAIL}}
           justlogin: true
       - run: |
           echo action is ${{ github.event.inputs.actions }}
-          if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
-          if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
-          if [[ ${{ github.event.inputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{secrets.APP_NAME}} --confirm ${{secrets.APP_NAME}} && echo "destroy app"; fi
-          heroku ps -a ${{secrets.APP_NAME}}
+          if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{env.heroku-app-name}} && echo "stop"; fi
+          if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{env.heroku-app-name}} && echo "start"; fi
+          if [[ ${{ github.event.inputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{env.heroku-app-name}} --confirm ${{env.heroku-app-name}} && echo "destroy app"; fi
+          heroku ps -a ${{env.heroku-app-name}}
