@@ -6,9 +6,11 @@ on:
       actions:
         description: "action: deploy/stop/start/destroy"
         default: "deploy"
+        required: true
       heroku-region:
         description: "us 或者 eu. 如果你的app已经创建，切换到不同的region，需要先输入 actions 为 destroy 删除app"
         default: "us"
+        required: false
       heroku-app-name:
         description: "可选，如果输入，则会覆盖 Secrets 里面配置的 APP_NAME。"
         default: ""
@@ -16,6 +18,7 @@ on:
       env:
         description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
+        required: false
 
 jobs:
   jobenv:
@@ -29,16 +32,39 @@ jobs:
     steps:
       - id: isDeployHeroku # TODO check atcion doc for usage
         # if: ${{ github.event.inputs.actions  == 'start'}}
-        run: echo "::set-output name=action::false"
-  # output-jobenv:
-  #   runs-on: ubuntu-latest
-  #   needs: jobenv
-  #   steps:
-  #     # - id: test-env
-  #     #   if: ${{ env.test-env }}
-  #     #   run: echo needs.jobenv.outputs.herokuAppName is ${{needs.jobenv.outputs.herokuAppName}}
-  #     - run: echo test111 is ${{needs.jobenv.outputs.test111}}
-  #     # - run: echo ${{needs.jobenv.outputs.herokuAppName}} | sed 's/./& /g'
+        run: echo "test output"
+
+  output-jobenv:
+    runs-on: ubuntu-latest
+    needs: jobenv
+    env:
+      APP_NAME: ${{ secrets.APP_NAME }}
+      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      EMAIL: ${{ secrets.EMAIL }}
+      HEROKU_V2RAY_UUID: ${{ secrets.HEROKU_V2RAY_UUID }}
+      HEROKU_TUNNEL_TOKEN: ${{ secrets.HEROKU_TUNNEL_TOKEN }}
+    steps:
+      - run: |
+          echo "actions: ${{ github.event.inputs.actions }}"
+          echo "heroku-region: ${{ github.event.inputs.heroku-region }}"
+          echo "heroku-app-name: ${{ github.event.inputs.heroku-app-name }}"
+          echo "env: ${{ github.event.inputs.env }}"
+      - id: APP_NAME_is_empty
+        if: ${{ env.APP_NAME == ''}}
+        run: echo APP_NAME is empty
+      - id: HEROKU_API_KEY_is_empty
+        if: ${{ env.HEROKU_API_KEY == ''}}
+        run: echo HEROKU_API_KEY is empty
+      - id: EMAIL_is_empty
+        if: ${{ env.EMAIL == ''}}
+        run: echo EMAIL is empty
+      - id: HEROKU_V2RAY_UUID_is_empty
+        if: ${{ env.HEROKU_V2RAY_UUID == ''}}
+        run: echo HEROKU_V2RAY_UUID is empty
+      - id: HEROKU_TUNNEL_TOKEN_is_empty
+        if: ${{ env.HEROKU_TUNNEL_TOKEN == ''}}
+        run: echo HEROKU_TUNNEL_TOKEN is empty
+      # - run: echo ${{needs.jobenv.outputs.herokuAppName}} | sed 's/./& /g'
 
 
   heroku-deploy:
