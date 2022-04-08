@@ -32,6 +32,8 @@
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
+> 貌似这个 repo 被 heroku 识别了，请大家 fork 时候，尽量不要带有 v2ray 关键字。
+
 ## Github Actions 管理
 
 请 Fork 本项目到自己的账户下。 Actions 需要以下 Secrets 才能正常工作，这些 Secrets 会被 workflow 中的 [akhileshns/heroku-deploy](https://github.com/AkhileshNS/heroku-deploy) 使用。
