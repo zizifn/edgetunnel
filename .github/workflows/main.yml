@@ -16,12 +16,32 @@ on:
       env:
         description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
-env:
-  heroku-app-name: ${{ github.event.inputs.heroku-app-name || secrets.APP_NAME }}
 
 jobs:
+  jobenv:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.env}}
+    outputs:
+      actions: ${{ github.event.inputs.actions || 'deploy'}}
+      heroku-app-name: ${{ github.event.inputs.heroku-app-name || secrets.APP_NAME }}
+      test111: ${{ github.event.inputs.env }} # todo
+    steps:
+      - id: isDeployHeroku # TODO check atcion doc for usage
+        # if: ${{ github.event.inputs.actions  == 'start'}}
+        run: echo "::set-output name=action::false"
+  output-jobenv:
+    runs-on: ubuntu-latest
+    needs: jobenv
+    steps:
+      - id: test-env
+        if: ${{ env.test-env }}
+        run: echo needs.jobenv.outputs.deploy is ${{needs.jobenv.outputs.deploy}}
+      - run: echo needs.jobenv.outputs.stop is ${{needs.jobenv.outputs.stop}}
+      - run: echo needs.jobenv.outputs.start is ${{needs.jobenv.outputs.start}}
+      - run: echo herokuEnv is ${{env.herokuEnv}}
+
   heroku-deploy:
-    if: ${{ github.event.inputs.actions == 'deploy' || github.event.inputs.actions == ''}}
+    if: ${{ needs.jobenv.outputs.actions == 'deploy' || needs.jobenv.outputs.actions == ''}}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}
     steps:
@@ -30,7 +50,7 @@ jobs:
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: ${{env.heroku-app-name}} #Must be unique in Heroku
+          heroku_app_name: ${{needs.jobenv.outputs.heroku-app-name}} #Must be unique in Heroku
           heroku_email: ${{secrets.EMAIL}}
           usedocker: true
           region: ${{github.event.inputs.heroku-region || 'us'}}
@@ -43,7 +63,7 @@ jobs:
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
   stop-start-destroy:
-    if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' || github.event.inputs.actions  == 'destroy' }}
+    if: ${{ needs.jobenv.outputs.actions  == 'start' || needs.jobenv.outputs.actions  == 'stop' || needs.jobenv.outputs.actions  == 'destroy' }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}
     steps:
@@ -51,12 +71,11 @@ jobs:
       - uses: akhileshns/heroku-deploy@v3.7.8 # This is the action
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: ${{env.heroku-app-name}} #Must be unique in Heroku
           heroku_email: ${{secrets.EMAIL}}
           justlogin: true
       - run: |
-          echo action is ${{ github.event.inputs.actions }}
-          if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{env.heroku-app-name}} && echo "stop"; fi
-          if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{env.heroku-app-name}} && echo "start"; fi
-          if [[ ${{ github.event.inputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{env.heroku-app-name}} --confirm ${{env.heroku-app-name}} && echo "destroy app"; fi
+          echo action is ${{ needs.jobenv.outputs.actions }}
+          if [[ ${{ needs.jobenv.outputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{needs.jobenv.outputs.heroku-app-name}} && echo "stop"; fi
+          if [[ ${{ needs.jobenv.outputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{needs.jobenv.outputs.heroku-app-name}} && echo "start"; fi
           heroku ps -a ${{env.heroku-app-name}}
+          if [[ ${{ needs.jobenv.outputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{needs.jobenv.outputs.heroku-app-name}} --confirm ${{env.heroku-app-name}} && echo "destroy app"; fi
