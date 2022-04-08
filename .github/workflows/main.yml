@@ -6,9 +6,11 @@ on:
       actions:
         description: "action: deploy/stop/start/destroy"
         default: "deploy"
+        required: true
       heroku-region:
         description: "us 或者 eu. 如果你的app已经创建，切换到不同的region，需要先输入 actions 为 destroy 删除app"
         default: "us"
+        required: false
       heroku-app-name:
         description: "可选，如果输入，则会覆盖 Secrets 里面配置的 APP_NAME。"
         default: ""
@@ -16,6 +18,7 @@ on:
       env:
         description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
+        required: false
 
 jobs:
   jobenv:
