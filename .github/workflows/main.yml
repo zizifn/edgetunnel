@@ -46,7 +46,6 @@ jobs:
         echo "heroku-region: ${{ github.event.inputs.heroku-region }}"
         echo "heroku-app-name: ${{ github.event.inputs.heroku-app-name }}"
         echo "env: ${{ github.event.inputs.env }}"
-        echo "HEROKU_V2RAY_UUID: ${{ github.event.inputs.env }}"
       - id: APP_NAME is empty
         if: ${{ env.APP_NAME == ''}}
         run: echo APP_NAME is empty
