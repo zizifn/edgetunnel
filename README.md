@@ -32,7 +32,7 @@
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-> 貌似这个 repo 被 heroku 识别了，请大家 fork 时候，尽量不要带有 v2ray 关键字。
+> 貌似这个 repo 被 heroku 识别了，请大家 fork 时候，项目名字，尽量不要带有 v2ray 关键字。
 
 ## Github Actions 管理
 
