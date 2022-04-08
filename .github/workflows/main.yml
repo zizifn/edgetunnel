@@ -26,10 +26,11 @@ jobs:
     outputs:
       actions: ${{ github.event.inputs.actions || 'deploy'}}
       test111: ${{ github.event.inputs.env }} # todo
-    # steps:
-      # - id: isDeployHeroku # TODO check atcion doc for usage
-      #   # if: ${{ github.event.inputs.actions  == 'start'}}
-      #   run: echo "::set-output name=action::false"
+    steps:
+      - id: isDeployHeroku # TODO check atcion doc for usage
+        # if: ${{ github.event.inputs.actions  == 'start'}}
+        run: echo "test output"
+
   output-jobenv:
     runs-on: ubuntu-latest
     needs: jobenv
