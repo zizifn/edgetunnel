@@ -21,6 +21,8 @@ jobs:
   jobenv:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env}}
+    env: # Or as an environment variable
+      APP_NAME: ${{ secrets.APP_NAME }}
     outputs:
       actions: ${{ github.event.inputs.actions || 'deploy'}}
       herokuAppName: ${{ steps.herokuAppName.outputs.name }}
@@ -29,7 +31,7 @@ jobs:
       - id: herokuAppName # TODO check atcion doc for usage
         # if: ${{ github.event.inputs.actions  == 'start'}}
         # run: echo "::set-output name=name::${{ github.event.inputs.heroku-app-name || secrets.APP_NAME }}"
-        run: echo "::set-output name=name::${{ secrets.APP_NAME }}"
+        run: echo "::set-output name=name::${{ env.APP_NAME }}"
       - id: isDeployHeroku # TODO check atcion doc for usage
         # if: ${{ github.event.inputs.actions  == 'start'}}
         run: echo "::set-output name=action::false"
@@ -80,6 +82,6 @@ jobs:
       - run: |
           echo action is ${{ needs.jobenv.outputs.actions }}
           if [[ ${{ needs.jobenv.outputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{needs.jobenv.outputs.herokuAppName}} && echo "stop"; fi
-          if [[ ${{ needs.jobenv.outputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{needs.jobenv.outputs.herokuAppName}} && echo "start"; fi
-          heroku ps -a ${{needs.jobenv.outputs.herokuAppName}}
-          if [[ ${{ needs.jobenv.outputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{needs.jobenv.outputs.herokuAppName}} --confirm ${{needs.jobenv.outputs.heroku-app-name}} && echo "destroy app"; fi
+          if [[ ${{ needs.jobenv.outputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
+          heroku ps -a ${{secrets.APP_NAME}}
+          if [[ ${{ needs.jobenv.outputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{secrets.APP_NAME}} --confirm ${{needs.jobenv.outputs.heroku-app-name}} && echo "destroy app"; fi
