@@ -42,10 +42,10 @@ jobs:
       HEROKU_TUNNEL_TOKEN: ${{ secrets.HEROKU_TUNNEL_TOKEN }}
     steps:
       - run: |
-        echo "actions: ${{ github.event.inputs.actions }}"
-        echo "heroku-region: ${{ github.event.inputs.heroku-region }}"
-        echo "heroku-app-name: ${{ github.event.inputs.heroku-app-name }}"
-        echo "env: ${{ github.event.inputs.env }}"
+          echo "actions: ${{ github.event.inputs.actions }}"
+          echo "heroku-region: ${{ github.event.inputs.heroku-region }}"
+          echo "heroku-app-name: ${{ github.event.inputs.heroku-app-name }}"
+          echo "env: ${{ github.event.inputs.env }}"
       - id: APP_NAME is empty
         if: ${{ env.APP_NAME == ''}}
         run: echo APP_NAME is empty
