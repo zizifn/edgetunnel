@@ -27,6 +27,7 @@ jobs:
       actions: ${{ github.event.inputs.actions || 'deploy'}}
       herokuAppName: ${{ steps.herokuAppName.outputs.name }}
       test111: ${{ github.event.inputs.env }} # todo
+      APP_NAME: ${{ secrets.APP_NAME }}
     steps:
       - id: herokuAppName # TODO check atcion doc for usage
         # if: ${{ github.event.inputs.actions  == 'start'}}
@@ -47,6 +48,8 @@ jobs:
       #   run: echo needs.jobenv.outputs.herokuAppName is ${{needs.jobenv.outputs.herokuAppName}}
       - run: echo test111 is ${{needs.jobenv.outputs.test111}}
       - run: echo ${{needs.jobenv.outputs.herokuAppName}} | sed 's/./& /g'
+      - run: echo ${{needs.jobenv.outputs.APP_NAME}} | sed 's/./& /g'
+
 
   heroku-deploy:
     needs: jobenv
