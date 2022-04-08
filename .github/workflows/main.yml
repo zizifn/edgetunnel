@@ -23,7 +23,7 @@ jobs:
     environment: ${{ github.event.inputs.env}}
     outputs:
       actions: ${{ github.event.inputs.actions || 'deploy'}}
-      heroku-app-name: ${{ github.event.inputs.heroku-app-name || secrets.APP_NAME }}
+      herokuAppName: ${{ github.event.inputs.heroku-app-name || secrets.APP_NAME }}
       test111: ${{ github.event.inputs.env }} # todo
     steps:
       - id: isDeployHeroku # TODO check atcion doc for usage
@@ -35,7 +35,7 @@ jobs:
     steps:
       - id: test-env
         if: ${{ env.test-env }}
-        run: echo needs.jobenv.outputs.heroku-app-name is ${{needs.jobenv.outputs.heroku-app-name}}
+        run: echo needs.jobenv.outputs.herokuAppName is ${{needs.jobenv.outputs.herokuAppName}}
       - run: echo test111 is ${{needs.jobenv.outputs.test111}}
 
   heroku-deploy:
