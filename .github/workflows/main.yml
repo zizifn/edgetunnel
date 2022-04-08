@@ -1,4 +1,4 @@
-name: heroku-deploy-stop-start
+name: heroku-deploy-stop-start-destroy
 
 on:
   workflow_dispatch:
@@ -20,7 +20,7 @@ on:
 jobs:
   jobenv:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.env}}
+    environment: ${{ github.event.inputs.env }}
     env: # Or as an environment variable
       APP_NAME: ${{ secrets.APP_NAME }}
     outputs:
