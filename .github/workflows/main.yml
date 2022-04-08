@@ -49,19 +49,19 @@ jobs:
           echo "heroku-region: ${{ github.event.inputs.heroku-region }}"
           echo "heroku-app-name: ${{ github.event.inputs.heroku-app-name }}"
           echo "env: ${{ github.event.inputs.env }}"
-      - id: APP_NAME is empty
+      - id: APP_NAME_is_empty
         if: ${{ env.APP_NAME == ''}}
         run: echo APP_NAME is empty
-      - id: HEROKU_API_KEY is empty
+      - id: HEROKU_API_KEY_is_empty
         if: ${{ env.HEROKU_API_KEY == ''}}
         run: echo HEROKU_API_KEY is empty
-      - id: EMAIL is empty
+      - id: EMAIL_is_empty
         if: ${{ env.EMAIL == ''}}
         run: echo EMAIL is empty
-      - id: HEROKU_V2RAY_UUID is empty
+      - id: HEROKU_V2RAY_UUID_is_empty
         if: ${{ env.HEROKU_V2RAY_UUID == ''}}
         run: echo HEROKU_V2RAY_UUID is empty
-      - id: HEROKU_TUNNEL_TOKEN is empty
+      - id: HEROKU_TUNNEL_TOKEN_is_empty
         if: ${{ env.HEROKU_TUNNEL_TOKEN == ''}}
         run: echo HEROKU_TUNNEL_TOKEN is empty
       # - run: echo ${{needs.jobenv.outputs.herokuAppName}} | sed 's/./& /g'
