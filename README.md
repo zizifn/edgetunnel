@@ -14,8 +14,10 @@
 本项目是包含，
 
 - 一键部署 V2ray 到 heroku。
-- 利用 Github action 实现 重新部署/停止/启动。
-- **支持多app和多账户 重新部署/停止/启动。**
+- 利用 Github action 实现 重新部署/停止/启动/删除。
+- 支持 heroku 的区域（us and eu）
+- **支持多app和多账户 [重新部署](#重新部署)/[停止](#停止)/[启动](#启动)/[删除](#删除)。**
+
 - 利用 cloudflare CDN 进行加速。
 - **利用 [cloudflare tunnel](https://www.cloudflare.com/products/tunnel/) 进行加速。**
 
@@ -43,6 +45,8 @@
 | HEROKU_API_KEY    | heroku API key，在 account 设置下可以找到 |
 | HEROKU_V2RAY_UUID | V2rayUUID                                |
 | HEROKU_TUNNEL_TOKEN | **可选** cloudflare tunnel 的 token    |
+
+> 这样Token一定必须是大写。。请在 heroku 网站创建app，来确保项目的名字的唯一性。
 
 HEROKU_TUNNEL_TOKEN 是可选项，可以忽略. 详细说明，请查看章节 《建立-cloudflare-tunnel-（可选）》
 
@@ -93,7 +97,9 @@ Actions
 
 点击 `Run workflow`, 输入 deploy。 然后就会重新 deploy。
 
-![deploy](./readme-data/deploy.jpg)
+这里可以**选择区域**，但是请确保app没有被创建过。如果要切换区域，请先使用 destroy 删除应用。
+
+![deploy](./readme-data/deploy.png)
 
 ### 停止
 
@@ -105,6 +111,12 @@ Actions
 点击 `Run workflow`, 输入 start。 然后就会启动。
 
 ![start](./readme-data/start.jpg)
+
+### 删除
+
+点击 `Run workflow`, 输入 destroy  然后就会删除。
+
+![delete](./readme-data/delete-app.png)
 
 
 ## 建立 cloudflare worker （可选）
