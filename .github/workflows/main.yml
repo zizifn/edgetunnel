@@ -35,9 +35,7 @@ jobs:
     steps:
       - id: test-env
         if: ${{ env.test-env }}
-        run: echo needs.jobenv.outputs.deploy is ${{needs.jobenv.outputs.deploy}}
-      - run: echo needs.jobenv.outputs.stop is ${{needs.jobenv.outputs.stop}}
-      - run: echo needs.jobenv.outputs.start is ${{needs.jobenv.outputs.start}}
+        run: echo needs.jobenv.outputs.heroku-app-name is ${{needs.jobenv.outputs.heroku-app-name}}
       - run: echo herokuEnv is ${{env.herokuEnv}}
 
   heroku-deploy:
