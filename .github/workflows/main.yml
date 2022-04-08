@@ -48,12 +48,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}
     steps:
-      - run: echo APP_NAME is ${{env.heroku-app-name}}
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: ${{needs.jobenv.outputs.heroku-app-name}} #Must be unique in Heroku
+          heroku_app_name: ${{needs.jobenv.outputs.herokuAppName}} #Must be unique in Heroku
           heroku_email: ${{secrets.EMAIL}}
           usedocker: true
           region: ${{github.event.inputs.heroku-region || 'us'}}
@@ -79,7 +78,7 @@ jobs:
           justlogin: true
       - run: |
           echo action is ${{ needs.jobenv.outputs.actions }}
-          if [[ ${{ needs.jobenv.outputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{needs.jobenv.outputs.heroku-app-name}} && echo "stop"; fi
-          if [[ ${{ needs.jobenv.outputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{needs.jobenv.outputs.heroku-app-name}} && echo "start"; fi
-          heroku ps -a ${{needs.jobenv.outputs.heroku-app-name}}
-          if [[ ${{ needs.jobenv.outputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{needs.jobenv.outputs.heroku-app-name}} --confirm ${{needs.jobenv.outputs.heroku-app-name}} && echo "destroy app"; fi
+          if [[ ${{ needs.jobenv.outputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{needs.jobenv.outputs.herokuAppName}} && echo "stop"; fi
+          if [[ ${{ needs.jobenv.outputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{needs.jobenv.outputs.herokuAppName}} && echo "start"; fi
+          heroku ps -a ${{needs.jobenv.outputs.herokuAppName}}
+          if [[ ${{ needs.jobenv.outputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{needs.jobenv.outputs.herokuAppName}} --confirm ${{needs.jobenv.outputs.heroku-app-name}} && echo "destroy app"; fi
