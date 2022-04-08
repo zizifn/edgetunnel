@@ -41,6 +41,7 @@ jobs:
       - run: echo herokuEnv is ${{env.herokuEnv}}
 
   heroku-deploy:
+    needs: jobenv
     if: ${{ needs.jobenv.outputs.actions == 'deploy' || needs.jobenv.outputs.actions == ''}}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}
@@ -63,6 +64,7 @@ jobs:
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
   stop-start-destroy:
+    needs: jobenv
     if: ${{ needs.jobenv.outputs.actions  == 'start' || needs.jobenv.outputs.actions  == 'stop' || needs.jobenv.outputs.actions  == 'destroy' }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}
