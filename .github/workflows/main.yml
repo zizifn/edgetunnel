@@ -43,8 +43,7 @@ jobs:
       #   if: ${{ env.test-env }}
       #   run: echo needs.jobenv.outputs.herokuAppName is ${{needs.jobenv.outputs.herokuAppName}}
       - run: echo test111 is ${{needs.jobenv.outputs.test111}}
-      - run: |
-          echo ${{needs.jobenv.outputs.herokuAppName}} | sed 's/./& /g'
+      # - run: echo ${{needs.jobenv.outputs.herokuAppName}} | sed 's/./& /g'
 
 
   heroku-deploy:
