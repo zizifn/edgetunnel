@@ -4,13 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       actions:
-        description: "action: deploy/stop/start"
+        description: "action: deploy/stop/start/destroy"
         default: "deploy"
-      auto-start-stop:
-        description: 'if this is true, then action will run auto stop on 2:00AM and auto start on 5:00AM beijing time'
-        default: "true"
-        required: true
-        type: boolean
+      heroku-region:
+        description: "us or eu. 如果你的app已经创建，切换到不同的region，需要先删除app"
+        default: "us"
       env:
         description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
@@ -29,6 +27,7 @@ jobs:
           heroku_app_name: ${{secrets.APP_NAME}} #Must be unique in Heroku
           heroku_email: ${{secrets.EMAIL}}
           usedocker: true
+          region: ${{github.event.inputs.heroku-region || 'us'}}
           # docker_build_args: |
           #   HD_UUID
         env:
@@ -53,4 +52,5 @@ jobs:
           echo action is ${{ github.event.inputs.actions }}
           if [[ ${{ github.event.inputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{secrets.APP_NAME}} && echo "stop"; fi
           if [[ ${{ github.event.inputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{secrets.APP_NAME}} && echo "start"; fi
+          if [[ ${{ github.event.inputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{secrets.APP_NAME}} && echo "destroy app"; fi
           heroku ps -a ${{secrets.APP_NAME}}

@@ -44,6 +44,8 @@
 | HEROKU_V2RAY_UUID | V2rayUUID                                |
 | HEROKU_TUNNEL_TOKEN | **可选** cloudflare tunnel 的 token    |
 
+> 这样Token一定必须是大写。。请在 heroku 网站创建app，来确保项目的名字的唯一性。
+
 HEROKU_TUNNEL_TOKEN 是可选项，可以忽略. 详细说明，请查看章节 《建立-cloudflare-tunnel-（可选）》
 
 > 请务必生成新的 UUID。使用已有的 UUID 会使自己 V2ray 暴露在危险之下。
