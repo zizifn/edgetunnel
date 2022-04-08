@@ -38,7 +38,7 @@
 
 请 Fork 本项目到自己的账户下。 Actions 需要以下 Secrets 才能正常工作，这些 Secrets 会被 workflow 中的 [akhileshns/heroku-deploy](https://github.com/AkhileshNS/heroku-deploy) 使用。
 
-具体实现细节，请查看 [workflow 配置文件](./.github/workflows/main.yml).
+具体实现细节，请查看 [workflow 配置文件](./.github/workflows/main.yml). 如何配置， 请查看，[Github Secrets](#github-secrets)
 
 | Name              | Description                                |
 | ----------------- | ------------------------------------------ |
