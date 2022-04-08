@@ -23,9 +23,12 @@ jobs:
     environment: ${{ github.event.inputs.env}}
     outputs:
       actions: ${{ github.event.inputs.actions || 'deploy'}}
-      herokuAppName: ${{ github.event.inputs.heroku-app-name || secrets.APP_NAME }}
+      herokuAppName: ${{ steps.herokuAppName.outputs.name }}
       test111: ${{ github.event.inputs.env }} # todo
     steps:
+      - id: herokuAppName # TODO check atcion doc for usage
+        # if: ${{ github.event.inputs.actions  == 'start'}}
+        run: echo "::set-output name=name::${{ github.event.inputs.heroku-app-name || secrets.APP_NAME }}"
       - id: isDeployHeroku # TODO check atcion doc for usage
         # if: ${{ github.event.inputs.actions  == 'start'}}
         run: echo "::set-output name=action::false"
