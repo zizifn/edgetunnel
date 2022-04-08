@@ -36,7 +36,7 @@ jobs:
       - id: test-env
         if: ${{ env.test-env }}
         run: echo needs.jobenv.outputs.heroku-app-name is ${{needs.jobenv.outputs.heroku-app-name}}
-      - run: echo herokuEnv is ${{env.herokuEnv}}
+      - run: echo test111 is ${{needs.jobenv.outputs.test111}}
 
   heroku-deploy:
     needs: jobenv
@@ -77,5 +77,5 @@ jobs:
           echo action is ${{ needs.jobenv.outputs.actions }}
           if [[ ${{ needs.jobenv.outputs.actions }} == 'stop' ]]; then heroku ps:scale web=0 -a ${{needs.jobenv.outputs.heroku-app-name}} && echo "stop"; fi
           if [[ ${{ needs.jobenv.outputs.actions }} == 'start' ]]; then heroku ps:scale web=1 -a ${{needs.jobenv.outputs.heroku-app-name}} && echo "start"; fi
-          heroku ps -a ${{env.heroku-app-name}}
-          if [[ ${{ needs.jobenv.outputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{needs.jobenv.outputs.heroku-app-name}} --confirm ${{env.heroku-app-name}} && echo "destroy app"; fi
+          heroku ps -a ${{needs.jobenv.outputs.heroku-app-name}}
+          if [[ ${{ needs.jobenv.outputs.actions }} == 'destroy' ]]; then heroku apps:destroy -a ${{needs.jobenv.outputs.heroku-app-name}} --confirm ${{needs.jobenv.outputs.heroku-app-name}} && echo "destroy app"; fi
