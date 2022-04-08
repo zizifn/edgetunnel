@@ -7,7 +7,7 @@ on:
         description: "action: deploy/stop/start/destroy"
         default: "deploy"
       heroku-region:
-        description: "us or eu. 如果你的app已经创建，切换到不同的region，需要先删除app"
+        description: "us or eu. 如果你的app已经创建，切换到不同的region，需要先输入actions 为 destroy 删除app"
         default: "us"
       heroku-app-name:
         description: "可选，如果输入，则会覆盖 Secrets 里面配置的 APP_NAME"
