@@ -14,9 +14,9 @@
 本项目是包含，
 
 - 一键部署 V2ray 到 heroku。
-- 利用 Github action 实现 重新部署/停止/启动/删除。
+- 利用 Github action 实现 [重新部署](#重新部署)/[停止](#停止)/[启动](#启动)/[删除](#删除)。
 - 支持 heroku 的区域（us and eu）
-- **支持多app和多账户 [重新部署](#重新部署)/[停止](#停止)/[启动](#启动)/[删除](#删除)。**
+- **支持[多app和多账户](#使用-environments-实现-多账户多app-secrets-管理) [重新部署](#重新部署)/[停止](#停止)/[启动](#启动)/[删除](#删除)。**
 
 - 利用 cloudflare CDN 进行加速。
 - **利用 [cloudflare tunnel](https://www.cloudflare.com/products/tunnel/) 进行加速。**
