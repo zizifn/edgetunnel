@@ -25,7 +25,7 @@ jobs:
       APP_NAME: ${{ secrets.APP_NAME }}
     outputs:
       actions: ${{ github.event.inputs.actions || 'deploy'}}
-      herokuAppName: ${{ steps.herokuAppName.outputs.name }}
+      herokuAppName: ${{ github.event.inputs.heroku-app-name }}
       test111: ${{ github.event.inputs.env }} # todo
     steps:
       - id: herokuAppName # TODO check atcion doc for usage
