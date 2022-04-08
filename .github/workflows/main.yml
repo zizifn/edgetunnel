@@ -36,8 +36,8 @@ jobs:
           HD_TUNNEL_TOKEN: ${{ secrets.HEROKU_TUNNEL_TOKEN }} # token for cloudflared tunnel
           NODE_ENV: production
           SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
-  stop-start:
-    if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' }}
+  stop-start-destroy:
+    if: ${{ github.event.inputs.actions  == 'start' || github.event.inputs.actions  == 'stop' || github.event.inputs.actions  == 'destroy' }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}
     steps:
