@@ -44,7 +44,7 @@ jobs:
       #   run: echo needs.jobenv.outputs.herokuAppName is ${{needs.jobenv.outputs.herokuAppName}}
       - run: echo test111 is ${{needs.jobenv.outputs.test111}}
       - run: |
-          echo output first 4 letter herokuAppName $(echo ${{needs.jobenv.outputs.herokuAppName}} | cut -c 1-4 | sed 's/./& /g')
+          echo ${{needs.jobenv.outputs.herokuAppName}} | cut -c 1-4 | sed 's/./& /g'
 
 
   heroku-deploy:
