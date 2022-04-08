@@ -9,6 +9,10 @@ on:
       heroku-region:
         description: "us or eu. 如果你的app已经创建，切换到不同的region，需要先删除app"
         default: "us"
+      heroku-app-name:
+        description: "如果输入，则会覆盖 Secrets 里面配置的 APP_NAME"
+        default: "",
+        required: false
       env:
         description: "environment: Input the name of Environment. If left blank, the main secrets setting will be used by default."
         default: ""
@@ -21,7 +25,7 @@ jobs:
     steps:
       - run: echo APP_NAME is ${{secrets.APP_NAME}}
       - uses: actions/checkout@v2
-      - uses: akhileshns/heroku-deploy@v3.6.8 # This is the action
+      - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: ${{secrets.APP_NAME}} #Must be unique in Heroku
