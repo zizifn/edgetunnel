@@ -41,6 +41,8 @@ Cloudflare Tunnel 的配置，运行在 herokuapp 的 Cloudflared 会动态获�
 
 重新部署 herokuapp 成功后， 记得在浏览器输入你 tunnel 地址和 自己 herokuapp 的地址，如果返回 Bad Request 字样，代表一切通顺。tunnel 地址可能会有 1 分钟左右延迟。
 
+> herokuapp 如果长时间不访问就会休眠。。所以你如果用tunnel，就需要一个定时job 访问herokuapp url.
+
 ## v2rayN
 
 其他配置和直接连接 herokuapp 是**一样的**，只需要把 v2rayN 的配置**地址改成你自己 tunnel 的地址**就可以。也就是你在设置 tunnel，添加的自己的域名。
