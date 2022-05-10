@@ -14,7 +14,10 @@
 
 ## 保存 Token
 
-在创建时候，可以在 Tunnels 的页面中找到 Token。Token 是 `--token` 后面的字符串。就是图片中，用红色涂抹的部分。
+在创建时候，可以在 Tunnels 的页面中找到 Token。
+
+> Token 是 `--token` 后面的字符串。就是图片中，用**红色涂抹**的部分。
+
 ![tunnels-token](./readme-data/tunnel-tokens.png)
 
 ## 添加域名
@@ -30,9 +33,11 @@
 2. Service 配成自己 heroku 的名字， \*\*\*.herokuapp.com
 
 3. HTTP Host Header
-   把自己 heroku 的名字， \*\*\*.herokuapp.com，添加进入，很重要。
+   把自己 heroku 的名字， \*\*\*.herokuapp.com，添加进入，**很重要**。
 
-然后把 Token 配置到 Github Action `HEROKU_TUNNEL_TOKEN` 就可以。剩下的配置，运行在 herokuapp 的 Cloudflared 会获取。
+然后把 Token 配置到 Github Action `HEROKU_TUNNEL_TOKEN`。然后重新部署 herokuapp。
+
+Cloudflare Tunnel 的配置，运行在 herokuapp 的 Cloudflared 会动态获取。 也就是说，如果成功后，你在 Cloudflare Tunnel 的改动会动态同步到 herokuapp 中。
 
 ## v2rayN
 
