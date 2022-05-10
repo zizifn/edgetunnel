@@ -28,7 +28,7 @@
 
 1. 定义一个自己的二级域名，不要和其他的二级域名冲突。
 
-> 这个域名需要最后配置在 V2ray 客户端中。
+> 这个域名就是你 tunnel 的地址，需要最后配置在 V2ray 客户端中。
 
 2. Service 配成自己 heroku 的名字， \*\*\*.herokuapp.com
 
@@ -39,8 +39,10 @@
 
 Cloudflare Tunnel 的配置，运行在 herokuapp 的 Cloudflared 会动态获取。 也就是说，如果成功后，你在 Cloudflare Tunnel 的改动会动态同步到 herokuapp 中。
 
+重新部署 herokuapp 成功后， 记得在浏览器输入你 tunnel 地址和 自己 herokuapp 的地址，如果返回 Bad Request 字样，代表一切通顺。tunnel 地址可能会有 1 分钟左右延迟。
+
 ## v2rayN
 
-其他配置和直接连接 herokuapp 是**一样的**，只需要把 v2rayN 的配置**地址改成你自己 tunnel 的域名**就可以。也就是你在设置 tunnel，添加的自己的域名。
+其他配置和直接连接 herokuapp 是**一样的**，只需要把 v2rayN 的配置**地址改成你自己 tunnel 的地址**就可以。也就是你在设置 tunnel，添加的自己的域名。
 
 ![V2rayN-tunnel](./readme-data/V2rayN-tunnel.jpg)
