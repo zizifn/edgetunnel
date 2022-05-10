@@ -24,7 +24,7 @@
 
 ![tunnel-host-name](./readme-data/tunnel-host-name.png)
 
-注意事项，
+**注意事项**，
 
 1. 定义一个自己的二级域名，不要和其他的二级域名冲突。
 
