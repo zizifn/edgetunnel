@@ -14,7 +14,7 @@
             "required": false
         }
     },
-    "website": "https://github.com/zizifn/v2ray-heroku",
-    "repository": "https://github.com/zizifn/v2ray-heroku",
+    "website": "",
+    "repository": "",
     "stack": "container"
 }
