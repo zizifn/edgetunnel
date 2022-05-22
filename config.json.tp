@@ -35,7 +35,7 @@
                 "network": "ws",
                 "security": "none",
                 "wsSettings": {
-                    "path": "/v2ws"
+                    "path": "/ws"
                 }
             }
         }
