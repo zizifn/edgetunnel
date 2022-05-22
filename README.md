@@ -208,6 +208,8 @@ https://github.com/badafans/better-cloudflare-ip
 
 ### v2rayN
 
+path 是 **/ws**
+
 换成 [V2rayN](https://github.com/2dust/v2rayN)
 
 别人的配置教程参考，https://v2raytech.com/v2rayn-config-tutorial/.
