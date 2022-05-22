@@ -10,9 +10,11 @@
 
 应需求，加上首页伪装，如果你有想法，请自己把想要的html放入到 项目html 文件，然后后续action部署会自动拿到。
 
-!!!!!!! **breaking change, 对ws 新加了path, 请注意查看客户端配置**
-!!!!!!! **breaking change, 对ws 新加了path, 请注意查看客户端配置**
-!!!!!!! **breaking change, 对ws 新加了path, 请注意查看客户端配置**
+## !!!!!!! **breaking change, 对ws 新加了path, 请注意查看客户端配置**
+
+## !!!!!!! **breaking change, 对ws 新加了path, 请注意查看客户端配置**
+
+## !!!!!!! **breaking change, 对ws 新加了path, 请注意查看客户端配置**
 
 首先查看别人的 [youtube 教程](https://www.youtube.com/watch?v=xHZyDsFYdvA)，了解怎么配置 v2ray-heroku。**本项目使用最新 VLESS 协议，请在客户端配置选择 VLESS**。  
 [详细 VLESS websocket 客户端配置](#vless-websocket-客户端配置) 。
