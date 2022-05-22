@@ -47,7 +47,11 @@
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-> 貌似在这个 repo 下 点击 一键部署貌似heroku 提示违反某些原则，但是action 正常工作！！建议 fork 时候，项目名字，尽量不要带有 v2ray 关键字。
+> 貌似在这个 repo 下 点击 一键部署貌似 heroku 提示违反某些原则，但是action 正常工作！！建议 fork 时候，项目名字，尽量不要带有 v2ray 关键字。
+
+> 如果被heroku 提示错误，请用 github action 来部署。
+
+> 部署成功后，可以先用浏览器访问 ***.herokuapp.com， 查看页面是否能正常访问。
 
 ## Github Actions 管理
 
