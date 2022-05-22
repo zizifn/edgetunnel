@@ -8,6 +8,8 @@
 
 > 有问题请开 issue 或者 discussions。
 
+## **请大家不要跑速度测试，请用 youtube 测试。**
+
 应需求，加上首页伪装，如果你有想法，请自己把想要的html放入到 项目html 文件，然后后续action部署会自动拿到。
 
 ## !!!!!!! **breaking change, 对ws 新加了path, 请注意查看客户端配置**
