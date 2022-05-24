@@ -1,17 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="./style/style.css">
-</head>
-<body>
-    My first website and show cat!!!!
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="author" content="iveseenthedark" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#333333" />
 
-    <img src="./img/cat.webp" alt="">
+    <title>A S C I I C A M</title>
+    <style>
+      #ascii-cam pre,
+      body,
+      html {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        overflow: hidden;
+        background-color: #000;
+        color: #eee;
+        font-family: monospace;
+      }
+      #logo,
+      #enable-cam-msg {
+        transform: translate(-50%, -50%);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+      }
+      .fade {
+        transition: opacity 0.25s ease-in-out;
+      }
+      #logo {
+        line-height: 1.5;
+      }
+      #ascii-cam {
+        opacity: 0;
+      }
+      #ascii-cam pre {
+        position: absolute;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+        line-height: 0.6;
+        user-select: none;
+        mix-blend-mode: screen;
+        font-size: 1.2em;
+        font-size: 2vh;
+      }
+      @media (max-height: 50em) {
+        #ascii-cam pre {
+          font-size: 1em;
+        }
+      }
+      @media (min-height: 60em) {
+        #ascii-cam pre {
+          font-size: 1.2em;
+        }
+      }
+      #ascii-cam #r-output {
+        color: red;
+      }
+      #ascii-cam #g-output {
+        color: #0f0;
+      }
+      #ascii-cam #b-output {
+        color: #00f;
+      }
+      #enable-cam-msg {
+        opacity: 0;
+        font-size: 3rem;
+        background-color: white;
+        color: black;
+        margin: 0;
+        max-width: 50vw;
+        white-space: pre-line;
+        text-align: center;
+        font-weight: 900;
+      }
+      #canvas,
+      #video {
+        display: none;
+      }
+    </style>
+  </head>
 
-    <script src="./test.js" async></script>
-</body>
+  <body>
+    <pre id="logo" class="fade">
+   _
+   _n_|_|_,_
+  |===.-.===|
+  |  ((_))  |
+  '==='-'==='
+A S C I I C A M
+    </pre>
+
+    <pre id="enable-cam-msg" class="fade">Allow access to camera to use</pre>
+
+    <div id="ascii-cam" class="fade">
+      <div class="layers">
+        <pre id="r-output"></pre>
+        <pre id="g-output"></pre>
+        <pre id="b-output"></pre>
+      </div>
+    </div>
+
+    <video id="video" autoplay="true"></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <script type="application/javascript">
+      (() => {
+        'use strict';
+
+        let interval;
+        let r_layer, g_layer, b_layer;
+        const palette = [' ', '.', '-', ':', '+', '*', '=', '%', '@', '#'];
+        const vanity = 'B Y  I V E S E E N T H E D A R K';
+
+        /**
+         * @param {*} stream
+         */
+        const handle_video = stream => {
+          const canvas = document.getElementById('canvas');
+          const ctx = canvas.getContext('2d');
+
+          const video = document.getElementById('video');
+          // Older browsers may not have srcObject
+          if ('srcObject' in video) {
+            video.srcObject = stream;
+          } else {
+            // Avoid using this in new browsers, as it is going away.
+            video.src = window.URL.createObjectURL(stream);
+          }
+          video.addEventListener('loadedmetadata', () => {
+            window.addEventListener('resize', () => set_canvas_dimensions(video, canvas, ctx));
+            set_canvas_dimensions(video, canvas, ctx);
+
+            // Hide Logo
+            play_video(video, canvas, ctx);
+            setTimeout(() => {
+              document.getElementById('logo').style.opacity = 0;
+              document.getElementById('ascii-cam').style.opacity = 1;
+            }, 1000);
+          });
+        };
+
+        /**
+         */
+        const handle_no_video = () => {
+          setTimeout(() => {
+            document.getElementById('logo').style.opacity = 0;
+            document.getElementById('ascii-cam').style.opacity = 1;
+            document.getElementById('enable-cam-msg').style.opacity = 1;
+            play_random();
+          }, 1000);
+        };
+
+        /**
+         * @param {*} e
+         */
+        const handle_error = e => {
+          console.error('Error', e);
+          handle_no_video();
+        };
+
+        /**
+         * The greyscale value is calculated GREY = 0.299 * RED + 0.587 * GREEN + 0.114 * BLUE
+         * For more information see http://en.wikipedia.org/wiki/Grayscale
+         * @param {Array} image_data
+         */
+        const fade_to_grey = pixels => pixels.map(pixel => pixel[0] * 0.299 + pixel[1] * 0.587 + pixel[2] * 0.114);
+
+        /**
+         */
+        const play_video = (video, canvas, ctx) => {
+          clearInterval(interval);
+
+          // Buffer reverse
+          ctx.drawImage(video, 0, 0, canvas.width * -1, canvas.height);
+
+          // Grab view
+          const dx = canvas.dataset.hoffset || 0;
+          const dy = canvas.dataset.voffset || 0;
+          const image_width = canvas.width - dx * 2;
+          const image_data = ctx.getImageData(dx, dy, image_width, canvas.height - dy * 2).data;
+
+          // Chunk
+          const channels = 4;
+          const pixels = Array.from(Array(Math.ceil(image_data.length / channels)), (_, i) =>
+            image_data.slice(i * channels, i * channels + channels)
+          );
+
+          // Draw
+          let r_output = '';
+          let g_output = '';
+          let b_output = '';
+          pixels.forEach((pixel, i) => {
+            // Break for new line
+            if (i && i % image_width === 0) {
+              r_output += '\n';
+              g_output += '\n';
+              b_output += '\n';
+            }
+
+            const b_idx = Math.floor((pixel[2] / 255.0) * (palette.length - 1));
+            const r_idx = Math.floor((pixel[0] / 255.0) * (palette.length - 1));
+            const g_idx = Math.floor((pixel[1] / 255.0) * (palette.length - 1));
+
+            if (i && i >= image_width - vanity.length && i < image_width) {
+              // Input vanity message
+              r_output += vanity[vanity.length + i - image_width];
+              g_output += vanity[vanity.length + i - image_width];
+              b_output += palette[g_idx];
+            } else {
+              // Output camera data
+              r_output += palette[r_idx];
+              g_output += palette[g_idx];
+              b_output += palette[b_idx];
+            }
+          }, this);
+
+          r_layer.textContent = r_output;
+          g_layer.textContent = g_output;
+          b_layer.textContent = b_output;
+
+          interval = setInterval(() => play_video(video, canvas, ctx), 33);
+        };
+
+        /**
+         */
+        const play_random = () => {
+          clearInterval(interval);
+
+          const char_dims = get_character_dimensions();
+          const screen_dims = get_screen_dimensions(char_dims);
+          const total_chars = Math.floor(screen_dims.char_width * screen_dims.char_height);
+
+          const mid_x = Math.floor(screen_dims.char_width / 2);
+          const mid_y = Math.floor(screen_dims.char_height / 2);
+
+          let radius_sq = mid_x * mid_x + mid_y + mid_y;
+          radius_sq = radius_sq < 2500 ? 2500 : radius_sq; // Stop the circle getting too small
+
+          let r_output = '',
+            g_output = '',
+            b_output = '';
+          for (let i = 0; i < total_chars; i++) {
+            // Break for new line
+            if (i && i % screen_dims.char_width === 0) {
+              r_output += '\n';
+              g_output += '\n';
+              b_output += '\n';
+            }
+
+            const char_pos_x = i % screen_dims.char_width;
+            const char_pos_y = i / screen_dims.char_width;
+
+            let dist = (char_pos_x - mid_x) * (char_pos_x - mid_x) + (char_pos_y - mid_y) * (char_pos_y - mid_y);
+            dist = dist > radius_sq ? radius_sq : dist; // Distance can be further than radius, clamp
+
+            const range = Math.floor(palette.length * (1 - dist / radius_sq));
+            const r_idx = Math.floor(Math.random() * range);
+            const g_idx = Math.floor(Math.random() * range);
+            const b_idx = Math.floor(Math.random() * range);
+
+            r_output += palette[r_idx];
+            g_output += palette[g_idx];
+            b_output += palette[b_idx];
+          }
+
+          r_layer.textContent = r_output;
+          g_layer.textContent = g_output;
+          b_layer.textContent = b_output;
+
+          interval = setInterval(play_random, 100);
+        };
+
+        /**
+         */
+        const get_character_dimensions = () => {
+          const span = document.createElement('span');
+          span.textContent = 'X';
+          span.style.position = 'absolute';
+          span.style.left = '-100px';
+
+          document.querySelector('#ascii-cam pre').appendChild(span);
+          const dimensions = span.getBoundingClientRect();
+          span.remove();
+
+          return dimensions;
+        };
+
+        /**
+         */
+        const get_screen_dimensions = char_dims => {
+          return {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            char_width: Math.ceil(window.innerWidth / char_dims.width),
+            char_height: Math.ceil(window.innerHeight / char_dims.height)
+          };
+        };
+
+        /**
+         */
+        const set_canvas_dimensions = (video, canvas, ctx) => {
+          console.log('setting canvas dimensions');
+          const char_dims = get_character_dimensions();
+          const screen_dims = get_screen_dimensions(char_dims);
+
+          let width = Math.floor(screen_dims.width / char_dims.width);
+          let height = Math.max(width * 0.75, screen_dims.char_height);
+
+          if (height > screen_dims.char_height) {
+            canvas.dataset.voffset = Math.floor((height - screen_dims.char_height) / 2);
+            canvas.dataset.hoffset = 0;
+          } else {
+            width = (height / 3) * 4;
+            canvas.dataset.hoffset = Math.floor((width - screen_dims.char_width) / 2);
+            canvas.dataset.voffset = 0;
+          }
+
+          video.width = canvas.width = width;
+          video.height = canvas.height = height;
+
+          // Reset scale if context exists
+          ctx && ctx.scale(-1, 1);
+        };
+
+        // Onload
+        window.addEventListener('load', () => {
+          if (navigator && navigator.mediaDevices) {
+            // Grab layers
+            r_layer = document.getElementById('r-output');
+            g_layer = document.getElementById('g-output');
+            b_layer = document.getElementById('b-output');
+
+            const constraints = { audio: false, video: {} };
+            navigator.mediaDevices
+              .getUserMedia(constraints)
+              .then(handle_video)
+              .catch(handle_error);
+          } else {
+            handle_no_video();
+          }
+        });
+      })();
+    </script>
+  </body>
 </html>
