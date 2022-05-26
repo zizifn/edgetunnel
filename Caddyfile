@@ -1,11 +1,11 @@
 http://:{$PORT} {
     root * /root/html
-    file_server
     reverse_proxy /h2 127.0.0.1:8082 {
         transport http {
             versions h2c
         }
     }
+    file_server
     @websockets {
         header Connection *Upgrade*
         header Upgrade websocket
