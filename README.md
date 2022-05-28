@@ -222,3 +222,7 @@ https://github.com/badafans/better-cloudflare-ip
 别人的配置教程参考，https://v2raytech.com/v2rayn-config-tutorial/.
 
 ![v2rayN](/readme-data/V2rayN.jpg)
+
+cloudflare worker ip 配置
+
+![v2rayN1](/readme-data/V2rayN1.jpg)
