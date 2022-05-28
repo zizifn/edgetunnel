@@ -13,7 +13,7 @@
 
 ## Change log
 
-应需求，加上首页伪装，如果你有想法，请自己把想要的html放入到 项目html 文件，然后后续 action 部署会自动拿到。
+应需求，加上首页伪装，每次部署都会随机生成首页，如果你有想法，请自己把想要的html放入到 项目html 文件，然后后续 action 部署会自动拿到。
 
 ## !!!!!!! **对于一些老用户是 breaking change, 对 ws 的 path 做了修改, 请注意查看客户端配置**
 
@@ -33,6 +33,7 @@
 - 利用 cloudflare CDN 进行加速。
 - **利用 [cloudflare tunnel](https://www.cloudflare.com/products/tunnel/) 进行加速。**
 - **随机生成首页。每次部署都会产生随机首页。**
+    1. 如想自定义主页，请自行在仓库中生成 index.html 放入 `html` 中
 
 ```text
 项目Dockerfile是基于V2fly 官方镜像制作。仅仅增加生产配置文件的脚本。重新部署就可以更新到最新的v2ray。
