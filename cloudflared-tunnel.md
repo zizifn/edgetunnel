@@ -47,4 +47,4 @@ Cloudflare Tunnel 的配置，运行在 herokuapp 的 Cloudflared 会动态获�
 
 其他配置和直接连接 herokuapp 是**一样的**，只需要把 v2rayN 的配置**地址改成你自己 tunnel 的地址**就可以。也就是你在设置 tunnel，添加的自己的域名。
 
-![V2rayN-tunnel](./readme-data/V2rayN-tunnel.jpg)
+![V2rayN-tunnel](./readme-data/V2rayN.jpg)
