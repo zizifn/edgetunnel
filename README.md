@@ -205,9 +205,6 @@ https://github.com/badafans/better-cloudflare-ip
             },
             "streamSettings": {
                 "network": "ws",
-                "wsSettings": {
-                    "path": "/ws"  // 这里是新加的
-                },
                 "security": "tls",
                 "tlsSettings": {
                     "serverName": "***.herokuapp.com" // heroku app host 或者 cloudflare worker host
