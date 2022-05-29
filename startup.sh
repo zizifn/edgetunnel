@@ -19,7 +19,7 @@ wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudfla
 chmod +x /root/cloudflared
 # /usr/bin/v2ray -config /root/config.json & /root/cloudflared tunnel --no-autoupdate run --token $TUNNEL_TOKEN & nginx -c /root/nginx.conf -g 'daemon off;'
 caddy start --config /root/Caddyfile
-/usr/bin/v2ray -config /root/config.json & /root/cloudflared tunnel --no-autoupdate run --token $TUNNEL_TOKEN
+/usr/bin/v2ray -config /root/config.json & /root/cloudflared tunnel --no-autoupdate --protocol http2 run --token $TUNNEL_TOKEN 
 else
 caddy start --config /root/Caddyfile
 /usr/bin/v2ray -config /root/config.json
