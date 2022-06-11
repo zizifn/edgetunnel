@@ -39,7 +39,7 @@ async function addAccount(key) {
     const jsonContent = await resp.json();
     console.log(jsonContent);
 
-    if (save2Local.checked) {
+    if (save2Local.checked && resp.ok) {
         const appStr = localStorage.getItem("accounts") || '[]';
         const appSet = new Set(JSON.parse(appStr)).add(key);
         const apps = [...appSet];
