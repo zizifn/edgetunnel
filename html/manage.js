@@ -4,6 +4,10 @@ import { testStr, restartAPP } from './manage-utils.js'
 const main = document.querySelector("#main");
 const template = document.querySelector('#app-list');
 const save2Local = document.querySelector("#save2Local")
+const clearlocalstorage = document.querySelector("#clearlocalstorage");
+clearlocalstorage.addEventListener('click', ()=>{
+    localStorage.clear();
+})
 // const accounts = [];
 const accountsStr = localStorage.getItem("accounts");
 const accounts = new Set(JSON.parse(accountsStr) || []);
