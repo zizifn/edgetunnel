@@ -148,13 +148,32 @@ Actions
 可以参考 开头的视频。代码如下。
 
 ```javascript
+const targetHost = "xxx.herokuapp.com"; //你的heroku的hostname
 addEventListener("fetch", (event) => {
   let url = new URL(event.request.url);
-  url.hostname = "你的heroku的hostname";
+  url.hostname = targetHost;
   let request = new Request(url, event.request);
   event.respondWith(fetch(request));
 });
+
+// herokuapp 如果长时间不访问就会休眠。增加cron事件监听器以支持定时job访问herokuapp url。
+addEventListener('scheduled', event => {
+  event.waitUntil(
+    handleSchedule(event)
+  )
+})
+
+async function handleSchedule(event) {
+  let url = new URL("https://" + targetHost);
+  url.hostname = targetHost;
+  let request = new Request(url);
+  const resp = await fetch(request);
+  //console.log(await resp.text());
+}
 ```
+然后添加Worker的触发器以定时访问herokuapp url：
+![image](https://user-images.githubusercontent.com/78028446/174426881-cc16c91a-eab1-4900-ad7c-957ede42a67c.png)
+
 
 如果 worker 不好用，请用自己域名代理 worker
 https://owo.misaka.rest/cf-workers-ban-solution/
