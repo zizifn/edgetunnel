@@ -6,7 +6,7 @@ We will be sending out a series of email communications to affected users.**
 
 
 # 我们终将重逢。。。
- 新的方式，https://deno.com/deploy 正在开发。 请去官网查看具体免费计划。https://deno.com/deploy/pricing 2022年12月1日
+ 新的方式，https://deno.com/deploy 正在开发。 请去官网查看具体免费计划。https://deno.com/deploy/pricing 更新于2022年12月1日
 
 
 
