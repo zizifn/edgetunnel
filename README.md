@@ -1,5 +1,7 @@
 # Edge Tunnel （正在开发）
 
+**v2ray-heroku 由于 heroku 取消免费，项目已经死了。 这是新的项目。**
+
 > 项目正在开发，基本可用，会有 bug。。
 
 一个无比简单安全，基于 edge 的 tunnel 。
