@@ -1,0 +1,37 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+      - run: npm ci
+      - name: pkg edge tunnel client
+        run: npx nx run edge-bypass-client:pkg
+      - name: copy config file
+        run: cp dist/apps/edge-bypass-client/assets/config.json dist/pkg/edge-tunnel-client
+      - name: zip edgetunnel-linux-arm64
+        run: zip -j  edgetunnel-linux-arm64.zip dist/pkg/edge-tunnel-client/edgetunnel-linux-arm64 dist/pkg/edge-tunnel-client/config.json
+      - name: zip edgetunnel-linux-x64
+        run: zip -j  edgetunnel-linux-x64.zip dist/pkg/edge-tunnel-client/edgetunnel-linux-x64 dist/pkg/edge-tunnel-client/config.json
+      - name: zip edgetunnel-macos-x64
+        run: zip -j  edgetunnel-macos-x64.zip dist/pkg/edge-tunnel-client/edgetunnel-macos-x64 dist/pkg/edge-tunnel-client/config.json
+      - name: zip edgetunnel-win-x64
+        run: zip -j  edgetunnel-win-x64.zip dist/pkg/edge-tunnel-client/edgetunnel-win-x64.exe dist/pkg/edge-tunnel-client/config.json
+      - name: Upload release files
+        uses: svenstaro/upload-release-action@v2
+        if: github.event_name == 'release'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file_glob: true
+          file: edgetunnel*.zip
+          tag: ${{ github.ref }}
