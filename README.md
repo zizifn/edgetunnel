@@ -1,12 +1,10 @@
-# 项目已死
+# 本项目已死， 如有需求请访问 https://github.com/zizifn/edgetunnel
+
 
 **Starting October 26, 2022, we will begin deleting inactive accounts and associated storage for accounts that have been inactive for over a year. 
 Starting November 28, 2022, we plan to stop offering free product plans and plan to start shutting down free dynos and data services. 
 We will be sending out a series of email communications to affected users.**
 
-
-# 我们终将重逢。。。
- 新的方式，https://deno.com/deploy 正在开发。完成后会在这里更新repo。。。 请去官网查看具体免费计划和节点状况，可以有香港节点。https://deno.com/deploy/pricing 更新于2022年12月1日
 
 
 
