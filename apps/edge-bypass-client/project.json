@@ -1,0 +1,67 @@
+{
+  "name": "edge-bypass-client",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/edge-bypass-client/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/edge-bypass-client",
+        "main": "apps/edge-bypass-client/src/main.ts",
+        "tsConfig": "apps/edge-bypass-client/tsconfig.app.json",
+        "assets": ["apps/edge-bypass-client/src/assets"]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/edge-bypass-client/src/environments/environment.ts",
+              "with": "apps/edge-bypass-client/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/js:node",
+      "options": {
+        "buildTarget": "edge-bypass-client:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "edge-bypass-client:build:production"
+        }
+      }
+    },
+    "pkg": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx pkg dist/apps/edge-bypass-client/main.js --targets linux,linux-arm64,macos,win --compress GZip --output dist/pkg/edge-tunnel-client/edgetunnel"
+      },
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/edge-bypass-client/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/edge-bypass-client/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}
