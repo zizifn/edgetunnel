@@ -1,14 +1,10 @@
-import { Socket } from 'node:net';
-import { createServer } from 'node:http';
-import { Duplex, pipeline, Readable, Writable } from 'node:stream';
+import { createServer, Socket } from 'node:net';
+import { Duplex } from 'node:stream';
+import { fetch } from 'undici';
 import { ReadableStream, WritableStream } from 'node:stream/web';
 import { Command } from 'commander';
 import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { exit } from 'node:process';
-import * as url from 'node:url';
-import * as undici from 'undici';
-import { concatStreams } from './helper';
-import * as http from 'node:http';
 
 let config: {
   port: string;
@@ -53,66 +49,88 @@ program
   });
 program.parse();
 
-let httpProxyServer = createServer((req, resp) => {
-  console.log('start');
-  const reqUrl = url.parse(req.url);
-  console.log('proxy for http request: ' + reqUrl.href);
-
-  req.pipe(resp);
-});
-
-httpProxyServer.on('connect', async (req, clientSocket, head) => {
-  const reqUrl = url.parse('https://' + req.url);
-  console.log(
-    `Client Connected To Proxy, client http version is ${
-      req.httpVersion
-    }, client url is ${req.url},head is ${head.toString()}`
-  );
+const server = createServer();
+server.on('connection', (clientToProxySocket: Socket) => {
+  console.log('Client Connected To Proxy');
   // We need only the data once, the starting packet
-  clientSocket.write(
-    `HTTP/${req.httpVersion} 200 Connection Established\r\n\r\n`
-  );
+  clientToProxySocket.once('data', async (data) => {
+    // If you want to see the packet uncomment below
+    // console.log(data.toString());
+    let isTLSConnection = data.toString().indexOf('CONNECT') !== -1;
+    let serverPort = '80';
+    let serverAddress: string;
+    if (isTLSConnection) {
+      // Port changed if connection is TLS
+      serverPort = data
+        .toString()
+        .split('CONNECT ')[1]
+        .split(' ')[0]
+        .split(':')[1];
+      serverAddress = data
+        .toString()
+        .split('CONNECT ')[1]
+        .split(' ')[0]
+        .split(':')[0];
+    } else {
+      serverAddress = data.toString().split('Host: ')[1].split('\r\n')[0];
+    }
 
-  const { body, headers, statusCode, trailers } = await undici.request(
-    config.address,
-    {
+    const {
+      readable: clientToProxySocketReadable,
+      writable: clientToProxySocketWritable,
+    } = Duplex.toWeb(clientToProxySocket) as any as {
+      readable: ReadableStream;
+      writable: WritableStream;
+    };
+
+    // console.log(serverAddress);
+    if (isTLSConnection) {
+      clientToProxySocket.write('HTTP/1.1 200 OK\r\n\n');
+    } else {
+      // TODO
+      //   proxyToServerSocket.write(data);
+    }
+
+    fetch(config.address, {
       headers: {
-        'x-host': reqUrl.hostname,
-        'x-port': reqUrl.port,
+        'x-host': serverAddress,
+        'x-port': serverPort,
         'x-uuid': config.uuid,
         // "Content-Type": "text/plain",
       },
       method: 'POST',
-      body: clientSocket,
-    }
-  );
-
-  body.pipe(clientSocket).on('error', (error) => {
-    console.log('serever reponse to clientSocket: ' + error);
-  });
-
-  clientSocket.on('error', (e) => {
-    console.log('client socket error: ' + e);
-  });
-  clientSocket.on('end', () => {
-    console.log('end-----');
+      // body: Uint8Array.from(chunks),
+      body: clientToProxySocketReadable,
+      duplex: 'half',
+    })
+      .then((resp) => {
+        console.log(
+          `proxy to ${serverAddress}:${serverPort} and remote return ${resp.status}`
+        );
+        resp.body.pipeTo(clientToProxySocketWritable).catch((error) => {
+          console.error('pipe to', JSON.stringify(error));
+        });
+      })
+      .catch((error) => {
+        console.log('fetch error', error);
+      });
+    clientToProxySocket.on('error', (err) => {
+      console.log('CLIENT TO PROXY ERROR');
+      console.log(err);
+    });
   });
 });
 
-httpProxyServer.on('error', (err) => {
+server.on('error', (err) => {
   console.log('SERVER ERROR');
   console.log(err);
   throw err;
 });
-httpProxyServer.on('clientError', (err, clientSocket) => {
-  console.log('client error: ' + err);
-  clientSocket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
-});
 
-httpProxyServer.on('close', () => {
+server.on('close', () => {
   console.log('Client Disconnected');
 });
 
-httpProxyServer.listen(Number(config.port), () => {
+server.listen(Number(config.port), () => {
   console.log('Server runnig at http://localhost:' + config.port);
 });
