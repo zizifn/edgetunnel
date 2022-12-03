@@ -10,7 +10,7 @@ const handler = async (request: Request): Promise<Response> => {
 
   if (!serverAddress || !remotePort || !userID) {
     return new Response(
-      `Version 0.0.1-2022/12/03!!
+      `Version 0.0.1-2022/12/04!!
 ${userID ? 'has UUID env' : 'no UUID env'}
 感谢 deno deploy 严肃对待 web standard。支持 HTTP request & response streaming。
       `,
