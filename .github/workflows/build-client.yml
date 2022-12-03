@@ -1,4 +1,4 @@
-name: release
+name: build client
 
 on:
   workflow_dispatch:
