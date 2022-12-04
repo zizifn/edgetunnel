@@ -14,12 +14,17 @@ Edge tunnel 的服务使用了 [Deno deploy](https://deno.com/deploy).
 
 ### 风险提示
 
-`Deno deploy` 采用 [fair use policy](https://deno.com/deploy/docs/fair-use-policy), 翻译成中文就是`看良心使用`. 违反可能会封号。
+`Deno deploy` 采用 [fair use policy](https://deno.com/deploy/docs/fair-use-policy), 翻译成中文就是`看良心使用`。 违反可能会封号。
 按照我的理解，本项目应该是违反 fair use policy。请大家**酌情使用**。
 
 > 这里十分感谢 Deno deploy 严肃对待 web standard， 支持 HTTP request & response streaming，让 edge tunnel 成为可能。
 
 > 这里没有使用 deno websocket，其实技术上可以把 v2ray 移植过来。但是我暂时没有看明白 VLESS 协议内容.
+
+## Edge Tunnel server --- Cloudflare Worker （敬请期待）
+
+这个需要等 Cloudflare 发布下面的技术。
+https://blog.cloudflare.com/introducing-socket-workers/
 
 ### 如何部署服务
 
@@ -100,4 +105,4 @@ https://proxy-switchyomega.com/settings/
 下面以电报为例，其他软件也是一样的。具体方式请用搜索引擎。
 
 路径， setting--> Advance-->Conntction type--> Use Custom proxy
-![](./doc/tel.jpg)
+![tel](./doc/tel.jpg)

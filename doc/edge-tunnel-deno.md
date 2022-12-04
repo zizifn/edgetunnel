@@ -2,7 +2,7 @@
 
 ## 风险提示
 
-`Deno deploy` 采用 [fair use policy](https://deno.com/deploy/docs/fair-use-policy), 翻译成中文就是`看良心使用`. 违反可能会封号。
+`Deno deploy` 采用 [fair use policy](https://deno.com/deploy/docs/fair-use-policy), 翻译成中文就是`看良心使用`。 违反可能会封号。
 
 ## Fork 本项目到自己 Github 下
 
