@@ -7,7 +7,7 @@ import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { exit } from 'node:process';
 import * as url from 'node:url';
 import * as undici from 'undici';
-import { concatStreams } from './helper';
+import { concatStreams } from './lib/helper';
 import * as http from 'node:http';
 
 let config: {
@@ -73,6 +73,8 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
     `HTTP/${req.httpVersion} 200 Connection Established\r\n\r\n`
   );
 
+  // make call to edge http server
+  // 1. forward all package remote, socket over http body
   const { body, headers, statusCode, trailers } = await undici.request(
     config.address,
     {
@@ -87,6 +89,7 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
     }
   );
 
+  // 2. forward remote reponse body to clientSocket
   body.pipe(clientSocket).on('error', (error) => {
     console.log('serever reponse to clientSocket: ' + error);
   });

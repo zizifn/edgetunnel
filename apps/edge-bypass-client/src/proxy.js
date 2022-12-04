@@ -7,6 +7,7 @@ var proxyServer = http.createServer(httpOptions);
 // handle http proxy requests
 function httpOptions(clientReq, clientRes) {
   var reqUrl = url.parse(clientReq.url);
+  console.log(reqUrl);
   console.log('proxy for http request: ' + reqUrl.href);
 
   var options = {
