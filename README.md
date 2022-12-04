@@ -85,7 +85,11 @@ curl -v https://www.google.com --proxy http://127.0.0.1:1081
 proxy to www.google.com:443 and remote return 200
 ```
 
-## 浏览器 switchyomega 设置
+## 配置代理服务 （重要）
+
+> 不像 v2rayN 可以在自动配置代理，本客户端目前需要手动配置代理才能工作。 下面三种方式可供参考。
+
+### 浏览器 switchyomega 设置
 
 具体安装和配置,请查看官网.
 https://proxy-switchyomega.com/settings/
@@ -96,11 +100,11 @@ https://proxy-switchyomega.com/settings/
 
 ![switchyomega2](./doc/switchyomega2.jpg)
 
-## 系统全局 proxy 配置
+### 系统全局 proxy 配置
 
 你也可以配置 proxy 到系统级别。
 
-## 其他软件 proxy 设置
+### 其他软件 proxy 设置
 
 下面以电报为例，其他软件也是一样的。具体方式请用搜索引擎。
 
