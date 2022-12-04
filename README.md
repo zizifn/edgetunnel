@@ -1,14 +1,21 @@
 # Edge Tunnel （正在开发）
 
+一个无比简单安全，基于 edge 的 tunnel 。
+
 **v2ray-heroku 由于 heroku 取消免费，项目已经死了。 这是新的项目。**
 
 > 项目正在开发，基本可用，会有 bug。。
 
-一个无比简单安全，基于 edge 的 tunnel 。
+> 本项目纯属技术性验证，不给予任何保证。
 
 ## Edge Tunnel server --- Deno deploy
 
 Edge tunnel 的服务使用了 [Deno deploy](https://deno.com/deploy).
+
+### 风险提示
+
+`Deno deploy` 采用 [fair use policy](https://deno.com/deploy/docs/fair-use-policy), 翻译成中文就是`看良心使用`. 违反可能会封号。
+按照我的理解，本项目应该是违反 fair use policy。请大家**酌情使用**。
 
 > 这里十分感谢 Deno deploy 严肃对待 web standard， 支持 HTTP request & response streaming，让 edge tunnel 成为可能。
 
@@ -49,7 +56,7 @@ Edge tunnel 的服务使用了 [Deno deploy](https://deno.com/deploy).
 
 > Edge Tunnel Client 会在本地启动一个 http 代理.
 
-> 如果系统提示，是否允许网络权限，请允许。
+> 如果 window 系统提示，是否允许网络权限，请把所有允许。
 
 ```ps
 .\edgetunnel-win-x64.exe run --config .\config.json
