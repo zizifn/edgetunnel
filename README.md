@@ -93,7 +93,7 @@ proxy to www.google.com:443 and remote return 200
 ### 浏览器 switchyomega 设置
 
 具体安装和配置,请查看官网.
-https://proxy-switchyomega.com/settings/
+https://proxy-switchyomega.com/proxy/
 
 除了端口（port）和下图可能不一样。其他都应该是一样的。
 
