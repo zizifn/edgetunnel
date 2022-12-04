@@ -62,6 +62,7 @@ https://blog.cloudflare.com/introducing-socket-workers/
 > Edge Tunnel Client 会在本地启动一个 http 代理.
 
 > 如果 window 系统提示，是否允许网络权限，请把所有允许。
+> ![firewall](./doc/firewall.jpg)
 
 ```ps
 .\edgetunnel-win-x64.exe run --config .\config.json
