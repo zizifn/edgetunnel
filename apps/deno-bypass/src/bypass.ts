@@ -1,4 +1,4 @@
-import { serve } from 'https://deno.land/std@0.157.0/http/server.ts';
+import { serve } from 'https://deno.land/std@0.167.0/http/server.ts';
 
 const userID = Deno.env.get('UUID');
 
@@ -34,7 +34,48 @@ ${userID ? 'has UUID env' : 'no UUID env'}
     port: Number(remotePort),
     hostname: serverAddress,
   });
+
+  // connection.write(
+  //   new TextEncoder().encode('GET http://www.baidu.com/  HTTP/1.1\r\n')
+  // );
+  // connection.write(new TextEncoder().encode('Host: www.baidu.com\r\n\r\n'));
+  // connection.close();
+
+  //   GET / HTTP/1.1
+  // Host: www.baidu.com
+  // User-Agent: curl/7.83.1
+  // Accept: */*
+  // const body2 = new ReadableStream({
+  //   start(controller) {
+  //     controller.enqueue(new TextEncoder().encode('GET / HTTP/1.1\r\n'));
+  //     controller.enqueue(new TextEncoder().encode('Host: www.baidu.com\r\n'));
+  //     controller.enqueue(
+  //       new TextEncoder().encode('User-Agent: curl/7.83.1\r\n')
+  //     );
+  //     controller.enqueue(new TextEncoder().encode('Accept: */*\r\n\r\n'));
+  //     // controller.close();
+  //   },
+  //   cancel() {},
+  // });
+
+  // for await (const chunk of body2) {
+  //   connection.write(chunk);
+  // }
   const proxyResp = request.body?.pipeThrough(connection);
+  // const proxyResp = request.body
+  //   ?.pipeThrough(
+  //     new TransformStream({
+  //       async transform(chunk, controller) {
+  //         console.log('transform');
+  //         controller.enqueue(chunk);
+  //       },
+  //       async flush(controller) {
+  //         console.log('flush');
+  //         return new Promise((res) => setTimeout(res, 1000));
+  //       },
+  //     })
+  //   )
+  //   .pipeThrough(connection);
   return new Response(proxyResp, {
     status: 200,
     headers: {},

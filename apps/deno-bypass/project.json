@@ -7,13 +7,13 @@
     "run": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "deno run --allow-net apps/deno-bypass/src/bypass.ts "
+        "command": "deno run --allow-net --allow-env --allow-write apps/deno-bypass/src/bypass.ts "
       }
     },
     "serve": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "deno run --allow-net  --watch apps/deno-bypass/src/bypass.ts "
+        "command": "deno run --allow-net --allow-write --allow-env --watch apps/deno-bypass/src/bypass.ts "
       }
     }
   },
