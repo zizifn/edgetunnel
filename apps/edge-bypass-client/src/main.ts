@@ -19,19 +19,6 @@ const httpProxyServer = createServer(async (req, resp) => {
       `Client Connected To Proxy, client http version is ${req.httpVersion}, ${clientSocketLoggerInfo}}`
     );
 
-    const raws = rawHTTPPackage(req);
-    const readableStream = new Readable({
-      async read() {
-        const { value, done } = await raws.next();
-        if (!done) {
-          this.push(value);
-        }
-      },
-      destroy() {
-        this.push(null);
-      },
-    });
-
     // make call to edge http server
     // 1. forward all package remote, socket over http body
     const { body, headers, statusCode, trailers } = await undici.request(
@@ -44,39 +31,30 @@ const httpProxyServer = createServer(async (req, resp) => {
           // "Content-Type": "text/plain",
         },
         method: 'POST',
-        // body: Readable.from(rawHTTPPackage(req)),
-        body: readableStream,
-
-        // body: rawHTTPHeader(req),
-        // body: req,
+        body: Readable.from(concatStreams([rawHTTPPackage(req), req.socket])),
       }
     );
-    // for await (const item of rawHTTPPackage(req)) {
-    //   myReadable.push(item);
-    // }
-    // console.log(headers, statusCode);
-    // for await (let chunk of body) {
-    //   console.log(chunk.toString());
-    // }
+    console.log(`${clientSocketLoggerInfo} remote server return ${statusCode}`);
     // 2. forward remote reponse body to clientSocket
-
-    pipeline(body, resp, (error) => {
-      console.log(
-        `${clientSocketLoggerInfo} remote server to clientSocket has error: ` +
-          error
-      );
-      resp.destroy();
-    });
+    for await (const chunk of body) {
+      req.socket.write(chunk);
+    }
     body.on('error', (err) => {
-      console.log('body error', err);
+      console.log(`${clientSocketLoggerInfo} body error`, err);
     });
-    body.on('data', () => {
-      if (!readableStream.closed) {
-        readableStream.push(null);
-      }
-    });
+    // issue with pipeline
+    // https://stackoverflow.com/questions/55959479/error-err-stream-premature-close-premature-close-in-node-pipeline-stream
+    // pipeline(body, req.socket, (error) => {
+    //   console.log(
+    //     `${clientSocketLoggerInfo} remote server to clientSocket has error: ` +
+    //       error
+    //   );
+    //   req.socket.end();
+    //   req.socket.destroy();
+    // });
   } catch (error) {
-    resp.destroy();
+    req.socket.end();
+    req.socket.destroy();
     console.log('${clientSocketLogger} has error ', error);
   }
 });
@@ -96,7 +74,6 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
       `HTTP/${req.httpVersion} 200 Connection Established\r\n\r\n`
     );
 
-    console.log(config);
     // make call to edge http server
     // 1. forward all package remote, socket over http body
     const { body, headers, statusCode, trailers } = await undici.request(
@@ -114,14 +91,21 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
     );
     console.log(`${clientSocketLoggerInfo} remote server return ${statusCode}`);
     // 2. forward remote reponse body to clientSocket
-    pipeline(body, clientSocket, (error) => {
-      console.log(
-        `${clientSocketLoggerInfo} remote server to clientSocket has error: `,
-        error
-      );
-      body?.destroy();
-      clientSocket.destroy();
+    // 2. forward remote reponse body to clientSocket
+    for await (const chunk of body) {
+      clientSocket.write(chunk);
+    }
+    body.on('error', (err) => {
+      console.log(`${clientSocketLoggerInfo} body error`, err);
     });
+    // pipeline(body, clientSocket, (error) => {
+    //   console.log(
+    //     `${clientSocketLoggerInfo} remote server to clientSocket has error: `,
+    //     error
+    //   );
+    //   body?.destroy();
+    //   clientSocket.destroy();
+    // });
     clientSocket.on('error', (e) => {
       body?.destroy();
       clientSocket.destroy();

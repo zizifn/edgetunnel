@@ -7,7 +7,7 @@ import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { exit } from 'node:process';
 import * as url from 'node:url';
 import * as undici from 'undici';
-import { concatStreams } from './lib/helper';
+
 import * as http from 'node:http';
 
 let config: {
