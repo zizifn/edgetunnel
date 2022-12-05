@@ -48,7 +48,7 @@
     "pkg": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx pkg dist/apps/edge-bypass-client/main.js --targets linux,linux-arm64,macos,win --compress GZip   --output dist/pkg/edge-tunnel-client/edgetunnel"
+        "command": "npx pkg dist/apps/edge-bypass-client/main.js --targets win --compress GZip   --output dist/pkg/edge-tunnel-client/edgetunnel"
       },
       "dependsOn": ["build"]
     },
