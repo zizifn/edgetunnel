@@ -1,15 +1,9 @@
-import { Socket } from 'node:net';
 import { createServer } from 'node:http';
-import { Duplex, pipeline, Readable } from 'node:stream';
-import { fetch } from 'undici';
-import { ReadableStream, WritableStream } from 'node:stream/web';
-import { Command } from 'commander';
-import { writeFileSync, existsSync, readFileSync } from 'fs';
-import { exit } from 'node:process';
+import { Readable } from 'node:stream';
 import { config } from './lib/cmd';
 import * as url from 'node:url';
 import * as undici from 'undici';
-import { concatStreams, rawHTTPHeader, rawHTTPPackage } from './lib/helper';
+import { concatStreams, rawHTTPPackage } from './lib/helper';
 
 const httpProxyServer = createServer(async (req, resp) => {
   const reqUrl = url.parse(req.url);
@@ -40,7 +34,10 @@ const httpProxyServer = createServer(async (req, resp) => {
       req.socket.write(chunk);
     }
     body.on('error', (err) => {
-      console.log(`${clientSocketLoggerInfo} body error`, err);
+      console.log(
+        `${clientSocketLoggerInfo} remote server response body has error`,
+        err
+      );
     });
     // issue with pipeline
     // https://stackoverflow.com/questions/55959479/error-err-stream-premature-close-premature-close-in-node-pipeline-stream
@@ -55,7 +52,7 @@ const httpProxyServer = createServer(async (req, resp) => {
   } catch (error) {
     req.socket.end();
     req.socket.destroy();
-    console.log('${clientSocketLogger} has error ', error);
+    console.log(`${clientSocketLoggerInfo} has error `, error);
   }
 });
 
@@ -65,9 +62,9 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
   const clientSocketLoggerInfo = `[proxy to ${req.url}]`;
   try {
     console.log(
-      `Client Connected To Proxy, client http version is ${
+      `${clientSocketLoggerInfo} Client use HTTP/${
         req.httpVersion
-      }, ${clientSocketLoggerInfo}, head is ${head.toString()}`
+      } Connected To Proxy, head on connect is ${head.toString() || 'empty'}`
     );
     // We need only the data once, the starting packet, per http proxy spec
     clientSocket.write(
