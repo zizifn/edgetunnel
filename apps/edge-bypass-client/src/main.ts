@@ -14,9 +14,7 @@ const httpProxyServer = createServer(async (req, resp) => {
   const reqUrl = url.parse(req.url);
   const clientSocketLoggerInfo = `[proxy to ${req.url}(http)]`;
   try {
-    console.log(
-      `Client Connected To Proxy, client http version is ${req.httpVersion}, ${clientSocketLoggerInfo}}`
-    );
+    console.log(`${clientSocketLoggerInfo} Client use HTTP/${req.httpVersion}`);
     // make call to edge http server
     // 1. forward all package remote, socket over http body
     const { body, headers, statusCode, trailers } = await undici.request(
@@ -33,7 +31,9 @@ const httpProxyServer = createServer(async (req, resp) => {
         body: Readable.from(rawHTTPPackageWithDelay(req)),
       }
     );
-    console.log(`${clientSocketLoggerInfo} remote server return ${statusCode}`);
+    console.log(
+      `${clientSocketLoggerInfo} remote server return ${statusCode} Connected To Proxy`
+    );
     // 2. forward remote reponse body to clientSocket
     for await (const chunk of body) {
       req.socket.write(chunk);
