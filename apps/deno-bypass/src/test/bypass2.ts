@@ -1,15 +1,12 @@
 import { serve } from 'https://deno.land/std@0.167.0/http/server.ts';
 
+console.log('Current Deno version', Deno.version.deno);
+
 const handler = async (request: Request): Promise<Response> => {
   const connection = await Deno.connect({
     port: 80,
-    hostname: 'www.baidcu.com',
+    hostname: 'www.baidu.com',
   });
-
-  //   GET / HTTP/1.1
-  // Host: www.baidu.com
-  // User-Agent: curl/7.83.1
-  // Accept: */*
   const body2 = new ReadableStream({
     start(controller) {
       controller.enqueue(new TextEncoder().encode('GET / HTTP/1.1\r\n'));
@@ -18,23 +15,24 @@ const handler = async (request: Request): Promise<Response> => {
         new TextEncoder().encode('User-Agent: curl/7.83.1\r\n')
       );
       controller.enqueue(new TextEncoder().encode('Accept: */*\r\n\r\n'));
-      controller.close(); // 注释这个就好用
+      controller.close();
     },
     cancel() {},
   });
 
-  // 或者不用 pipeThrough， 直接write
   // for await (const chunk of body2) {
-  //   connection.write(chunk);
+  //   console.log('11');
   // }
-  // const proxyResp = connection.readable;
-
-  // -----------
   const proxyResp = body2?.pipeThrough(connection);
 
-  return new Response(proxyResp, {
+  for await (const chunk of proxyResp) {
+    console.log('11');
+  }
+  return new Response('111', {
     status: 200,
-    headers: {},
+    headers: {
+      'x-ray': 'xxxx',
+    },
   });
 };
 
