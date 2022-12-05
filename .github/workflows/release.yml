@@ -20,13 +20,13 @@ jobs:
       - name: copy config file
         run: cp dist/apps/edge-bypass-client/assets/config.json dist/pkg/edge-tunnel-client
       - name: zip edgetunnel-linux-arm64
-        run: zip -j  edgetunnel-linux-arm64.zip dist/pkg/edge-tunnel-client/edgetunnel-linux-arm64 dist/pkg/edge-tunnel-client/config.json
+        run: zip -j  edgetunnel-linux-arm64-${{github.GITHUB_RUN_NUMBER}}.zip dist/pkg/edge-tunnel-client/edgetunnel-linux-arm64 dist/pkg/edge-tunnel-client/config.json
       - name: zip edgetunnel-linux-x64
-        run: zip -j  edgetunnel-linux-x64.zip dist/pkg/edge-tunnel-client/edgetunnel-linux-x64 dist/pkg/edge-tunnel-client/config.json
+        run: zip -j  edgetunnel-linux-x64-${{github.GITHUB_RUN_NUMBER}}.zip dist/pkg/edge-tunnel-client/edgetunnel-linux-x64 dist/pkg/edge-tunnel-client/config.json
       - name: zip edgetunnel-macos-x64
-        run: zip -j  edgetunnel-macos-x64.zip dist/pkg/edge-tunnel-client/edgetunnel-macos-x64 dist/pkg/edge-tunnel-client/config.json
+        run: zip -j  edgetunnel-macos-x64-${{github.GITHUB_RUN_NUMBER}}.zip dist/pkg/edge-tunnel-client/edgetunnel-macos-x64 dist/pkg/edge-tunnel-client/config.json
       - name: zip edgetunnel-win-x64
-        run: zip -j  edgetunnel-win-x64.zip dist/pkg/edge-tunnel-client/edgetunnel-win-x64.exe dist/pkg/edge-tunnel-client/config.json
+        run: zip -j  edgetunnel-win-x64-${{github.GITHUB_RUN_NUMBER}}.zip dist/pkg/edge-tunnel-client/edgetunnel-win-x64.exe dist/pkg/edge-tunnel-client/config.json
       - name: Upload release files
         uses: svenstaro/upload-release-action@v2
         if: github.event_name == 'release'
