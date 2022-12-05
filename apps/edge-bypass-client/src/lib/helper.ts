@@ -43,4 +43,23 @@ function rawHTTPPackage(req: IncomingMessage) {
   return concatStreams([[rawHttpHeader], req]);
 }
 
-export { concatStreams, rawHTTPPackage, rawHTTPHeader };
+async function* deplay(ms) {
+  yield await new Promise((res, reject) => {
+    setTimeout(() => res(''), ms);
+  });
+}
+
+// delay few ms for
+//  // request.body readablestream end casue socket to be end, this will casue socket send FIN package early
+// and casue deno can't get TCP pcakge.
+function rawHTTPPackageWithDelay(req: IncomingMessage) {
+  const rawHttpHeader = rawHTTPHeader(req);
+  return concatStreams([[rawHttpHeader], req, deplay(500)]);
+}
+
+export {
+  concatStreams,
+  rawHTTPPackage,
+  rawHTTPHeader,
+  rawHTTPPackageWithDelay,
+};

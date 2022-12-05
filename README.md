@@ -109,7 +109,8 @@ https://proxy-switchyomega.com/proxy/
 
 ### 其他软件 proxy 设置
 
-下面以电报为例，其他软件也是一样的。具体方式请用搜索引擎。
+> 电报客户端一直不停的发送 HTTP 请求，所以代理电报可能会快速消耗资源和免费额度。
+> 下面以电报为例，其他软件也是一样的。具体方式请用搜索引擎。
 
 路径， setting--> Advance-->Conntction type--> Use Custom proxy
 ![tel](./doc/tel.jpg)

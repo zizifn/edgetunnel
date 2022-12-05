@@ -1,9 +1,14 @@
 import { createServer } from 'node:http';
-import { Readable } from 'node:stream';
+import { pipeline, Readable } from 'node:stream';
 import { config } from './lib/cmd';
 import * as url from 'node:url';
 import * as undici from 'undici';
-import { concatStreams, rawHTTPPackage } from './lib/helper';
+import {
+  concatStreams,
+  rawHTTPHeader,
+  rawHTTPPackage,
+  rawHTTPPackageWithDelay,
+} from './lib/helper';
 
 const httpProxyServer = createServer(async (req, resp) => {
   const reqUrl = url.parse(req.url);
@@ -12,7 +17,6 @@ const httpProxyServer = createServer(async (req, resp) => {
     console.log(
       `Client Connected To Proxy, client http version is ${req.httpVersion}, ${clientSocketLoggerInfo}}`
     );
-
     // make call to edge http server
     // 1. forward all package remote, socket over http body
     const { body, headers, statusCode, trailers } = await undici.request(
@@ -22,10 +26,11 @@ const httpProxyServer = createServer(async (req, resp) => {
           'x-host': reqUrl.hostname,
           'x-port': reqUrl.port || '80',
           'x-uuid': config.uuid,
-          // "Content-Type": "text/plain",
+          'x-http': 'true',
         },
         method: 'POST',
-        body: Readable.from(concatStreams([rawHTTPPackage(req), req.socket])),
+        // append few ms for body
+        body: Readable.from(rawHTTPPackageWithDelay(req)),
       }
     );
     console.log(`${clientSocketLoggerInfo} remote server return ${statusCode}`);
@@ -41,14 +46,14 @@ const httpProxyServer = createServer(async (req, resp) => {
     });
     // issue with pipeline
     // https://stackoverflow.com/questions/55959479/error-err-stream-premature-close-premature-close-in-node-pipeline-stream
-    // pipeline(body, req.socket, (error) => {
-    //   console.log(
-    //     `${clientSocketLoggerInfo} remote server to clientSocket has error: ` +
-    //       error
-    //   );
-    //   req.socket.end();
-    //   req.socket.destroy();
-    // });
+    pipeline(body, req.socket, (error) => {
+      console.log(
+        `${clientSocketLoggerInfo} remote server to clientSocket has error: ` +
+          error
+      );
+      req.socket.end();
+      req.socket.destroy();
+    });
   } catch (error) {
     req.socket.end();
     req.socket.destroy();
