@@ -34,12 +34,19 @@ ${userID ? 'has UUID env' : 'no UUID env'}
     hostname: serverAddress,
   });
 
+  // const proxyResp = request.body?.pipeThrough(connection);
   // 1. request.body readablestream end casue socket to be end, this will casue socket send FIN package early
   // and casue deno can't get TCP pcakge.
   // 2. current soluction for this, let proxy client wait for few ms and then end readablestream
   // 3. this is only inpact HTTP proxy not https
-  const proxyResp = request.body?.pipeThrough(connection);
-  return new Response(proxyResp, {
+  (async () => {
+    for await (let chunk of request.body || []) {
+      // console.log(new TextDecoder().decode(chunk));
+      connection.write(chunk);
+    }
+  })();
+
+  return new Response(connection.readable, {
     status: 200,
     headers: {},
   });
