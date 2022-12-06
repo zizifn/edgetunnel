@@ -49,8 +49,8 @@ const httpProxyServer = createServer(async (req, resp) => {
       req.socket.destroy();
     });
   } catch (error) {
-    req.socket.end();
-    req.socket.destroy();
+    req.socket?.end();
+    req.socket?.destroy();
     console.log(`${clientSocketLoggerInfo} has error `, error);
   }
 });
