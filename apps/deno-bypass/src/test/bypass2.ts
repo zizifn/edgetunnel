@@ -21,12 +21,12 @@ const handler = async (request: Request): Promise<Response> => {
   });
 
   // for await (const chunk of body2) {
-  //   console.log('11');
+  //   console.log('11', new TextDecoder().decode(chunk));
   // }
   const proxyResp = body2?.pipeThrough(connection);
 
   for await (const chunk of proxyResp) {
-    console.log('11');
+    console.log('11', new TextDecoder().decode(chunk));
   }
   return new Response('111', {
     status: 200,
