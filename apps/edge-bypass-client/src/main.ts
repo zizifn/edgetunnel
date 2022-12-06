@@ -5,7 +5,7 @@ import * as url from 'node:url';
 import * as undici from 'undici';
 import { concatStreams, rawHTTPPackage } from './lib/helper';
 
-const isLocal = process.env.env === 'LOCAL';
+const isLocal = process.env.LOCAL === 'true';
 const httpProxyServer = createServer(async (req, resp) => {
   const reqUrl = url.parse(req.url);
   const clientSocketLoggerInfo = `[proxy to ${req.url}](http)`;
@@ -46,6 +46,7 @@ const httpProxyServer = createServer(async (req, resp) => {
         `${clientSocketLoggerInfo} remote server response body has error`,
         err
       );
+      req.socket.destroy();
     });
   } catch (error) {
     req.socket.end();
@@ -72,6 +73,15 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
     // console.log(config);
     // make call to edge http server
     // 1. forward all package remote, socket over http body
+    const fromClientSocket = Readable.from(
+      concatStreams([head, clientSocket])
+    ).on('error', (error) => {
+      console.log(
+        `${clientSocketLoggerInfo} client socket to remote http body has error`,
+        error
+      );
+      clientSocket.destroy();
+    });
     const { body, headers, statusCode, trailers } = await undici.request(
       config.address,
       {
@@ -82,17 +92,20 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
           // "Content-Type": "text/plain",
         },
         method: 'POST',
-        body: Readable.from(concatStreams([head, clientSocket])),
+        body: fromClientSocket,
       }
     );
     console.log(`${clientSocketLoggerInfo} remote server return ${statusCode}`);
-    // 2. forward remote reponse body to clientSocket
     // 2. forward remote reponse body to clientSocket
     for await (const chunk of body) {
       clientSocket.write(chunk);
     }
     body.on('error', (err) => {
-      console.log(`${clientSocketLoggerInfo} body error`, err);
+      console.log(
+        `${clientSocketLoggerInfo} remote response body has error`,
+        err
+      );
+      clientSocket.destroy();
     });
     clientSocket.on('error', (e) => {
       body?.destroy();
