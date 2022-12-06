@@ -142,9 +142,7 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
 });
 
 httpProxyServer.on('error', (err) => {
-  loghelper('SERVER ERROR');
-  loghelper(err);
-  throw err;
+  loghelper('SERVER ERROR', err);
 });
 httpProxyServer.on('clientError', (err, clientSocket) => {
   loghelper('client error: ' + err);
