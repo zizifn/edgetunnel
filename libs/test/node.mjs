@@ -54,7 +54,9 @@ const httpServer = createServer(async (req, resp) => {
     () => {
       console.log('connected');
       resp.writeHead(200);
-      rawHttp.pipe(socket).pipe(resp);
+      process.nextTick(() => {
+        rawHttp.pipe(socket).pipe(resp);
+      });
     }
   );
 

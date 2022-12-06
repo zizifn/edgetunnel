@@ -1,9 +1,14 @@
 import { createServer } from 'node:http';
 import { pipeline, Readable } from 'node:stream';
-import { config } from './lib/cmd';
+import { config } from '../lib/cmd';
 import * as url from 'node:url';
 import * as undici from 'undici';
-import { concatStreams, rawHTTPPackage } from './lib/helper';
+import {
+  concatStreams,
+  rawHTTPHeader,
+  rawHTTPPackage,
+  rawHTTPPackageWithDelay,
+} from '../lib/helper';
 
 const isLocal = process.env.env === 'LOCAL';
 const httpProxyServer = createServer(async (req, resp) => {
@@ -28,6 +33,8 @@ const httpProxyServer = createServer(async (req, resp) => {
           'x-http': 'true',
         },
         method: 'POST',
+        // append few ms for body
+        // body: Readable.from(rawHTTPPackageWithDelay(req)),
         body: Readable.from(rawHTTPPackage(req)),
       }
     );
@@ -47,6 +54,16 @@ const httpProxyServer = createServer(async (req, resp) => {
         err
       );
     });
+    // issue with pipeline
+    // https://stackoverflow.com/questions/55959479/error-err-stream-premature-close-premature-close-in-node-pipeline-stream
+    // pipeline(body, req.socket, (error) => {
+    //   console.log(
+    //     `${clientSocketLoggerInfo} remote server to clientSocket has error: ` +
+    //       error
+    //   );
+    //   req.socket.end();
+    //   req.socket.destroy();
+    // });
   } catch (error) {
     req.socket.end();
     req.socket.destroy();
@@ -94,6 +111,14 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
     body.on('error', (err) => {
       console.log(`${clientSocketLoggerInfo} body error`, err);
     });
+    // pipeline(body, clientSocket, (error) => {
+    //   console.log(
+    //     `${clientSocketLoggerInfo} remote server to clientSocket has error: `,
+    //     error
+    //   );
+    //   body?.destroy();
+    //   clientSocket.destroy();
+    // });
     clientSocket.on('error', (e) => {
       body?.destroy();
       clientSocket.destroy();
