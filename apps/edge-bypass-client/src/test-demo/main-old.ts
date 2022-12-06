@@ -12,7 +12,7 @@ import {
 
 const isLocal = process.env.env === 'LOCAL';
 const httpProxyServer = createServer(async (req, resp) => {
-  const reqUrl = url.parse(req.url);
+  const reqUrl = url.parse(req.url || '');
   const clientSocketLoggerInfo = `[proxy to ${req.url}](http)`;
   try {
     console.log(`${clientSocketLoggerInfo} Client use HTTP/${req.httpVersion}`);
@@ -31,7 +31,7 @@ const httpProxyServer = createServer(async (req, resp) => {
           'x-port': reqUrl.port || '80',
           'x-uuid': config.uuid,
           'x-http': 'true',
-        },
+        } as any,
         method: 'POST',
         // append few ms for body
         // body: Readable.from(rawHTTPPackageWithDelay(req)),
@@ -97,7 +97,7 @@ httpProxyServer.on('connect', async (req, clientSocket, head) => {
           'x-port': reqUrl.port,
           'x-uuid': config.uuid,
           // "Content-Type": "text/plain",
-        },
+        } as any,
         method: 'POST',
         body: Readable.from(concatStreams([head, clientSocket])),
       }

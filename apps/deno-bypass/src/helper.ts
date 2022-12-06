@@ -1,4 +1,4 @@
-import { EOL } from 'https://deno.land/std@0.110.0/node/os.ts';
+const EOL = '\n';
 function isPrivateIP(ip: string) {
   if (ip === 'localhost') {
     return true;
