@@ -1,11 +1,12 @@
 import { Command } from 'commander';
 import { writeFileSync, existsSync, readFileSync } from 'fs';
 import { exit } from 'node:process';
+import { env } from 'process';
 let config: {
   port: string;
   address: string;
   uuid: string;
-  config: string;
+  logLevel: string;
 } = null;
 const program = new Command();
 program.option('-v').action((options) => {
@@ -54,5 +55,6 @@ program
     }
   });
 program.parse();
+env.NODE_ENV = env.NODE_ENV || 'production';
 
 export { config };

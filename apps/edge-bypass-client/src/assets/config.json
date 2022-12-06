@@ -1,5 +1,6 @@
 {
   "port": "",
   "address": "",
-  "uuid": ""
+  "uuid": "",
+  "logLevel": "DEBUG"
 }

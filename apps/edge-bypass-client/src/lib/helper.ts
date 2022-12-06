@@ -1,6 +1,7 @@
 import { IncomingMessage } from 'http';
 import * as os from 'os';
 import * as url from 'node:url';
+import { config } from './cmd';
 
 async function* concatStreams(readables: any[]) {
   for (const readable of readables) {
@@ -57,9 +58,37 @@ function rawHTTPPackageWithDelay(req: IncomingMessage) {
   return concatStreams([[rawHttpHeader], req, deplay(500)]);
 }
 
+function errorHandler() {
+  process
+    .on('unhandledRejection', (reason, p) => {
+      console.error(reason, 'Unhandled Rejection at Promise', p);
+    })
+    .on('uncaughtException', (err) => {
+      console.error(err, 'Uncaught Exception thrown');
+      // should exit node.js, but anyway
+      // process.exit(1);
+    });
+}
+
+function loghelper(...args) {
+  let logs = args;
+  if (config.logLevel?.toUpperCase() !== 'DEBUG') {
+    logs = args.map((item) => {
+      if (item instanceof Error) {
+        return `${item.message}`;
+      } else {
+        return item;
+      }
+    });
+  }
+  console.log('', ...logs);
+}
+
 export {
   concatStreams,
   rawHTTPPackage,
   rawHTTPHeader,
   rawHTTPPackageWithDelay,
+  errorHandler,
+  loghelper,
 };
