@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.167.0/http/server.ts';
-import { parse, stringify, validate } from 'npm:uuid@^9.0.0';
+import { parse, stringify, validate } from 'https://jspm.dev/uuid';
 const userID = Deno.env.get('UUID');
 
 if (!validate(userID)) {
