@@ -2,7 +2,7 @@
 
 一个无比简单安全，基于 edge 的 tunnel 。
 
-**v2ray-heroku 由于 heroku 取消免费，项目已经死了。如果你还需要 v2ray-heroku， 请访问 [yaolin-0/v2ray-heroku](https://github.com/yaolin-0/v2ray-heroku)**
+**v2ray-heroku 由于 heroku 取消免费，项目已经死了。
 
 > 项目正在开发，基本可用，会有 bug。。
 > **请定期按照 github 的提示，只同步到自己的项目。只需要在乎下图红框的提示，其他提示不要点击**。
