@@ -1,0 +1,21 @@
+{
+  "name": "deno-vless",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/deno-vless/src",
+  "projectType": "application",
+  "targets": {
+    "run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "deno run  --allow-net --allow-env --allow-write apps/deno-vless/src/main.ts "
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "deno run --allow-net --allow-write --allow-env --watch apps/deno-vless/src/main.ts "
+      }
+    }
+  },
+  "tags": []
+}
