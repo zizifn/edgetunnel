@@ -22,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
   socket.onopen = () => console.log('socket opened');
   socket.onmessage = async (e) => {
     try {
-      if (e.data instanceof ArrayBuffer) {
+      if (!(e.data instanceof ArrayBuffer)) {
         return;
       }
       const vlessBuffer: ArrayBuffer = e.data;
