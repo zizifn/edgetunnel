@@ -170,7 +170,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(
         `[${address}:${port}] request hadler has error`,
         error,
-        e.data.slice(0, 32)
+        [...e.data.slice(0, 32)].map((x) => x.toString(16).padStart(2, '0'))
       );
     }
   };
