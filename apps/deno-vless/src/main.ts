@@ -167,8 +167,9 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`[${address}:${port}] request hadler has error`, error);
     }
   };
-  socket.onerror = (e) => console.log('socket errored:', e);
-  socket.onclose = () => console.log('socket closed');
+  socket.onerror = (e) =>
+    console.log(`[${address}:${port}] socket errored:`, e);
+  socket.onclose = () => console.log(`[${address}:${port}] socket closed`);
   return response;
 };
 
