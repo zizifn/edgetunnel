@@ -38,11 +38,6 @@ const handler = async (req: Request): Promise<Response> => {
 
         // 1 字节	              1 字节	      N 字节	         Y 字节
         // 协议版本，与请求的一致	附加信息长度 N	附加信息 ProtoBuf	响应数据
-        console.log(
-          [...new Uint8Array(vlessBuffer.slice(0, 32))].map((x) =>
-            x.toString(16).padStart(2, '0')
-          )
-        );
         if (vlessBuffer.byteLength < 24) {
           console.log('invalid data');
           return;
@@ -176,6 +171,11 @@ const handler = async (req: Request): Promise<Response> => {
           });
       }
     } catch (error) {
+      // console.log(
+      //   [...new Uint8Array(vlessBuffer.slice(0, 32))].map((x) =>
+      //     x.toString(16).padStart(2, '0')
+      //   )
+      // );
       console.log(`[${address}:${port}] request hadler has error`, error);
     }
   };
