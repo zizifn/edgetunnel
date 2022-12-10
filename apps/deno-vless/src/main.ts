@@ -69,7 +69,10 @@ const handler = async (req: Request): Promise<Response> => {
         if (command === 1) {
           console.log('-----tcp---');
         } else {
-          console.log('--not---tcp---');
+          console.log(
+            `command ${command} is not support, command 01-tcp,02-udp,03-mux`
+          );
+          socket.close();
           return;
         }
         const portIndex = 18 + optLength + 1;
