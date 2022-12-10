@@ -22,6 +22,9 @@ const handler = async (req: Request): Promise<Response> => {
   socket.onopen = () => console.log('socket opened');
   socket.onmessage = async (e) => {
     try {
+      if (e.data instanceof ArrayBuffer) {
+        return;
+      }
       const vlessBuffer: ArrayBuffer = e.data;
       if (remoteConnection) {
         const number = await remoteConnection.write(
@@ -164,7 +167,11 @@ const handler = async (req: Request): Promise<Response> => {
           });
       }
     } catch (error) {
-      console.log(`[${address}:${port}] request hadler has error`, error);
+      console.log(
+        `[${address}:${port}] request hadler has error`,
+        error,
+        e.data.slice(0, 32)
+      );
     }
   };
   socket.onerror = (e) =>
