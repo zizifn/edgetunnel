@@ -26,6 +26,11 @@ const handler = async (req: Request): Promise<Response> => {
         return;
       }
       const vlessBuffer: ArrayBuffer = e.data;
+      console.log(
+        [...new Uint8Array(vlessBuffer.slice(0, 32))].map((x) =>
+          x.toString(16).padStart(2, '0')
+        )
+      );
       if (remoteConnection) {
         const number = await remoteConnection.write(
           new Uint8Array(vlessBuffer)
@@ -167,11 +172,7 @@ const handler = async (req: Request): Promise<Response> => {
           });
       }
     } catch (error) {
-      console.log(
-        `[${address}:${port}] request hadler has error`,
-        error,
-        [...e.data.slice(0, 32)].map((x) => x.toString(16).padStart(2, '0'))
-      );
+      console.log(`[${address}:${port}] request hadler has error`, error);
     }
   };
   socket.onerror = (e) =>
