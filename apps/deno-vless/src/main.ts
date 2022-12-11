@@ -62,7 +62,6 @@ const handler = async (req: Request): Promise<Response> => {
         // 0x02 UDP
         // 0x03 MUX
         if (command === 1) {
-          console.log('-----tcp---');
         } else {
           console.log(
             `command ${command} is not support, command 01-tcp,02-udp,03-mux`
