@@ -34,11 +34,11 @@ https://blog.cloudflare.com/introducing-socket-workers/
 
 ## 客户端 v2rayN 配置
 
-> ⚠️ 请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
+> ⚠️ 由于 edge 平台限制，无法转发 UDP 包。请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
 
 ## VLESS websocket 客户端配置
 
-> ⚠️ 请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
+> ⚠️ 由于 edge 平台限制，无法转发 UDP 包。请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
 
 ```json
 "outbounds": [
