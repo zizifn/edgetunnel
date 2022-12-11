@@ -1,6 +1,6 @@
 # Edge Tunnel （Beta）
 
-把 V2ray 部署到 Edge/Serverless Functions 平台上。
+把 **V2ray** 部署到 Edge/Serverless Functions 平台上。
 
 **v2ray-heroku 由于 heroku 取消免费，项目已经死了。**
 
