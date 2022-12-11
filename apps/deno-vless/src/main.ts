@@ -130,8 +130,12 @@ const handler = async (req: Request): Promise<Response> => {
           default:
             console.log(`[${address}:${port}] invild address`);
         }
-
         address = addressValue;
+        if (!addressValue) {
+          console.log(`[${address}:${port}] addressValue is empty`);
+          socket.close();
+          return;
+        }
         // const addressType = requestAddr >> 4;
         // const addressLength = requestAddr & 0x0f;
         console.log(`[${address}:${port}] connecting`);
