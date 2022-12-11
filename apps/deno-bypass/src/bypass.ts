@@ -3,7 +3,7 @@ import { buildRawHttp500, isVaildateReq } from './helper.ts';
 const userID = Deno.env.get('UUID');
 
 const handler = async (request: Request): Promise<Response> => {
-  // console.log('--------start--------');
+  console.log('--------start--------');
   try {
     const headers = request.headers;
     const serverAddress = headers.get('x-host') || '';
@@ -80,4 +80,4 @@ ${userID ? 'has UUID env' : 'no UUID env'}
   }
 };
 
-serve(handler, { port: 8080, hostname: '0.0.0.0' });
+serve(handler, { port: 8888, hostname: '[::]' });

@@ -149,17 +149,21 @@ const handler = async (req: Request): Promise<Response> => {
         remoteConnection.readable
           .pipeTo(
             new WritableStream({
+              start() {
+                socket.send(new Blob(chunkDatas));
+              },
               write(chunk, controller) {
-                if (!skipHeader) {
-                  console.log(
-                    `[${address}:${port}] first time write to client socket`
-                  );
-                  chunkDatas.push(chunk);
-                  socket.send(new Blob(chunkDatas));
-                  chunkDatas = [];
-                } else {
-                  socket.send(new Blob([chunk]));
-                }
+                socket.send(new Blob([chunk]));
+                // if (!skipHeader) {
+                //   console.log(
+                //     `[${address}:${port}] first time write to client socket`
+                //   );
+                //   chunkDatas.push(chunk);
+                //   socket.send(new Blob(chunkDatas));
+                //   chunkDatas = [];
+                // } else {
+                //   socket.send(new Blob([chunk]));
+                // }
               },
             })
           )
