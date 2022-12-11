@@ -13,7 +13,6 @@ const handler = async (req: Request): Promise<Response> => {
   if (upgrade.toLowerCase() != 'websocket') {
     return new Response("request isn't trying to upgrade to websocket.");
   }
-  console.log('---upgradeWebSocket---');
   const { socket, response } = Deno.upgradeWebSocket(req);
   let remoteConnection: Deno.TcpConn;
   let skipHeader = false;
