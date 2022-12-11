@@ -19,7 +19,12 @@
 
 ## New Project
 
-请在配置过程中 **记住 UUID**, 并且选择正确的部署入口文件。`apps\deno-bypass\src\bypass.ts`
+请在配置过程中 **记住 UUID**, 并且选择正确的部署入口文件。⚠️⚠️⚠️ `apps\deno-vless\src\main.ts`
+![deno-link](./deno-link.jpg)
+
+### 全流程演示
+
+> ⚠️ 下面仅仅是流程演示，具体文件请参考上图。
 
 ![deno-deploy](./deno-deploy.gif)
 
