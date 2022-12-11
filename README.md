@@ -1,14 +1,14 @@
-# Edge Tunnel （正在开发）
+# Edge Tunnel （Beta）
 
-一个无比简单安全，基于 edge 的 tunnel 。
+把 V2ray 部署到 Edge/Serverless Functions 平台上。
 
-**v2ray-heroku 由于 heroku 取消免费，项目已经死了。
+**v2ray-heroku 由于 heroku 取消免费，项目已经死了。**
 
 > 项目正在开发，基本可用，会有 bug。。
 > **请定期按照 github 的提示，只同步到自己的项目。只需要在乎下图红框的提示，其他提示不要点击**。
 > ![sync](./doc/sync.jpg)
 
-> 本项目纯属技术性验证，探索最新的 web standard。不给予任何保证。请大家酌情使用。如果有兴趣想一起进行技术探讨可以联系我。💕
+> 本项目纯属技术性验证，探索最新的 web standard。不给予任何保证。
 
 ## Edge Tunnel server --- Deno deploy
 
@@ -21,97 +21,78 @@ Edge tunnel 的服务使用了 [Deno deploy](https://deno.com/deploy).
 
 > 这里十分感谢 Deno deploy 严肃对待 web standard， 支持 HTTP request & response streaming，让 edge tunnel 成为可能。
 
-> 这里没有使用 deno websocket，其实技术上可以把 v2ray 移植过来。但是我暂时没有看明白 VLESS 协议内容.
-
-## Edge Tunnel server --- Cloudflare Worker （敬请期待）
-
-这个需要等 Cloudflare 发布下面的技术。
-https://blog.cloudflare.com/introducing-socket-workers/
-
 ### 如何部署服务
 
 请查看下面教程。
 
 [Deno deploy Install](./doc/edge-tunnel-deno.md)
 
-## Edge Tunnel 客户端
+## Edge Tunnel server --- Cloudflare Worker （敬请期待）
 
-> 由于看不懂 VLESS 协议内容, 所以无法使用常用的客户端软件.
+这个需要等 Cloudflare 发布下面的技术。
+https://blog.cloudflare.com/introducing-socket-workers/
 
-### 安装
+## 客户端 v2rayN 配置
 
-请转到本项目 [releases](https://github.com/zizifn/edgetunnel/releases),选择正确的平台，下载最新客户端.
+> ⚠️ 由于 edge 平台限制，无法转发 UDP 包。请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
 
-项目使用https://github.com/vercel/pkg, 所以支持下面平台.
+> [ DNS 科普文章](https://tachyondevel.medium.com/%E6%BC%AB%E8%B0%88%E5%90%84%E7%A7%8D%E9%BB%91%E7%A7%91%E6%8A%80%E5%BC%8F-dns-%E6%8A%80%E6%9C%AF%E5%9C%A8%E4%BB%A3%E7%90%86%E7%8E%AF%E5%A2%83%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8-62c50e58cbd0)
 
-1. **platform** alpine, linux, linuxstatic, win, macos, (freebsd)
-2. **arch** x64, arm64, (armv6, armv7)
+## VLESS websocket 客户端配置
 
-## 启动
-
-解压并且修改安装文件的 `config.json` 文件.
+> ⚠️ 由于 edge 平台限制，无法转发 UDP 包。请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
 
 ```json
-{
-  "port": "1081", // 本地 HTTP 代理的端口
-  "address": "https://****.deno.dev/", // deno deploy URL
-  "uuid": "****" // 你 deno deploy 设置的用户
-}
+"outbounds": [
+        {
+            "protocol": "vless",
+            "settings": {
+                "vnext": [
+                    {
+                        "address": "***.herokuapp.com", // edge app URL 或者 cloudflare worker url/ip
+                        "port": 443,
+                        "users": [
+                            {
+                                "id": "", // 填写你的 UUID
+                                "encryption": "none"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "ws",
+                "security": "tls",
+                "tlsSettings": {
+                    "serverName": "***.***.com" // edge app host 或者 cloudflare worker host
+                }
+              }
+          }
+    ]
 ```
 
-然后,在解压目录下，打开命令行, 输入下面命令.
+https://github.com/2dust/v2rayN
+别人的配置教程参考，https://v2raytech.com/v2rayn-config-tutorial/.
+![v2rayN](./doc/v2rayn.jpg)
 
-> Edge Tunnel Client 会在本地启动一个 http 代理.
+## 建立 cloudflare worker （可选）
 
-> 如果 window 系统提示，是否允许网络权限，请把所有允许。
-> ![firewall](./doc/firewall.jpg)
-
-```ps
-.\edgetunnel-win-x64.exe run --config .\config.json
+```js
+const targetHost = 'xxx.xxxx.dev'; //你的 edge function 的hostname
+addEventListener('fetch', (event) => {
+  let url = new URL(event.request.url);
+  url.hostname = targetHost;
+  let request = new Request(url, event.request);
+  event.respondWith(fetch(request));
+});
 ```
 
-![client-log](./doc/client-log.jpg)
+# FAQ
 
-> 请不要关闭关闭命令行. 如果关闭,代理会自动退出.
+## 不支持 UDP
 
-### 验证代理是否正常
+由于 edge 平台限制，无法转发 UDP 包。所以 DNS 策略请设置成 `Asis`.
 
-再次开启一个新的命令行，测试 proxy 是否启动正常。。**注意自己 proxy 的端口**。
+## 不支持 VMESS
 
-```bash
-curl -v https://www.google.com --proxy http://127.0.0.1:1081
-```
-
-如果有返回结果，并且 edge tunnel 命令行有提示，说明一切成功。
-
-```
-proxy to www.google.com:443 and remote return 200
-```
-
-## 配置代理服务 （重要）
-
-> 不像 v2rayN 可以在自动配置代理，本客户端目前需要手动配置代理才能工作。 下面三种方式可供参考。
-
-### 浏览器 switchyomega 设置
-
-具体安装和配置,请查看官网.
-https://proxy-switchyomega.com/proxy/
-
-除了端口（port）和下图可能不一样。其他都应该是一样的。
-
-> 端口是你在 config.json 自己配置的
-
-![switchyomega2](./doc/switchyomega2.jpg)
-
-### 系统全局 proxy 配置
-
-你也可以配置 proxy 到系统级别。
-
-### 其他软件 proxy 设置
-
-> 电报客户端一直不停的发送 HTTP 请求，所以代理电报可能会快速消耗资源和免费额度。
-
-> 下面以电报为例，其他软件也是一样的。具体方式请用搜索引擎。
-
-路径， setting--> Advance-->Conntction type--> Use Custom proxy
-![tel](./doc/tel.jpg)
+VMESS 协议过于复杂，并且所有 edge 平台都支持 HTTPS， 所以无需 VMESS.
