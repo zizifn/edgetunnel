@@ -1,4 +1,4 @@
-# Edge Tunnel （Beta）
+# V2ray Edge（Beta）
 
 把 **V2ray** 部署到 Edge/Serverless Functions 平台上。
 
