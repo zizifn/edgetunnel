@@ -19,12 +19,20 @@
 
 ## New Project
 
-请在配置过程中 **记住 UUID**, 并且选择正确的部署入口文件。`apps\deno-bypass\src\bypass.ts`
+请在配置过程中 **记住 UUID**, 并且选择正确的部署入口文件。`apps\deno-vless\src\main.ts`
+![deno-link](./deno-link.jpg)
+
+### 流程演示
+
+> GIF 仅仅是流程演示，具体入口文件，请看上图。
+
+https://raw.githubusercontent.com/zizifn/edgetunnel/main/doc/deno-deploy.gif
 
 ![deno-deploy](./deno-deploy.gif)
 
 如果 UUID 忘记 或者入口文件有变化，也可以在 deno 管理界面修改项目的配置。
 
+https://raw.githubusercontent.com/zizifn/edgetunnel/main/doc/deno-deploy2.gif
 ![deno-deploy2](./deno-deploy2.gif)
 
 其他更多配置，比如使用量，请自行探索。
