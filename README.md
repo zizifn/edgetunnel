@@ -32,7 +32,13 @@ Edge tunnel 的服务使用了 [Deno deploy](https://deno.com/deploy).
 这个需要等 Cloudflare 发布下面的技术。
 https://blog.cloudflare.com/introducing-socket-workers/
 
+## 客户端 v2rayN 配置
+
+> ⚠️ 请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
+
 ## VLESS websocket 客户端配置
+
+> ⚠️ 请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
 
 ```json
 "outbounds": [
@@ -62,10 +68,6 @@ https://blog.cloudflare.com/introducing-socket-workers/
           }
     ]
 ```
-
-## v2rayN
-
-> ⚠️ 请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
 
 https://github.com/2dust/v2rayN
 别人的配置教程参考，https://v2raytech.com/v2rayn-config-tutorial/.
