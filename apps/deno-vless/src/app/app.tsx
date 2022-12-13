@@ -9,9 +9,9 @@ export function App() {
     setText(text);
   }
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col items-center h-screen">
       <Warning></Warning>
-      <div className="flex flex-col items-center h-full">
+      <div className="flex flex-col h-full ite">
         <QRcodeImg text={text}></QRcodeImg>
         <Actions handleShare={handleShare}></Actions>
         <Anything handleShare={handleShare}></Anything>
@@ -20,7 +20,6 @@ export function App() {
   );
 }
 
-function ClipboardCopy(text: string) {}
 function QRcodeImg({ text }: { text: string }) {
   const [codeImg, setcodeImg] = useState('');
   const [copy, setCopy] = useState(false);
@@ -92,7 +91,7 @@ function QRcodeImg({ text }: { text: string }) {
 function Anything({ handleShare }: { handleShare: (text: string) => void }) {
   const [text, setText] = useState('');
   return (
-    <div className="mt-4 w-60">
+    <div className="mt-4">
       <label
         htmlFor="comment"
         className="block text-sm font-medium text-gray-700"
@@ -132,7 +131,7 @@ function Actions({ handleShare }: { handleShare: (text: string) => void }) {
     return `vless://${uuid}@${url.hostname}:443?encryption=none&security=tls&type=ws#deno-vless`;
   }
   return (
-    <span className="inline-flex rounded-md shadow-sm isolate">
+    <span className="inline-flex self-center mt-4 rounded-md shadow-sm isolate">
       <button
         onClick={() => handleShare(getPageURL())}
         type="button"
@@ -153,7 +152,7 @@ function Actions({ handleShare }: { handleShare: (text: string) => void }) {
 
 function Warning() {
   return (
-    <div className="flex justify-center p-4 rounded-md bg-yellow-50">
+    <div className="flex justify-center w-full p-4 rounded-md bg-yellow-50">
       <div className="flex">
         <div className="flex-shrink-0">
           <ExclamationTriangleIcon
