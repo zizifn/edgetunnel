@@ -152,17 +152,17 @@ function Actions({ handleShare }: { handleShare: (text: string) => void }) {
 
 function Warning() {
   return (
-    <div className="flex justify-center w-full p-4 rounded-md bg-yellow-50">
+    <div className="flex justify-center w-full p-4 rounded-md bg-red-50">
       <div className="flex">
         <div className="flex-shrink-0">
           <ExclamationTriangleIcon
-            className="w-5 h-5 text-red-400"
+            className="w-5 h-5 text-red-700"
             aria-hidden="true"
           />
         </div>
         <div className="ml-3">
-          <h3 className="text-sm font-medium text-yellow-800">注意！！</h3>
-          <div className="mt-2 text-sm text-yellow-700">
+          <h3 className="text-sm font-medium text-red-700">注意！！</h3>
+          <div className="mt-2 text-sm text-red-700">
             <p>泄露本页面就等于泄露你的设置。</p>
           </div>
         </div>
