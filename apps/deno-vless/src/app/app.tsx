@@ -76,7 +76,7 @@ function QRcodeImg({ text }: { text: string }) {
             viewBox="0 0 16 16"
             version="1.1"
             className={`w-6 h-6 hover:border hover:border-indigo-500 ${
-              copy ? 'block' : 'hidden'
+              copy ? 'block bg-green-300' : 'hidden'
             }`}
           >
             <path
@@ -153,7 +153,7 @@ function Actions({ handleShare }: { handleShare: (text: string) => void }) {
 
 function Warning() {
   return (
-    <div className="p-4 rounded-md bg-yellow-50">
+    <div className="flex justify-center p-4 rounded-md bg-yellow-50">
       <div className="flex">
         <div className="flex-shrink-0">
           <ExclamationTriangleIcon
