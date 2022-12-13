@@ -8,9 +8,11 @@ async function serveClient(req: Request, basePath: string) {
   }
   const pathname = new URL(req.url).pathname;
   if (pathname.startsWith('/assets')) {
-    return await serveDir(req, {
+    const resp = await serveDir(req, {
       fsRoot: `${Deno.cwd()}/apps/deno-vless/src/client`,
     });
+    resp.headers.set('cache-control', 'public, max-age=2592000');
+    return resp;
   }
   if (pathname.includes(basePath)) {
     return await serveFile(
