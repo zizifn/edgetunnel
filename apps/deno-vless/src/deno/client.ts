@@ -9,11 +9,14 @@ async function serveClient(req: Request, basePath: string) {
   const pathname = new URL(req.url).pathname;
   if (pathname.startsWith('/assets')) {
     return await serveDir(req, {
-      fsRoot: `${Deno.cwd()}/client`,
+      fsRoot: `${Deno.cwd()}/apps/deno-vless/src/client`,
     });
   }
   if (pathname.includes(basePath)) {
-    return await serveFile(req, `${Deno.cwd()}/client/index.html`);
+    return await serveFile(
+      req,
+      `${Deno.cwd()}/apps/deno-vless/src/client/index.html`
+    );
     // Do dynamic responses
     // const indexHtml = await Deno.readFile(`${Deno.cwd()}/client/index.html`);
     // return new Response(indexHtml, {

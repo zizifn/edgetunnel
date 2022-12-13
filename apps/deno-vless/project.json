@@ -36,8 +36,7 @@
     "serve-deno": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "deno run --allow-net --allow-read --allow-write --allow-env --watch ./main.ts",
-        "cwd": "apps/deno-vless/src"
+        "command": "deno run --allow-net --allow-read --allow-write --allow-env --watch apps/deno-vless/src/main.ts"
       }
     },
     "test": {
