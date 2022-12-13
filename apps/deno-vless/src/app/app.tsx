@@ -97,7 +97,7 @@ function Anything({ handleShare }: { handleShare: (text: string) => void }) {
         htmlFor="comment"
         className="block text-sm font-medium text-gray-700"
       >
-        要分享的内容
+        随意要分享的内容
       </label>
       <div className="mt-1">
         <textarea
