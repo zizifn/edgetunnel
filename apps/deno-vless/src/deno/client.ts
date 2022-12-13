@@ -1,20 +1,26 @@
-import { serveDir } from 'https://deno.land/std@0.167.0/http/file_server.ts';
-import { validate } from 'https://jspm.dev/npm:uuid@9.0.0';
+import {
+  serveDir,
+  serveFile,
+} from 'https://deno.land/std@0.167.0/http/file_server.ts';
 async function serveClient(req: Request, basePath: string) {
+  for await (const entry of Deno.readDir('.')) {
+    console.log(entry);
+  }
   const pathname = new URL(req.url).pathname;
   if (pathname.startsWith('/assets')) {
-    return serveDir(req, {
+    return await serveDir(req, {
       fsRoot: `${Deno.cwd()}/client`,
     });
   }
   if (pathname.includes(basePath)) {
+    return await serveFile(req, `${Deno.cwd()}/client/index.html`);
     // Do dynamic responses
-    const indexHtml = await Deno.readFile(`${Deno.cwd()}/client/index.html`);
-    return new Response(indexHtml, {
-      headers: {
-        'content-type': 'text/html; charset=utf-8',
-      },
-    });
+    // const indexHtml = await Deno.readFile(`${Deno.cwd()}/client/index.html`);
+    // return new Response(indexHtml, {
+    //   headers: {
+    //     'content-type': 'text/html; charset=utf-8',
+    //   },
+    // });
   }
 
   return new Response(``, {
