@@ -4,8 +4,20 @@ import { chunk, join } from 'https://jspm.dev/lodash-es';
 import { serveClient } from './deno/client.ts';
 
 const userID = Deno.env.get('UUID') || '';
+let isVaildUser = validate(userID);
+if (!isVaildUser) {
+  console.log('not set valid UUID');
+}
 
 const handler = async (req: Request): Promise<Response> => {
+  if (!isVaildUser) {
+    return new Response(``, {
+      status: 401,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+      },
+    });
+  }
   const upgrade = req.headers.get('upgrade') || '';
   if (upgrade.toLowerCase() != 'websocket') {
     return await serveClient(req, userID);
