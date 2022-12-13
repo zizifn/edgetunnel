@@ -8,6 +8,8 @@
 > **请定期按照 github 的提示，只同步到自己的项目。只需要在乎下图红框的提示，其他提示不要点击**。
 > ![sync](./doc/sync.jpg)
 
+> 同步完成后，如果发现不一样，**请看文档**。
+
 > 本项目纯属技术性验证，探索最新的 web standard。不给予任何保证。
 
 ## Edge Tunnel server --- Deno deploy
