@@ -1,5 +1,9 @@
 {
   "deno.codeLens.implementations": true,
   "deno.codeLens.references": true,
-  "deno.enablePaths": ["apps/deno-bypass", "apps/deno-vless"]
+  "deno.enablePaths": [
+    "apps/deno-bypass",
+    "apps/deno-vless/src/deno",
+    "apps/deno-vless/src/main.ts"
+  ]
 }

@@ -1,17 +1,14 @@
 import { serve } from 'https://deno.land/std@0.167.0/http/server.ts';
 import { parse, stringify, validate } from 'https://jspm.dev/uuid';
 import { chunk, join } from 'https://jspm.dev/lodash-es';
+import { serveClient } from './deno/client.ts';
 
-const userID = Deno.env.get('UUID');
-
-if (!validate(userID)) {
-  console.log('not valid userID');
-}
+const userID = Deno.env.get('UUID') || '';
 
 const handler = async (req: Request): Promise<Response> => {
   const upgrade = req.headers.get('upgrade') || '';
   if (upgrade.toLowerCase() != 'websocket') {
-    return new Response("request isn't trying to upgrade to websocket.");
+    return await serveClient(req, userID);
   }
   const { socket, response } = Deno.upgradeWebSocket(req);
   let remoteConnection: Deno.TcpConn;
