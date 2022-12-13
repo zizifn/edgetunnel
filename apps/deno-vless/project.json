@@ -4,16 +4,53 @@
   "sourceRoot": "apps/deno-vless/src",
   "projectType": "application",
   "targets": {
-    "run": {
-      "executor": "nx:run-commands",
+    "build": {
+      "executor": "@nrwl/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
       "options": {
-        "command": "deno run  --allow-net --allow-env --allow-write apps/deno-vless/src/main.ts "
+        "outputPath": "apps/deno-vless/src/client"
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
       }
     },
     "serve": {
+      "executor": "@nrwl/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "deno-vless:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "deno-vless:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "deno-vless:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "serve-deno": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "deno run --allow-net --allow-write --allow-env --watch apps/deno-vless/src/main.ts "
+        "command": "deno run --allow-net --allow-read --allow-write --allow-env --watch apps/deno-vless/src/main.ts"
+      }
+    },
+    "test": {
+      "executor": "@nrwl/vite:test",
+      "outputs": ["{projectRoot}/coverage"],
+      "options": {
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/deno-vless/**/*.{ts,tsx,js,jsx}"]
       }
     }
   },
