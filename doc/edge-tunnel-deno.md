@@ -28,12 +28,9 @@
 
 https://raw.githubusercontent.com/zizifn/edgetunnel/main/doc/deno-deploy.gif
 
-![deno-deploy](./deno-deploy.gif)
-
 如果 UUID 忘记 或者入口文件有变化，也可以在 deno 管理界面修改项目的配置。
 
 https://raw.githubusercontent.com/zizifn/edgetunnel/main/doc/deno-deploy2.gif
-![deno-deploy2](./deno-deploy2.gif)
 
 其他更多配置，比如使用量，请自行探索。
 
