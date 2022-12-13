@@ -39,5 +39,11 @@ https://raw.githubusercontent.com/zizifn/edgetunnel/main/doc/deno-deploy2.gif
 
 ## 项目地址
 
-点击 View 项目会自动打开。
-记住项目地址，并且**留意返回的网站内容**，是否有提供缺少关键配置。
+点击 View 项目会自动打开。一开始返回 `404`. 不要慌张, 把你设置的 `UUID` 添加到 URL 后面。
+
+下面是示例，请把 URL 和 UUID 换成自己的。
+`https://xxxxxx.deno.dev/015897c1-663d-4b2a-9f90-053b189cdc47`。
+
+如果出现下面的界面，都代表一切正常。
+
+![index](./index.jpg)
