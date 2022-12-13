@@ -47,7 +47,7 @@ function QRcodeImg({ text }: { text: string }) {
         src={codeImg}
         width="350"
         height="350"
-        alt="code"
+        alt="二维码"
         className="border-spacing-1"
       />
       <div className="flex flex-grow w-full bg-gray-200">
