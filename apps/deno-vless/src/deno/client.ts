@@ -3,9 +3,6 @@ import {
   serveFile,
 } from 'https://deno.land/std@0.167.0/http/file_server.ts';
 async function serveClient(req: Request, basePath: string) {
-  for await (const entry of Deno.readDir('.')) {
-    console.log(entry);
-  }
   const pathname = new URL(req.url).pathname;
   if (pathname.startsWith('/assets')) {
     const resp = await serveDir(req, {
@@ -19,21 +16,27 @@ async function serveClient(req: Request, basePath: string) {
       req,
       `${Deno.cwd()}/apps/deno-vless/src/client/index.html`
     );
-    // Do dynamic responses
-    // const indexHtml = await Deno.readFile(`${Deno.cwd()}/client/index.html`);
-    // return new Response(indexHtml, {
-    //   headers: {
-    //     'content-type': 'text/html; charset=utf-8',
-    //   },
-    // });
   }
-
-  return new Response(``, {
-    status: 404,
-    headers: {
-      'content-type': 'text/html; charset=utf-8',
-    },
-  });
+  const basicAuth = req.headers.get('Authorization') || '';
+  const authString = basicAuth.split(' ')?.[1] || '';
+  if (atob(authString).includes(basePath)) {
+    console.log('302');
+    return new Response(``, {
+      status: 302,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        Location: `./${basePath}`,
+      },
+    });
+  } else {
+    return new Response(``, {
+      status: 401,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'WWW-Authenticate': 'Basic',
+      },
+    });
+  }
 }
 
 export { serveClient };
