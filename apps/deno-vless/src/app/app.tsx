@@ -42,7 +42,7 @@ function QRcodeImg({ text }: { text: string }) {
   }
 
   return (
-    <div className="flex flex-col border border-blue-300 overflow-hidden w-[400px] h-[400px] justify-start items-center">
+    <div className="flex flex-col border border-blue-300 overflow-hidden w-[420px] h-[420px] justify-start items-center">
       <img
         src={codeImg}
         width="350"
@@ -51,7 +51,7 @@ function QRcodeImg({ text }: { text: string }) {
         className="border-spacing-1"
       />
       <div className="flex flex-grow w-full bg-gray-200">
-        <span className="flex-grow ">{text}</span>
+        <span className="flex-grow">{text}</span>
         <div className="w-6 h-6 ml-auto">
           <svg
             xmlns="http://www.w3.org/2000/svg"
