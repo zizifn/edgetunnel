@@ -25,6 +25,7 @@ jobs:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           command: publish --env ${{ github.event.inputs.environment || 'prod' }}
           workingDirectory: 'apps/cf-worker-vless'
+          environment: ${{ github.events.inputs.environment || 'prod' }}
           secrets: |
             UUID
         env:
