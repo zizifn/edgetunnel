@@ -28,7 +28,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           command: publish --env ${{ env.cf_environment || 'default' }}
-          workingDirectory: 'apps/cf-worker-vless'
+          workingDirectory: 'apps/cf-worker'
           environment: ${{ env.cf_environment || 'default' }}
           secrets: |
             UUID
