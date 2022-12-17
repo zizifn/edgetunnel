@@ -1,4 +1,4 @@
-name = "" # todo
+name = "my-vless-dev" # todo
 main = "./src/main.ts"
 compatibility_date = "2022-05-03"
 workers_dev = true # should be deployed to *.workers.dev

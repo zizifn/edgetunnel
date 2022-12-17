@@ -11,10 +11,6 @@ on:
         description: 'Choose an environment to deploy to: <dev|staging|prod>'
         required: true
         default: 'dev'
-      name:
-        description: 'Choose an environment to deploy to: <dev|staging|prod>'
-        required: true
-        default: 'my-vless-prod'
 
 jobs:
   deploy:
@@ -27,7 +23,7 @@ jobs:
         uses: cloudflare/wrangler-action@2.0.0
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
-          command: publish --env ${{ github.event.inputs.environment || 'prod' }} --name ${{ github.event.inputs.name }}
+          command: publish --env ${{ github.event.inputs.environment || 'prod' }}
           workingDirectory: 'apps/cf-worker-vless'
           secrets: |
             UUID
