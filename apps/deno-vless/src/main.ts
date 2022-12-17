@@ -11,7 +11,7 @@ if (!isVaildUser) {
 
 const handler = async (req: Request): Promise<Response> => {
   if (!isVaildUser) {
-    return new Response(``, {
+    return new Response(`not set valid UUID in Environment Variables`, {
       status: 401,
       headers: {
         'content-type': 'text/html; charset=utf-8',
