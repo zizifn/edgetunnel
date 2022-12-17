@@ -42,3 +42,6 @@ Thumbs.db
 **/config-local.json
 
 **/.env
+
+**/.dev.vars
+**/wrangler.toml
