@@ -15,7 +15,6 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@edge-bypass/test": ["libs/test/src/index.ts"],
       "vless-js": ["libs/vless-js/src/index.ts"]
     }
   },
