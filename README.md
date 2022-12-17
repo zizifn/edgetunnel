@@ -4,6 +4,8 @@
 
 **v2ray-heroku 由于 heroku 取消免费，项目已经死了。这里是新的项目。**
 
+> For international user, I write this readme in Chinese. But I understand English pretty well, if your has any issue, please open it in Github.
+
 > 项目正在开发，基本可用，会有 bug。。
 > **请定期按照 github 的提示，只同步到自己的项目。只需要在乎下图红框的提示，其他提示不要点击**。
 > ![sync](./doc/sync.jpg)
