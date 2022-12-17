@@ -1,21 +1,21 @@
 {
-  "name": "cf-worker-vless",
+  "name": "cf-worker",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/cf-worker-vless/src",
+  "sourceRoot": "apps/cf-worker/src",
   "projectType": "application",
   "targets": {
     "serve": {
       "executor": "nx:run-commands",
       "options": {
         "command": "wrangler dev",
-        "cwd": "apps/cf-worker-vless"
+        "cwd": "apps/cf-worker"
       }
     },
     "lint": {
       "executor": "@nrwl/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/cf-worker-vless/**/*.ts"]
+        "lintFilePatterns": ["apps/cf-worker/**/*.ts"]
       }
     }
   },

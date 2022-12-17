@@ -1,5 +1,5 @@
 name = "edge-tunnel-vless" # todo
-main = "./src/main.ts"
+main = "./src/index.ts"
 compatibility_date = "2022-05-03"
 workers_dev = true # should be deployed to *.workers.dev
 
