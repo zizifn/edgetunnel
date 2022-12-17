@@ -32,7 +32,6 @@
     ],
     "sharedGlobals": []
   },
-  "defaultProject": "edge-bypass-client",
   "generators": {
     "@nrwl/react": {
       "application": {
