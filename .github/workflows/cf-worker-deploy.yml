@@ -15,10 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: envsubst
-        if: ${{github.event.inputs.turn_k8s_base_app == 'ON'}}
         run: |
           envsubst < apps/cf-worker-vless/wrangler.toml.tp > apps/cf-worker-vless/wrangler.toml
-          echo cf_environment="custom" >> $GITHUB_ENV
+          if [[ $CUSTOM_DOMAIN ]]; then
+            echo cf_environment="custom" >> $GITHUB_ENV
+          else
+            echo "not set CUSTOM_DOMAIN"
+          fi
         env:
           CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN }}
       - name: Publish
