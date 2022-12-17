@@ -15,6 +15,7 @@ TEST_VAR = "TEST_VAR_DEV"
 
 [env.prod]
 name = "my-vless-prod"
+routes = [{ pattern = "cf-vless-prod.zizi.press", custom_domain = true }]
 
 [env.prod.vars]
 TEST_VAR = "TEST_VAR_PROD"
