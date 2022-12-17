@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - test-cf
   workflow_dispatch:
 
 jobs:
