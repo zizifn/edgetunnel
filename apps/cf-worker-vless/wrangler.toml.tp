@@ -10,6 +10,12 @@ TEST_VAR = "example_dev_token"
 name = "my-vless"
 workers_dev = true # should be deployed to *.workers.dev
 
+[env.default.vars]
+TEST_VAR = "TEST_VAR_DEV"
+
 [env.custom]
 name = "my-vless"
 routes = [{ pattern = "$CUSTOM_DOMAIN", custom_domain = true }]
+
+[env.custom.vars]
+TEST_VAR = "TEST_VAR_CUSTOM"

@@ -44,3 +44,4 @@ Thumbs.db
 **/.env
 
 **/.dev.vars
+**/wrangler.toml
