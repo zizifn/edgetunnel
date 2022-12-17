@@ -1,4 +1,4 @@
-name: Deploy
+name: cf-worker-deploy
 
 on:
   push:
