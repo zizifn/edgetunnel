@@ -6,6 +6,11 @@ on:
       - main
       - test-cf
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Choose an environment to deploy to: <dev|staging|prod>'
+        required: true
+        default: 'dev'
 
 jobs:
   deploy:
@@ -17,4 +22,5 @@ jobs:
         uses: cloudflare/wrangler-action@2.0.0
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
+          command: publish --env ${{ github.event.inputs.environment || 'prod' }}
         workingDirectory: 'apps/cf-worker-vless'
