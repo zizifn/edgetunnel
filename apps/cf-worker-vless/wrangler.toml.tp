@@ -1,4 +1,4 @@
-name = "my-vless" # todo
+name = "edge-tunnel-vless" # todo
 main = "./src/main.ts"
 compatibility_date = "2022-05-03"
 workers_dev = true # should be deployed to *.workers.dev
@@ -7,14 +7,14 @@ workers_dev = true # should be deployed to *.workers.dev
 TEST_VAR = "example_dev_token"
 
 [env.default]
-name = "my-vless"
+name = "edge-tunnel-vless"
 workers_dev = true # should be deployed to *.workers.dev
 
 [env.default.vars]
-TEST_VAR = "TEST_VAR_DEV"
+TEST_VAR = "TEST_VAR_DEFAULT"
 
 [env.custom]
-name = "my-vless"
+name = "edge-tunnel-vless"
 routes = [{ pattern = "$CUSTOM_DOMAIN", custom_domain = true }]
 
 [env.custom.vars]
