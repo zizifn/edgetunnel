@@ -11,7 +11,10 @@ if (!isVaildUser) {
 
 const handler = async (req: Request): Promise<Response> => {
   if (!isVaildUser) {
-    return new Response(`not set valid UUID in Environment Variables`, {
+    const index401 = await Deno.readFile(
+      `${Deno.cwd()}/apps/deno-vless/src/deno/401.html`
+    );
+    return new Response(index401, {
       status: 401,
       headers: {
         'content-type': 'text/html; charset=utf-8',
