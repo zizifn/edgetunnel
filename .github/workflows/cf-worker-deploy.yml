@@ -1,0 +1,37 @@
+name: cf-worker-deploy
+
+on:
+  push:
+    branches:
+      - main
+      - test-cf
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: CF
+    name: Deploy
+    steps:
+      - uses: actions/checkout@v2
+      - name: envsubst
+        run: |
+          envsubst < apps/cf-worker-vless/wrangler.toml.tp > apps/cf-worker-vless/wrangler.toml
+          if [[ $CUSTOM_DOMAIN ]]; then
+            echo cf_environment="custom" >> $GITHUB_ENV
+          else
+            echo "not set CUSTOM_DOMAIN"
+          fi
+        env:
+          CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN }}
+      - name: Publish
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          command: publish --env ${{ env.cf_environment || 'default' }}
+          workingDirectory: 'apps/cf-worker-vless'
+          environment: ${{ env.cf_environment || 'default' }}
+          secrets: |
+            UUID
+        env:
+          UUID: ${{ secrets.UUID }}
