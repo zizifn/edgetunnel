@@ -1,10 +1,9 @@
 name: cf-worker-deploy
 
 on:
-  push:
-    branches:
-      - main
-      - test-cf
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
