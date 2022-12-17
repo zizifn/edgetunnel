@@ -1,0 +1,15 @@
+name = "my-vless" # todo
+main = "./src/main.ts"
+compatibility_date = "2022-05-03"
+workers_dev = true # should be deployed to *.workers.dev
+
+[vars]
+TEST_VAR = "example_dev_token"
+
+[env.default]
+name = "my-vless"
+workers_dev = true # should be deployed to *.workers.dev
+
+[env.custom]
+name = "my-vless"
+routes = [{ pattern = "$CUSTOM_DOMAIN", custom_domain = true }]
