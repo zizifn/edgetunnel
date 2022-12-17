@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: envsubst
         run: |
-          envsubst < apps/cf-worker-vless/wrangler.toml.tp > apps/cf-worker-vless/wrangler.toml
+          envsubst < apps/cf-worker/wrangler.toml.tp > apps/cf-worker/wrangler.toml
           if [[ $CUSTOM_DOMAIN ]]; then
             echo cf_environment="custom" >> $GITHUB_ENV
           else
