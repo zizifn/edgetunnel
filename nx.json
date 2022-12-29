@@ -49,5 +49,6 @@
         "unitTestRunner": "vitest"
       }
     }
-  }
+  },
+  "defaultProject": "cf-page"
 }
