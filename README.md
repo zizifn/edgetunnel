@@ -23,8 +23,6 @@ Edge tunnel 的服务使用了 [Deno deploy](https://deno.com/deploy).
 `Deno deploy` 采用 [fair use policy](https://deno.com/deploy/docs/fair-use-policy), 翻译成中文就是`看良心使用`。 违反可能会封号。
 按照我的理解，本项目应该是违反 fair use policy。请大家**酌情使用**。
 
-> 这里十分感谢 Deno deploy 严肃对待 web standard， 支持 HTTP request & response streaming，让 edge tunnel 成为可能。
-
 ### 如何部署服务
 
 请查看下面教程。
