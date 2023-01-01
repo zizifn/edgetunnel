@@ -33,6 +33,13 @@
         }
       }
     },
+    "serve-cf-page": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "wrangler pages dev dist/apps/cf-page"
+      },
+      "dependsOn": ["^build"]
+    },
     "test": {
       "executor": "@nrwl/vite:test",
       "outputs": ["{projectRoot}/coverage"],
