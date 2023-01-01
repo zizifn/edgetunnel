@@ -4,7 +4,7 @@ import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import QRCode from 'qrcode';
 import { Fragment, useEffect, useState } from 'react';
 import { validate as uuidValidate } from 'uuid';
-export function App() {
+export function EdgeApp() {
   const [text, setText] = useState('');
   const [show, setShow] = useState(false);
   function handleShare(text: string) {
@@ -183,7 +183,7 @@ function ShareAnything({
         htmlFor="comment"
         className="block text-sm font-medium text-gray-700"
       >
-        随意要分享的内容
+        随意要分享的内容.
       </label>
       <div className="mt-1">
         <textarea
@@ -262,4 +262,4 @@ function Warning() {
   );
 }
 
-export default App;
+export default EdgeApp;
