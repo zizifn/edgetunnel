@@ -1,6 +1,6 @@
 import { index401 } from './util';
 import { parse, stringify, validate } from 'uuid';
-const skipUrls = ['ws'];
+const skipUrls = ['ws', 'assets'];
 
 async function errorHandling(context: EventContext<any, any, any>) {
   try {
@@ -23,9 +23,14 @@ function authentication(context: EventContext<any, any, any>) {
     });
   }
   // skip authentication
-  if (skipUrls.filter((url) => context.request.url.endsWith(url)).length) {
+  if (
+    skipUrls.filter((url) => context.request.url.includes(url)).length ||
+    // if url has uuid, skip auth
+    context.request.url.includes(userID)
+  ) {
     return context.next();
   }
+  // static page
   const basicAuth = context.request.headers.get('Authorization') || '';
   const authString = basicAuth.split(' ')?.[1] || '';
   if (!atob(authString).includes(userID)) {
@@ -37,7 +42,13 @@ function authentication(context: EventContext<any, any, any>) {
       },
     });
   } else {
-    return context.next();
+    return new Response(``, {
+      status: 302,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        Location: `./${userID}`,
+      },
+    });
   }
 }
 
