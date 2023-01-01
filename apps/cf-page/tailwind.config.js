@@ -9,7 +9,6 @@ module.exports = {
       '{src,pages,components}/**/*!(*.stories|*.spec).{ts,tsx,html}'
     ),
     ...createGlobPatternsForDependencies(__dirname),
-    'libs/edge-ui/src/lib/*.tsx',
   ],
   theme: {
     extend: {},
