@@ -67,7 +67,9 @@ async function processSocket({
         });
       },
       pull(controller) {},
-      cancel(reason) {},
+      cancel(reason) {
+        console.log(`[${address}:${port}] ReadableStream is cancel`, reason);
+      },
     });
     let remoteConnection: {
       readable: any;
