@@ -151,7 +151,7 @@ export async function processSocket({
                     .map((item) => item.toString(16).padStart(2, '0'))
                     .join('')
                 )
-                .join('.');
+                .join(':');
               break;
             default:
               console.log(`[${address}:${port}] invild address`);
