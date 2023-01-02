@@ -5,21 +5,31 @@ try {
     start(control) {
       setInterval(() => {
         control.enqueue('11');
-      }, 1000);
+      }, 100);
     },
     pull(control) {
-      control.enqueue('11');
+      // control.enqueue('11');
       // undefined.length;
       // control.close();
       //   control.error('error');
       //   undefined.length;
     },
+    cancel(reason) {
+      console.log('---------', reason);
+    },
   });
+
+  setTimeout(() => {
+    console.log('cancel');
+  }, 2000);
 
   await readableStream.pipeTo(
     new WritableStream({
       write(chunk, controller) {
         console.log(chunk);
+      },
+      close() {
+        console.log('close------WritableStream');
       },
     })
   );
