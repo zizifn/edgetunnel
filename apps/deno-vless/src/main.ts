@@ -62,13 +62,17 @@ async function processSocket({
           controller.error(e);
         });
         socket.addEventListener('close', () => {
-          console.log(`[${address}:${port}] socket is close`);
-          controller.close();
+          try {
+            console.log(`[${address}:${port}] socket is close`);
+            controller.close();
+          } catch (error) {
+            console.log(`[${address}:${port}] websocketStream can't close`);
+          }
         });
       },
       pull(controller) {},
       cancel(reason) {
-        console.log(`[${address}:${port}] ReadableStream is cancel`, reason);
+        console.log(`[${address}:${port}] websocketStream is cancel`, reason);
       },
     });
     let remoteConnection: {
