@@ -26,7 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
     return await serveClient(req, userID);
   }
   const { socket, response } = Deno.upgradeWebSocket(req);
-  socket.onopen = () => console.log('socket opened');
+  socket.addEventListener('open', () => {});
 
   processSocket({
     socket,
