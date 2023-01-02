@@ -91,6 +91,16 @@ addEventListener('fetch', (event) => {
 
 # FAQ
 
+## 那些平台可以使用？
+
+判断一个平台是否可以支持的，有 2 个必要条件，
+
+1. 是否支持 websocket
+   - 或者支持，HTTP request stream 也是可以的。https://developer.chrome.com/articles/fetch-streaming-requests/
+2. 可以创建 raw tcp socket
+
+> Cloudflare Worker 虽然支持 websocket，但是 Worker 的 runtime 没有支持 创建 raw tcp socket 的 API。
+
 ## 不支持 UDP
 
 由于 edge 平台限制，无法转发 UDP 包。所以 DNS 策略请设置成 `Asis`.
