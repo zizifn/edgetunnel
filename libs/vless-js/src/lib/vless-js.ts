@@ -84,10 +84,6 @@ export async function processSocket({
           // 0x03 MUX
           if (command === 1) {
           } else {
-            console.log(
-              `command ${command} is not support, command 01-tcp,02-udp,03-mux`
-            );
-            // socket.close();
             controller.error(
               `command ${command} is not support, command 01-tcp,02-udp,03-mux`
             );
