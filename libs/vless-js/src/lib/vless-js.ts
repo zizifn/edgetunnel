@@ -134,7 +134,7 @@ export async function processSocket({
               break;
             case 3:
               addressLength = 16;
-              const addressChunkBy2: number[][] = lodash.lodashChunk(
+              const addressChunkBy2: number[][] = lodash.chunk(
                 new Uint8Array(
                   vlessBuffer.slice(
                     addressValueIndex,
