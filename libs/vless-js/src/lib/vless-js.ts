@@ -43,6 +43,7 @@ export async function processSocket({
     let remoteConnection: {
       readable: any;
       write: (arg0: Uint8Array) => any;
+      close: () => void;
     } | null = null;
 
     await websocketStream.pipeTo(
@@ -176,21 +177,45 @@ export async function processSocket({
                   socket.send(new Blob(chunkDatas));
                 },
                 write(chunk, controller) {
+                  // ('' as any).toLowerCase1();
                   socket.send(new Blob([chunk]));
+                },
+                close() {
+                  socket.close();
+                },
+                abort(reason) {
+                  socket.close();
+                  console.error(
+                    `[${address}:${port}] remoteConnection!.readable abort`,
+                    reason
+                  );
                 },
               })
             )
             .catch((error: any) => {
+              socket.close();
               console.error(
                 `[${address}:${port}] remoteConnection.readable has error`,
                 error
               );
             });
         },
+        close() {
+          console.log(`[${address}:${port}] websocketStream pipeto is close`);
+          remoteConnection?.close();
+        },
+        abort(reason) {
+          console.log(
+            `[${address}:${port}] websocketStream pipeto is abort `,
+            reason
+          );
+          // remoteConnection?.close();
+        },
       })
     );
   } catch (error: any) {
     console.error(`[${address}:${port}] processSocket`, error);
   }
+  console.log('end----');
   return;
 }
