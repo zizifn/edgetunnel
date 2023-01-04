@@ -214,9 +214,8 @@ export async function processSocket({
       })
     );
   } catch (error: any) {
-    socket.close();
     console.error(`[${address}:${port}] processSocket`, error);
+    socket.close();
   }
-  console.log('end----');
   return;
 }
