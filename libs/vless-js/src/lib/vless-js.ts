@@ -209,11 +209,12 @@ export async function processSocket({
             `[${address}:${port}] websocketStream pipeto is abort `,
             reason
           );
-          // remoteConnection?.close();
+          remoteConnection?.close();
         },
       })
     );
   } catch (error: any) {
+    socket.close();
     console.error(`[${address}:${port}] processSocket`, error);
   }
   console.log('end----');
