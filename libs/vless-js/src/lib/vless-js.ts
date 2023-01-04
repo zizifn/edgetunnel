@@ -182,6 +182,9 @@ export async function processSocket({
                   socket.send(new Blob([chunk]));
                 },
                 close() {
+                  console.error(
+                    `[${address}:${port}] remoteConnection!.readable is close`
+                  );
                   socket.close();
                 },
                 abort(reason) {
