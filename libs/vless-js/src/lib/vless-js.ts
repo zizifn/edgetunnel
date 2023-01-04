@@ -38,6 +38,7 @@ export async function processSocket({
       pull(controller) {},
       cancel(reason) {
         console.log(`[${address}:${port}] websocketStream is cancel`, reason);
+        socket.close();
       },
     });
     let remoteConnection: {
@@ -202,7 +203,6 @@ export async function processSocket({
         },
         close() {
           console.log(`[${address}:${port}] websocketStream pipeto is close`);
-          remoteConnection?.close();
         },
         abort(reason) {
           console.log(
@@ -210,6 +210,7 @@ export async function processSocket({
             reason
           );
           remoteConnection?.close();
+          socket.close();
         },
       })
     );
