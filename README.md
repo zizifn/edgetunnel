@@ -103,6 +103,8 @@ addEventListener('fetch', (event) => {
 });
 ```
 
+优选 IP https://github.com/XIU2/CloudflareSpeedTest
+
 # FAQ
 
 ## 那些平台可以使用？
