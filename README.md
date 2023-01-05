@@ -9,7 +9,7 @@
 > For international user, I write this readme in Chinese. But I understand English pretty well, if you has any issue, please open it in Github.
 
 > 项目正在完善阶段，欢迎大家使用，如果发现 bug， 请开 issue。
-> **请定期按照 github 的提示，只同步到自己的项目。只需要在乎下图红框的提示，其他提示不要点击**。
+> **请定期按照 github 的提示，同步最新代码。只需要在乎下图红框的提示，其他提示不要点击**。
 > ![sync](./doc/sync.jpg)
 
 > 同步完成后，如果发现不一样，**请看文档**。
