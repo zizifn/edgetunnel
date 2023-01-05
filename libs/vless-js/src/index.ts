@@ -1,1 +1,1 @@
-export * from './lib/vless-js';
+export { vlessJs, processSocket } from './lib/vless-js';
