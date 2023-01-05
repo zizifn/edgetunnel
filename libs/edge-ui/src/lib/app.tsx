@@ -219,7 +219,7 @@ function ShareActions({
   function getVlessURL() {
     const url = new URL(window.location.href);
     const uuid = url.pathname.split('/').find(uuidValidate);
-    return `vless://${uuid}@${url.hostname}:443?encryption=none&security=tls&type=ws#deno-vless`;
+    return `vless://${uuid}@${url.hostname}:443?encryption=none&security=tls&type=ws#v2ray-edge`;
   }
   return (
     <span className="inline-flex self-center mt-4 rounded-md shadow-sm isolate">
