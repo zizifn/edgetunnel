@@ -16,7 +16,7 @@
 
 > 本项目纯属技术性验证，探索最新的 web standard。不给予任何保证。
 
-## Edge Tunnel server --- Deno deploy
+## V2ray Edge server --- Deno deploy
 
 Edge tunnel 的服务使用了 [Deno deploy](https://deno.com/deploy).
 
@@ -31,7 +31,7 @@ Edge tunnel 的服务使用了 [Deno deploy](https://deno.com/deploy).
 
 [Deno deploy Install](./doc/edge-tunnel-deno.md)
 
-## Edge Tunnel server --- Cloudflare Worker （敬请期待）
+## V2ray Edge server --- Cloudflare Worker （敬请期待）
 
 这个需要等 Cloudflare 发布下面的技术。
 https://blog.cloudflare.com/introducing-socket-workers/
