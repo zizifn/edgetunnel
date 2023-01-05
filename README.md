@@ -40,9 +40,17 @@ https://blog.cloudflare.com/introducing-socket-workers/
 
 > [ DNS 科普文章](https://tachyondevel.medium.com/%E6%BC%AB%E8%B0%88%E5%90%84%E7%A7%8D%E9%BB%91%E7%A7%91%E6%8A%80%E5%BC%8F-dns-%E6%8A%80%E6%9C%AF%E5%9C%A8%E4%BB%A3%E7%90%86%E7%8E%AF%E5%A2%83%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8-62c50e58cbd0)
 
+### Windows 版本
+
 https://github.com/2dust/v2rayN
 别人的配置教程参考，https://v2raytech.com/v2rayn-config-tutorial/.
 ![v2rayN](./doc/v2rayn.jpg)
+
+### 安卓
+
+如果遇到安卓无法使用, 请参考如下配置，多尝试下 DNS 设置。
+
+![andriod-v2ray](./doc/andriod_v2rayn.jpg)
 
 ## VLESS websocket 客户端配置
 
