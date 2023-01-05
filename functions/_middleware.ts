@@ -42,13 +42,18 @@ function authentication(context: EventContext<any, any, any>) {
       },
     });
   } else {
-    return new Response(``, {
-      status: 302,
-      headers: {
-        'content-type': 'text/html; charset=utf-8',
-        Location: `./${userID}`,
-      },
-    });
+    const url = new URL(context.request.url);
+    if (url.pathname === '/') {
+      return new Response(``, {
+        status: 302,
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          Location: `./${userID}`,
+        },
+      });
+    } else {
+      return context.next();
+    }
   }
 }
 
