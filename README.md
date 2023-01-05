@@ -36,6 +36,10 @@ Edge tunnel 的服务使用了 [Deno deploy](https://deno.com/deploy).
 这个需要等 Cloudflare 发布下面的技术。
 https://blog.cloudflare.com/introducing-socket-workers/
 
+> Cloudflare 大气的免费政策，外加 优选 IP。使得 部署 V2ray 变得无比简单。
+
+> 这个不是利用 Worker 进行反代， 而是直接部署 V2ray （js 版本）到 Worker 上。
+
 ## 客户端 v2rayN 配置
 
 > ⚠️ 由于 edge 平台限制，无法转发 UDP 包。请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
