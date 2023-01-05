@@ -30,6 +30,7 @@ export function EdgeApp() {
         <div className="flex flex-col h-full ite">
           <QRcodeImg text={text}></QRcodeImg>
           <ShareActions handleShare={handleShare}></ShareActions>
+          <SetUpAlert></SetUpAlert>
           <ShareAnything handleShare={handleShare}></ShareAnything>
         </div>
       </div>
@@ -38,6 +39,35 @@ export function EdgeApp() {
   );
 }
 
+function SetUpAlert() {
+  return (
+    <div className="p-4 rounded-md bg-yellow-50">
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <ExclamationTriangleIcon
+            className="w-5 h-5 text-yellow-400"
+            aria-hidden="true"
+          />
+        </div>
+        <div className="ml-3">
+          <h3 className="text-sm font-medium text-yellow-800">请注意！</h3>
+          <div className="mt-2 text-sm text-yellow-700">
+            <p>
+              如果遇到连不上网的情况, 请查看/参考具体客户端的 &nbsp;
+              <a
+                target="_blank"
+                href="https://github.com/zizifn/edgetunnel#%E5%AE%A2%E6%88%B7%E7%AB%AF-v2rayn-%E9%85%8D%E7%BD%AE"
+                className="font-medium text-yellow-700 underline hover:text-yellow-600"
+              >
+                DNS 相关设置。
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 function ShareNotifications({
   show,
   setShow,
