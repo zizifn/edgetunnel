@@ -2,7 +2,7 @@
 
 众所周知，V2ray 是基于 `go` 的，导致原版 V2ray 无法部署到基于 `js(V8)` 的平台上。
 
-本项目通过，使用 `js` 实现 `VLESS`协议， 使得 **V2ray** 可以部署到 Edge/Serverless Functions 平台上。
+本项目通过，使用 `js` 实现 `VLESS`协议， 使得 **V2ray** 可以部署到一些 Edge/Serverless Functions 平台上。
 
 **v2ray-heroku 由于 heroku 取消免费，项目已经死了。这里是新的项目。**
 
