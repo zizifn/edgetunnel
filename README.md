@@ -14,7 +14,7 @@
 
 > 同步完成后，如果发现不一样，**请看文档**。
 
-> 本项目纯属技术性验证，探索最新的 web standard。不给予任何保证。
+> 本项目纯属技术性验证，探索最新的 web standard。请勿乱用，不给予任何保证。
 
 ## V2ray Edge server --- Deno deploy
 
