@@ -54,8 +54,12 @@ https://github.com/2dust/v2rayN
 
 ### 安卓
 
+[v2rayNG](https://github.com/2dust/v2rayNG)
+[SagerNet](https://github.com/SagerNet/SagerNet)
+
 如果遇到安卓无法使用, 请参考如下配置，多尝试下 DNS 设置。
 
+v2rayNG 设置。
 ![andriod-v2ray](./doc/andriod_v2rayn.jpg)
 
 ## VLESS websocket 客户端配置
