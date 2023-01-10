@@ -2,6 +2,11 @@ export function vlessJs(): string {
   return 'vless-js';
 }
 
+function delay(ms: number) {
+  return new Promise((resolve, rej) => {
+    setTimeout(resolve, ms);
+  });
+}
 export async function processSocket({
   userID,
   socket,
@@ -170,8 +175,9 @@ export async function processSocket({
           const rawClientData = vlessBuffer.slice(rawDataIndex);
           await remoteConnection!.write(new Uint8Array(rawClientData));
           let chunkDatas = [new Uint8Array([version[0], 0])];
-          // let sizes = 0;
+          let totoal = 0;
           // get response from remoteConnection
+          let remoteChunkCount = 0;
           remoteConnection!.readable
             .pipeTo(
               new WritableStream({
@@ -186,10 +192,19 @@ export async function processSocket({
 
                   // https://github.com/zizifn/edgetunnel/issues/87, hack for this issue, maybe websocket sent too many small chunk,
                   // casue v2ray client can't process
-                  await new Promise((res, rej) => {
-                    setTimeout(res, 2);
-                  });
-                  socket.send(chunk);
+                  console.log(
+                    `${(totoal +=
+                      chunk.length)}, count: ${remoteChunkCount.toString()}, ${
+                      chunk.length
+                    }`
+                  );
+                  //don't limit X number count
+                  if (remoteChunkCount < 20) {
+                    socket.send(chunk);
+                  } else {
+                    await delay(10);
+                    socket.send(chunk);
+                  }
                 },
                 close() {
                   console.error(
