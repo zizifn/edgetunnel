@@ -199,11 +199,17 @@ export async function processSocket({
                       chunk.length
                     }`
                   );
-                  //don't limit X number count
+                  //don't limit X number count, due to deno can't read bufferedAmount
                   if (remoteChunkCount < 20) {
                     socket.send(chunk);
-                  } else {
+                  } else if (remoteChunkCount < 100) {
                     await delay(10);
+                    socket.send(chunk);
+                  } else if (remoteChunkCount < 500) {
+                    await delay(50);
+                    socket.send(chunk);
+                  } else {
+                    await delay(100);
                     socket.send(chunk);
                   }
                 },
