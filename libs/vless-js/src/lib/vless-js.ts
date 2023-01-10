@@ -192,6 +192,7 @@ export async function processSocket({
 
                   // https://github.com/zizifn/edgetunnel/issues/87, hack for this issue, maybe websocket sent too many small chunk,
                   // casue v2ray client can't process
+                  remoteChunkCount++;
                   console.log(
                     `${(totoal +=
                       chunk.length)}, count: ${remoteChunkCount.toString()}, ${
