@@ -203,13 +203,10 @@ export async function processSocket({
                   if (remoteChunkCount < 20) {
                     socket.send(chunk);
                   } else if (remoteChunkCount < 100) {
-                    await delay(10);
-                    socket.send(chunk);
-                  } else if (remoteChunkCount < 500) {
-                    await delay(50);
+                    await delay(10); // 64kb * 100 = 6m/s
                     socket.send(chunk);
                   } else {
-                    await delay(100);
+                    await delay(50); // 64kb * 20 = 1.2m/s
                     socket.send(chunk);
                   }
                 },
