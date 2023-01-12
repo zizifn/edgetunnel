@@ -209,11 +209,11 @@ export async function processWebSocket({
           } else if (remoteChunkCount < 120) {
             await delay(10); // 64kb * 100 = 6m/s
             send2WebSocket();
-          } else if (remoteChunkCount < 800) {
+          } else if (remoteChunkCount < 500) {
             await delay(20); // (64kb * 1000/20) = 3m/s
             send2WebSocket();
           } else {
-            await delay(40); // (64kb * 1000/40) /s
+            await delay(40); // (64kb * 1000/40)  /s
             send2WebSocket();
           }
         },
