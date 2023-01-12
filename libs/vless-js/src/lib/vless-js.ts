@@ -228,7 +228,10 @@ export async function processWebSocket({
       })
     );
   } catch (error: any) {
-    console.error(`[${address}:${port}] processSocket`, error.stack);
+    console.error(
+      `[${address}:${port}] processWebSocket has esception `,
+      error.stack || error
+    );
     closeWebSocket(webSocket);
   }
   return;
