@@ -201,7 +201,8 @@ export async function processWebSocket({
           // );
           // https://github.com/zizifn/edgetunnel/issues/87, hack for this issue, maybe websocket sent too many small chunk,
           // casue v2ray client can't process
-          // limit X number count / bandwith, due to deno can't read bufferedAmount in deno, this is deno bug
+          // limit X number count / bandwith, due to deno can't read bufferedAmount in deno,
+          // this is deno bug and this will not need in nodejs version
           //#endregion
           if (remoteChunkCount < 20) {
             send2WebSocket();
@@ -209,7 +210,7 @@ export async function processWebSocket({
             await delay(10); // 64kb * 100 = 6m/s
             send2WebSocket();
           } else {
-            await delay(20); // 64kb * 20 = 1.2m/s
+            await delay(20); // 64kb * 1000/20 = 3m/s
             send2WebSocket();
           }
         },
