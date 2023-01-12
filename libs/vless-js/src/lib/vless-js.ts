@@ -204,7 +204,7 @@ export async function processWebSocket({
           // limit X number count / bandwith, due to deno can't read bufferedAmount in deno,
           // this is deno bug and this will not need in nodejs version
           //#endregion
-          if (remoteChunkCount < 30) {
+          if (remoteChunkCount < 20) {
             send2WebSocket();
           } else if (remoteChunkCount < 120) {
             await delay(10); // 64kb * 100 = 6m/s
