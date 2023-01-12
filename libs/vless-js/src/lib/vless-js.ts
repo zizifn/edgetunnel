@@ -165,7 +165,7 @@ export async function processWebSocket({
       .catch((error) => {
         console.log(
           `[${address}:${port}] readableWebSocketStream pipeto has exception`,
-          error.stack
+          error.stack || error
         );
         closeWebSocket(webSocket);
         // close remote conn
@@ -204,13 +204,13 @@ export async function processWebSocket({
           // limit X number count / bandwith, due to deno can't read bufferedAmount in deno,
           // this is deno bug and this will not need in nodejs version
           //#endregion
-          if (remoteChunkCount < 20) {
+          if (remoteChunkCount < 30) {
             send2WebSocket();
-          } else if (remoteChunkCount < 100) {
+          } else if (remoteChunkCount < 120) {
             await delay(10); // 64kb * 100 = 6m/s
             send2WebSocket();
           } else {
-            await delay(20); // 64kb * 1000/20 = 3m/s
+            await delay(25); // 64kb * 1000/20 = 3m/s
             send2WebSocket();
           }
         },
