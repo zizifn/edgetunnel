@@ -8,7 +8,7 @@
       "request": "launch",
       "name": "Launch Program",
       "type": "pwa-node",
-      "program": "C:\\github\\edgetunnel\\apps\\deno-vless\\src\\main.ts",
+      "program": "C:\\github\\test-deno\\apps\\deno-vless\\src\\main.ts",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "C:\\Users\\zizifn\\scoop\\shims\\deno.EXE",
       "runtimeArgs": ["run", "--inspect", "--allow-all", "--unstable"],
