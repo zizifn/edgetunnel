@@ -213,7 +213,7 @@ export async function processWebSocket({
             await delay(20); // (64kb * 1000/20) = 3m/s
             send2WebSocket();
           } else {
-            await delay(40); // (64kb * 1000/40)  /s
+            await delay(50); // (64kb * 1000/40)  /s
             send2WebSocket();
           }
         },
