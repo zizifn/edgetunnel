@@ -2,7 +2,7 @@ import { serve } from 'https://deno.land/std@0.170.0/http/server.ts';
 import * as uuid from 'https://jspm.dev/uuid';
 import * as lodash from 'https://jspm.dev/lodash-es';
 import { serveClient } from './deno/client.ts';
-import { processSocket } from '../../../libs/vless-js/src/lib/vless-js.ts';
+import { processWebSocket } from '../../../libs/vless-js/src/lib/vless-js.ts';
 
 const userID = Deno.env.get('UUID') || '';
 let isVaildUser = uuid.validate(userID);
@@ -29,9 +29,12 @@ const handler = async (req: Request): Promise<Response> => {
   const { socket, response } = Deno.upgradeWebSocket(req);
   socket.addEventListener('open', () => {});
 
-  processSocket({
+  let test: Deno.TcpConn | null = null;
+  // test!.writable.abort();
+  //
+  processWebSocket({
     userID,
-    socket,
+    webSocket: socket,
     rawTCPFactory: (port: number, hostname: string) => {
       return Deno.connect({
         port,
