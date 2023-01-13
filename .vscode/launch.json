@@ -8,13 +8,13 @@
       "request": "launch",
       "name": "Launch Program",
       "type": "pwa-node",
-      "program": "C:\\github\\edgetunnel\\apps\\deno-vless\\src\\main.ts",
+      "program": "C:\\github\\test-deno\\apps\\deno-vless\\src\\main.ts",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "C:\\Users\\zizifn\\scoop\\shims\\deno.EXE",
       "runtimeArgs": ["run", "--inspect", "--allow-all", "--unstable"],
       "attachSimplePort": 9229,
       "env": {
-        "UUID": ""
+        "UUID": "e0a102c8-51c8-436c-860b-ef279d8a6ada"
       }
     }
   ]
