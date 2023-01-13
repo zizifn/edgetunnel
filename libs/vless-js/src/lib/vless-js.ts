@@ -200,7 +200,7 @@ export async function processWebSocket({
           //   }`
           // );
           // https://github.com/zizifn/edgetunnel/issues/87, hack for this issue, maybe websocket sent too many small chunk,
-          // casue v2ray client can't process
+          // casue v2ray client can't process https://github.com/denoland/deno/issues/17332
           // limit X number count / bandwith, due to deno can't read bufferedAmount in deno,
           // this is deno bug and this will not need in nodejs version
           //#endregion
