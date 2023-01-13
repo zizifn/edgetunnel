@@ -184,7 +184,7 @@ export async function processWebSocket({
           function send2WebSocket() {
             if (webSocket.readyState !== webSocket.OPEN) {
               controller.error(
-                `[${address}:${port}] webSocket is close can't accept data from remoteConnection!.readable`
+                `[${address}:${port}] abort when webSocket is close can't accept data from remoteConnection!.readable`
               );
               return;
             }
