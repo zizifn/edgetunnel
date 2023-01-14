@@ -163,9 +163,9 @@ export async function processWebSocket({
         })
       )
       .catch((error) => {
-        console.log(
+        console.error(
           `[${address}:${port}] readableWebSocketStream pipeto has exception`,
-          error.stack || error
+          JSON.stringify(error.stack || error)
         );
         // closeWebSocket(webSocket);
         // close remote conn
@@ -186,7 +186,7 @@ export async function processWebSocket({
           function send2WebSocket() {
             if (webSocket.readyState !== webSocket.OPEN) {
               controller.error(
-                `can't accept data from remoteConnection!.readable when when webSocket is close`
+                `can't accept data from remoteConnection!.readable when client webSocket is close early`
               );
               return;
             }
