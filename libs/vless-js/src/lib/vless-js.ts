@@ -273,6 +273,7 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
       });
       ws.addEventListener('error', (e) => {
         log('socket has error');
+        readableStreamCancel = true;
         controller.error(e);
       });
       ws.addEventListener('close', () => {
@@ -284,13 +285,16 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
           }
           controller.close();
         } catch (error) {
-          log(`websocketStream can't close`, error);
+          log(`websocketStream can't close DUE to `, error);
         }
       });
     },
     pull(controller) {},
     cancel(reason) {
-      log(`websocketStream is cancel`, reason);
+      log(`websocketStream is cancel DUE to `, reason);
+      if (readableStreamCancel) {
+        return;
+      }
       readableStreamCancel = true;
       closeWebSocket(ws);
     },
