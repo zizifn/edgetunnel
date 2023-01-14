@@ -164,8 +164,16 @@ export async function processWebSocket({
             await remoteConnection!.write(new Uint8Array(rawClientData));
             remoteConnectionReadyResolve(remoteConnection);
           },
-          close() {},
-          abort(reason) {},
+          close() {
+            console.log(
+              `[${address}:${port}] readableWebSocketStream is close`
+            );
+          },
+          abort(reason) {
+            console.log(
+              `[${address}:${port}] readableWebSocketStream is abort`
+            );
+          },
         })
       )
       .catch((error) => {
