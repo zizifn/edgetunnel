@@ -164,12 +164,8 @@ export async function processWebSocket({
             await remoteConnection!.write(new Uint8Array(rawClientData));
             remoteConnectionReadyResolve(remoteConnection);
           },
-          close() {
-            remoteConnection?.close();
-          },
-          abort(reason) {
-            remoteConnection?.close();
-          },
+          close() {},
+          abort(reason) {},
         })
       )
       .catch((error) => {
@@ -177,9 +173,9 @@ export async function processWebSocket({
           `[${address}:${port}] readableWebSocketStream pipeto has exception`,
           JSON.stringify(error.stack || error)
         );
-        // closeWebSocket(webSocket);
+        closeWebSocket(webSocket);
         // close remote conn
-        remoteConnection?.close();
+        // remoteConnection?.close();
       });
     await new Promise((resolve) => (remoteConnectionReadyResolve = resolve));
     let remoteChunkCount = 0;
