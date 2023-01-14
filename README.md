@@ -1,6 +1,6 @@
 # V2ray Edge（Beta）
 
-众所周知，V2ray 是基于 `go` 的，导致原版 V2ray 无法部署到基于 `javascript (V8)` 的平台上。
+众所周知，V2ray 是基于 `go` 的，导致原版 V2ray 无法部署到基于 `javaScript (V8)` 的平台上。
 
 本项目通过，使用 `js` 实现 `VLESS`协议， 使得 **V2ray** 可以部署到一些 Edge 或者 Serverless 平台上。
 
