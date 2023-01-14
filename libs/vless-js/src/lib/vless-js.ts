@@ -178,13 +178,15 @@ export async function processWebSocket({
     await remoteConnection!.readable.pipeTo(
       new WritableStream({
         start() {
-          webSocket.send(vlessResponseHeader!);
+          if (webSocket.readyState === webSocket.OPEN) {
+            webSocket.send(vlessResponseHeader!);
+          }
         },
         async write(chunk: Uint8Array, controller) {
           function send2WebSocket() {
             if (webSocket.readyState !== webSocket.OPEN) {
               controller.error(
-                `[${address}:${port}] abort when webSocket is close can't accept data from remoteConnection!.readable`
+                `[${address}:${port}] can't accept data from remoteConnection!.readable when when webSocket is close`
               );
               return;
             }
@@ -233,7 +235,7 @@ export async function processWebSocket({
     );
   } catch (error: any) {
     console.error(
-      `[${address}:${port}] processWebSocket has esception `,
+      `[${address}:${port}] processWebSocket has exception `,
       error.stack || error
     );
     closeWebSocket(webSocket);
