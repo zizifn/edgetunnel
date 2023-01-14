@@ -140,6 +140,10 @@ export async function processWebSocket({
                       .join('')
                   )
                   .join(':');
+                if (addressValue) {
+                  addressValue = `[${addressValue}]`;
+                }
+
                 break;
               default:
                 console.log(`[${address}:${port}] invild address`);
@@ -159,6 +163,12 @@ export async function processWebSocket({
             const rawClientData = vlessBuffer.slice(rawDataIndex);
             await remoteConnection!.write(new Uint8Array(rawClientData));
             remoteConnectionReadyResolve(remoteConnection);
+          },
+          close() {
+            remoteConnection?.close();
+          },
+          abort(reason) {
+            remoteConnection?.close();
           },
         })
       )
@@ -225,7 +235,7 @@ export async function processWebSocket({
           );
         },
         abort(reason) {
-          // closeWebSocket(webSocket);
+          closeWebSocket(webSocket);
           console.error(
             `[${address}:${port}] remoteConnection!.readable abort`,
             reason
