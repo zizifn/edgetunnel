@@ -179,7 +179,7 @@ export async function processWebSocket({
       .catch((error) => {
         console.error(
           `[${address}:${port}] readableWebSocketStream pipeto has exception`,
-          JSON.stringify(error.stack || error)
+          error.stack || error
         );
         // error is cancel readable stream anyway, no need close websocket in here
         // closeWebSocket(webSocket);
