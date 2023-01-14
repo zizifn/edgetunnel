@@ -255,10 +255,10 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
       });
       ws.addEventListener('close', () => {
         try {
-          log('socket is close');
+          // log('socket is close');
           controller.close();
         } catch (error) {
-          log(`websocketStream can't close`);
+          log(`websocketStream can't close`, error);
         }
       });
     },
