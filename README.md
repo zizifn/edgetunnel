@@ -40,6 +40,14 @@ https://blog.cloudflare.com/introducing-socket-workers/
 
 > 这个不是利用 Worker 进行反代， 而是直接部署 V2ray （js 版本）到 Worker 上。
 
+## V2ray Edge server --- Node.js
+
+很多 Node.js 的平台都是支持 docker 的，所以可以直接部署原版。但是既然很多人要，我就写一个，但是我不承若一定回答关于 Node.js 平台的所有问题。因为太多了。
+
+### railway.app
+
+### render.com
+
 ## 客户端 v2rayN 配置
 
 > ⚠️ 由于 edge 平台限制，无法转发 UDP 包。请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
@@ -50,11 +58,13 @@ https://blog.cloudflare.com/introducing-socket-workers/
 
 https://github.com/2dust/v2rayN
 别人的配置教程参考，https://v2raytech.com/v2rayn-config-tutorial/.
-![v2rayN](./doc/v2rayn.jpg)
+
+具体配置，请参考部署服务的主页。
 
 ### 安卓
 
 [v2rayNG](https://github.com/2dust/v2rayNG)
+
 [SagerNet](https://github.com/SagerNet/SagerNet)
 
 如果遇到安卓无法使用, 请参考如下配置，多尝试下 DNS 设置。
@@ -62,40 +72,13 @@ https://github.com/2dust/v2rayN
 v2rayNG 设置。
 ![andriod-v2ray](./doc/andriod_v2rayn.jpg)
 
-## VLESS websocket 客户端配置
+### IOS
 
-> ⚠️ 由于 edge 平台限制，无法转发 UDP 包。请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
+> 需要美国区账户
 
-```json
-"outbounds": [
-        {
-            "protocol": "vless",
-            "settings": {
-                "vnext": [
-                    {
-                        "address": "***.herokuapp.com", // edge app URL 或者 cloudflare worker url/ip
-                        "port": 443,
-                        "users": [
-                            {
-                                "id": "", // 填写你的 UUID
-                                "encryption": "none"
-                            }
-                        ]
-                    }
-                ]
-            },
-            "streamSettings": {
-                "network": "ws",
-                "security": "tls",
-                "tlsSettings": {
-                    "serverName": "***.***.com" // edge app host 或者 cloudflare worker host
-                }
-              }
-          }
-    ]
-```
+[shadowrocket](https://apps.apple.com/us/app/shadowrocket/id932747118)
 
-## 建立 cloudflare worker （可选）
+## 建立 cloudflare worker 反代 （可选）
 
 ```js
 const targetHost = 'xxx.xxxx.dev'; //你的 edge function 的hostname
