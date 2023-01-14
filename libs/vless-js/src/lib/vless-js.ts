@@ -50,10 +50,11 @@ export async function processWebSocket({
               hasError,
               message,
               portRemote,
-              addressRemote: address,
+              addressRemote,
               rawDataIndex,
               vlessVersion,
             } = processVlessHeader(vlessBuffer, userID, uuid, lodash);
+            address = addressRemote || '';
             portWithRandomLog = `${portRemote}--${Math.random()}`;
             if (hasError) {
               controller.error(`[${address}:${portWithRandomLog}] ${message} `);
