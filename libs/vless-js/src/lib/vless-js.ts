@@ -171,7 +171,8 @@ export async function processWebSocket({
           },
           abort(reason) {
             console.log(
-              `[${address}:${port}] readableWebSocketStream is abort`
+              `[${address}:${port}] readableWebSocketStream is abort`,
+              reason
             );
           },
         })
