@@ -2,7 +2,7 @@ export function vlessJs(): string {
   return 'vless-js';
 }
 
-function delay(ms: number) {
+export function delay(ms: number) {
   return new Promise((resolve, rej) => {
     setTimeout(resolve, ms);
   });
@@ -163,16 +163,19 @@ export async function processWebSocket({
   return;
 }
 
-function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
+export function makeReadableWebSocketStream(
+  ws: WebSocket | any,
+  log: Function
+) {
   let readableStreamCancel = false;
   return new ReadableStream<ArrayBuffer>({
     start(controller) {
-      ws.addEventListener('message', async (e) => {
+      ws.addEventListener('message', async (e: { data: ArrayBuffer }) => {
         const vlessBuffer: ArrayBuffer = e.data;
         // console.log(`message is ${vlessBuffer.byteLength}`);
         controller.enqueue(vlessBuffer);
       });
-      ws.addEventListener('error', (e) => {
+      ws.addEventListener('error', (e: any) => {
         log('socket has error');
         readableStreamCancel = true;
         controller.error(e);
@@ -208,7 +211,7 @@ function closeWebSocket(socket: WebSocket) {
   }
 }
 
-function processVlessHeader(
+export function processVlessHeader(
   vlessBuffer: ArrayBuffer,
   userID: string,
   uuidLib: any,
