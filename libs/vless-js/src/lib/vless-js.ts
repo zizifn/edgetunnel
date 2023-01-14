@@ -19,6 +19,7 @@ export async function processWebSocket({
   libs: { uuid: any; lodash: any };
 }) {
   let address = '';
+  let portWithRandomLog = '';
   let port = 0;
   let remoteConnection: {
     readable: any;
@@ -29,7 +30,7 @@ export async function processWebSocket({
   let remoteConnectionReadyResolve: Function;
   try {
     const log = (info: string, event?: any) => {
-      console.log(`[${address}:${port}] ${info}`, event || '');
+      console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
     };
     const readableWebSocketStream = makeReadableWebSocketStream(webSocket, log);
     let vlessResponseHeader: Uint8Array | null = null;
@@ -85,7 +86,7 @@ export async function processWebSocket({
             const portBuffer = vlessBuffer.slice(portIndex, portIndex + 2);
             // port is big-Endian in raw data etc 80 == 0x005d
             const portRemote = new DataView(portBuffer).getInt16(0);
-            port = portRemote;
+            portWithRandomLog = `${portRemote}--${Math.random()}`;
             let addressIndex = portIndex + 2;
             const addressBuffer = new Uint8Array(
               vlessBuffer.slice(addressIndex, addressIndex + 1)
@@ -146,18 +147,20 @@ export async function processWebSocket({
 
                 break;
               default:
-                console.log(`[${address}:${port}] invild address`);
+                console.log(`[${address}:${portWithRandomLog}] invild address`);
             }
             address = addressValue;
             if (!addressValue) {
               // console.log(`[${address}:${port}] addressValue is empty`);
-              controller.error(`[${address}:${port}] addressValue is empty`);
+              controller.error(
+                `[${address}:${portWithRandomLog}] addressValue is empty`
+              );
               return;
             }
             // const addressType = requestAddr >> 4;
             // const addressLength = requestAddr & 0x0f;
-            console.log(`[${addressValue}:${port}] connecting`);
-            remoteConnection = await rawTCPFactory(port, addressValue);
+            console.log(`[${addressValue}:${portWithRandomLog}] connecting`);
+            remoteConnection = await rawTCPFactory(portRemote, addressValue);
             vlessResponseHeader = new Uint8Array([version[0], 0]);
             const rawDataIndex = addressValueIndex + addressLength;
             const rawClientData = vlessBuffer.slice(rawDataIndex);
@@ -166,12 +169,12 @@ export async function processWebSocket({
           },
           close() {
             console.log(
-              `[${address}:${port}] readableWebSocketStream is close`
+              `[${address}:${portWithRandomLog}] readableWebSocketStream is close`
             );
           },
           abort(reason) {
             console.log(
-              `[${address}:${port}] readableWebSocketStream is abort`,
+              `[${address}:${portWithRandomLog}] readableWebSocketStream is abort`,
               reason
             );
           },
@@ -179,7 +182,7 @@ export async function processWebSocket({
       )
       .catch((error) => {
         console.error(
-          `[${address}:${port}] readableWebSocketStream pipeto has exception`,
+          `[${address}:${portWithRandomLog}] readableWebSocketStream pipeto has exception`,
           error.stack || error
         );
         // error is cancel readable stream anyway, no need close websocket in here
@@ -237,13 +240,13 @@ export async function processWebSocket({
         },
         close() {
           console.log(
-            `[${address}:${port}] remoteConnection!.readable is close`
+            `[${address}:${portWithRandomLog}] remoteConnection!.readable is close`
           );
         },
         abort(reason) {
           closeWebSocket(webSocket);
           console.error(
-            `[${address}:${port}] remoteConnection!.readable abort`,
+            `[${address}:${portWithRandomLog}] remoteConnection!.readable abort`,
             reason
           );
         },
@@ -251,7 +254,7 @@ export async function processWebSocket({
     );
   } catch (error: any) {
     console.error(
-      `[${address}:${port}] processWebSocket has exception `,
+      `[${address}:${portWithRandomLog}] processWebSocket has exception `,
       error.stack || error
     );
     closeWebSocket(webSocket);
