@@ -20,7 +20,6 @@ export async function processWebSocket({
 }) {
   let address = '';
   let portWithRandomLog = '';
-  let port = 0;
   let remoteConnection: {
     readable: any;
     writable: any;
@@ -51,20 +50,18 @@ export async function processWebSocket({
               hasError,
               message,
               portRemote,
-              addressRemote,
+              addressRemote: address,
               rawDataIndex,
               vlessVersion,
             } = processVlessHeader(vlessBuffer, userID, uuid, lodash);
             portWithRandomLog = `${portRemote}--${Math.random()}`;
             if (hasError) {
-              controller.error(
-                `[${addressRemote}:${portWithRandomLog}] ${message} `
-              );
+              controller.error(`[${address}:${portWithRandomLog}] ${message} `);
             }
             // const addressType = requestAddr >> 4;
             // const addressLength = requestAddr & 0x0f;
-            console.log(`[${addressRemote}:${portWithRandomLog}] connecting`);
-            remoteConnection = await rawTCPFactory(portRemote!, addressRemote!);
+            console.log(`[${address}:${portWithRandomLog}] connecting`);
+            remoteConnection = await rawTCPFactory(portRemote!, address!);
             vlessResponseHeader = new Uint8Array([vlessVersion![0], 0]);
             const rawClientData = vlessBuffer.slice(rawDataIndex!);
             await remoteConnection!.write(new Uint8Array(rawClientData));
