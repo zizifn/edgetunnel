@@ -225,7 +225,7 @@ export async function processWebSocket({
           );
         },
         abort(reason) {
-          closeWebSocket(webSocket);
+          // closeWebSocket(webSocket);
           console.error(
             `[${address}:${port}] remoteConnection!.readable abort`,
             reason
