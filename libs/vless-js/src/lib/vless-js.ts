@@ -173,7 +173,8 @@ export async function processWebSocket({
           `[${address}:${port}] readableWebSocketStream pipeto has exception`,
           JSON.stringify(error.stack || error)
         );
-        closeWebSocket(webSocket);
+        // error is cancel readable stream anyway, no need close websocket in here
+        // closeWebSocket(webSocket);
         // close remote conn
         // remoteConnection?.close();
       });
@@ -250,6 +251,7 @@ export async function processWebSocket({
 }
 
 function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
+  let readableStreamCancel = false;
   return new ReadableStream({
     start(controller) {
       ws.addEventListener('message', async (e) => {
@@ -273,6 +275,7 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
     pull(controller) {},
     cancel(reason) {
       log(`websocketStream is cancel`, reason);
+      readableStreamCancel = true;
       ws.close();
     },
   });
