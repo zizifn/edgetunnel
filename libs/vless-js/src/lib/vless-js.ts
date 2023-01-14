@@ -175,7 +175,7 @@ export async function processWebSocket({
           abort(reason) {
             console.log(
               `[${address}:${portWithRandomLog}] readableWebSocketStream is abort`,
-              reason
+              JSON.stringify(reason)
             );
           },
         })
@@ -272,7 +272,7 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
         controller.enqueue(vlessBuffer);
       });
       ws.addEventListener('error', (e) => {
-        // log('socket has error', e);
+        log('socket has error');
         controller.error(e);
       });
       ws.addEventListener('close', () => {
