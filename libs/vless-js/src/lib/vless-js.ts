@@ -257,7 +257,7 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
       });
       ws.addEventListener('close', () => {
         try {
-          log('socket is close');
+          log('webSocket is close');
           controller.close();
         } catch (error) {
           log(`websocketStream can't close`, error);
