@@ -278,6 +278,10 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
       ws.addEventListener('close', () => {
         try {
           log('webSocket is close');
+          // is stream is cancel, skill controller.close
+          if (readableStreamCancel) {
+            return;
+          }
           controller.close();
         } catch (error) {
           log(`websocketStream can't close`, error);
@@ -288,7 +292,7 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
     cancel(reason) {
       log(`websocketStream is cancel`, reason);
       readableStreamCancel = true;
-      ws.close();
+      closeWebSocket(ws);
     },
   });
 }
