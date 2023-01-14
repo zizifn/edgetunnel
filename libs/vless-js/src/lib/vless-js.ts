@@ -250,12 +250,12 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
         controller.enqueue(vlessBuffer);
       });
       ws.addEventListener('error', (e) => {
-        log('socket has error', e);
+        // log('socket has error', e);
         controller.error(e);
       });
       ws.addEventListener('close', () => {
         try {
-          // log('socket is close');
+          log('socket is close');
           controller.close();
         } catch (error) {
           log(`websocketStream can't close`, error);
