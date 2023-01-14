@@ -1,4 +1,0 @@
-GET http://zizi.press:4009 User-Agent: curl/7.83.1 Accept: */*/ HTTP/1.1
-Host: zizi.press:4009 User-Agent: curl/7.83.1 Accept: */*
-Proxy-Connection: Keep-Alive
-
