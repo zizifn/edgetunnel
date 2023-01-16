@@ -1,6 +1,6 @@
 import { createServer } from 'http';
 import { parse } from 'url';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import { index401, serverStaticFile } from './app/utils';
 import * as uuid from 'uuid';
 import * as lodash from 'lodash';
@@ -9,9 +9,10 @@ import {
   makeReadableWebSocketStream,
   processVlessHeader,
   delay,
+  closeWebSocket,
 } from 'vless-js';
 import { connect, Socket } from 'node:net';
-import { networkInterfaces } from 'os';
+import { Duplex, Readable } from 'stream';
 
 const port = process.env.PORT;
 const userID = process.env.UUID || '';
@@ -54,64 +55,113 @@ const server = createServer((req, resp) => {
 });
 const vlessWServer = new WebSocketServer({ noServer: true });
 
-vlessWServer.on('connection', function connection(ws) {
+vlessWServer.on('connection', async function connection(ws) {
   let address = '';
   let portWithRandomLog = '';
-  const log = (info: string, event?: any) => {
-    console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
-  };
-  let remoteConnection: Socket | null = null;
-  const readableWebSocketStream = makeReadableWebSocketStream(ws, log);
-  // ws --> remote
-  readableWebSocketStream.pipeTo(
-    new WritableStream({
-      async write(chunk, controller) {
-        const vlessBuffer = chunk;
-        if (!remoteConnection.closed) {
-          const number = remoteConnection.write(new Uint8Array(vlessBuffer));
-          return;
-        }
-        const {
-          hasError,
-          message,
-          portRemote,
-          addressRemote,
-          rawDataIndex,
-          vlessVersion,
-        } = processVlessHeader(vlessBuffer, userID, uuid, lodash);
-        address = addressRemote || '';
-        portWithRandomLog = `${portRemote}--${Math.random()}`;
-        if (hasError) {
-          controller.error(`[${address}:${portWithRandomLog}] ${message} `);
-        }
-        // const addressType = requestAddr >> 4;
-        // const addressLength = requestAddr & 0x0f;
-        console.log(`[${address}:${portWithRandomLog}] connecting`);
-        remoteConnection = connect(
-          {
-            port: portRemote,
-            host: address,
+  try {
+    const log = (info: string, event?: any) => {
+      console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
+    };
+    let remoteConnection: Socket = null;
+    let remoteConnectionReadyResolve: Function;
+
+    const readableWebSocketStream = makeReadableWebSocketStream(ws, log);
+    let vlessResponseHeader: Uint8Array | null = null;
+
+    // ws --> remote
+    readableWebSocketStream
+      .pipeTo(
+        new WritableStream({
+          async write(chunk: Buffer, controller) {
+            const vlessBuffer = chunk.buffer.slice(chunk.byteOffset);
+            if (remoteConnection) {
+              const number = remoteConnection.write(
+                new Uint8Array(vlessBuffer)
+              );
+              return;
+            }
+            const {
+              hasError,
+              message,
+              portRemote,
+              addressRemote,
+              rawDataIndex,
+              vlessVersion,
+            } = processVlessHeader(vlessBuffer, userID, uuid, lodash);
+            address = addressRemote || '';
+            portWithRandomLog = `${portRemote}--${Math.random()}`;
+            if (hasError) {
+              controller.error(`[${address}:${portWithRandomLog}] ${message} `);
+            }
+            // const addressType = requestAddr >> 42
+            // const addressLength = requestAddr & 0x0f;
+            console.log(`[${address}:${portWithRandomLog}] connecting`);
+            remoteConnection = await connect2Remote(portRemote, address, log);
+            vlessResponseHeader = new Uint8Array([vlessVersion![0], 0]);
+
+            const rawClientData = vlessBuffer.slice(rawDataIndex!);
+            remoteConnection.write(new Uint8Array(rawClientData));
+            remoteConnectionReadyResolve(remoteConnection);
           },
-          () => {
-            console.log(`[${address}:${portWithRandomLog}] connected`);
+          close() {
+            console.log(
+              `[${address}:${portWithRandomLog}] readableWebSocketStream is close`
+            );
+          },
+          abort(reason) {
+            console.log(
+              `[${address}:${portWithRandomLog}] readableWebSocketStream is abort`,
+              JSON.stringify(reason)
+            );
+          },
+        })
+      )
+      .catch((error) => {
+        console.error(
+          `[${address}:${portWithRandomLog}] readableWebSocketStream pipeto has exception`,
+          error.stack || error
+        );
+        // error is cancel readable stream anyway, no need close websocket in here
+        // closeWebSocket(webSocket);
+        // close remote conn
+        // remoteConnection?.close();
+      });
+
+    await new Promise((resolve) => (remoteConnectionReadyResolve = resolve));
+    // remote --> ws
+    let remoteChunkCount = 0;
+    let totoal = 0;
+    await Readable.toWeb(remoteConnection).pipeTo(
+      new WritableStream({
+        start() {
+          if (ws.readyState === ws.OPEN) {
+            ws.send(vlessResponseHeader!);
           }
-        );
-        const rawClientData = vlessBuffer.slice(rawDataIndex!);
-        remoteConnection.write(new Uint8Array(rawClientData));
-      },
-      close() {
-        console.log(
-          `[${address}:${portWithRandomLog}] readableWebSocketStream is close`
-        );
-      },
-      abort(reason) {
-        console.log(
-          `[${address}:${portWithRandomLog}] readableWebSocketStream is abort`,
-          JSON.stringify(reason)
-        );
-      },
-    })
-  );
+        },
+        async write(chunk: Uint8Array, controller) {
+          ws.send(chunk);
+        },
+        close() {
+          console.log(
+            `[${address}:${portWithRandomLog}] remoteConnection!.readable is close`
+          );
+        },
+        abort(reason) {
+          closeWebSocket(ws);
+          console.error(
+            `[${address}:${portWithRandomLog}] remoteConnection!.readable abort`,
+            reason
+          );
+        },
+      })
+    );
+  } catch (error) {
+    console.error(
+      `[${address}:${portWithRandomLog}] processWebSocket has exception `,
+      error.stack || error
+    );
+    closeWebSocket(ws);
+  }
 });
 
 server.on('upgrade', function upgrade(request, socket, head) {
@@ -130,3 +180,23 @@ server.on('upgrade', function upgrade(request, socket, head) {
 server.listen(port, () => {
   console.log(`server listen in http://127.0.0.1:${port}`);
 });
+
+async function connect2Remote(port, host, log: Function): Promise<Socket> {
+  return new Promise((resole, reject) => {
+    const remoteSocket = connect(
+      {
+        port: port,
+        host: host,
+      },
+      () => {
+        log(`connected`);
+        resole(remoteSocket);
+      }
+    );
+    remoteSocket.addListener('error', () => {
+      reject('remoteSocket has error');
+    });
+  });
+}
+
+async function wsAsyncWrite(ws: WebSocket) {}
