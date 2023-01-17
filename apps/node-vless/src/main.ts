@@ -13,6 +13,7 @@ import {
 } from 'vless-js';
 import { connect, Socket } from 'node:net';
 import { Duplex, Readable } from 'stream';
+import { resolve } from 'path';
 
 const port = process.env.PORT;
 const userID = process.env.UUID || '';
@@ -75,9 +76,7 @@ vlessWServer.on('connection', async function connection(ws) {
           async write(chunk: Buffer, controller) {
             const vlessBuffer = chunk.buffer.slice(chunk.byteOffset);
             if (remoteConnection) {
-              const number = remoteConnection.write(
-                new Uint8Array(vlessBuffer)
-              );
+              await wsAsyncWrite(remoteConnection, vlessBuffer);
               return;
             }
             const {
@@ -199,4 +198,14 @@ async function connect2Remote(port, host, log: Function): Promise<Socket> {
   });
 }
 
-async function wsAsyncWrite(ws: WebSocket) {}
+async function wsAsyncWrite(ws: Socket, chunk: ArrayBuffer) {
+  return new Promise((resolve, reject) => {
+    ws.write(Buffer.from(chunk), (error) => {
+      if (error || ws.closed) {
+        reject(error);
+      } else {
+        resolve('');
+      }
+    });
+  });
+}
