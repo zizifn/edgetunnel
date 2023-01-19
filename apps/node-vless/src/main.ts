@@ -38,6 +38,9 @@ const server = createServer((req, resp) => {
   // index page
   if (url.pathname.includes(userID)) {
     const index = 'dist/apps/cf-page/index.html';
+    resp.writeHead(200, {
+      'Content-Type': 'text/html,charset=UTF-8',
+    });
     return createReadStream(index).pipe(resp);
   }
   if (req.method === 'GET' && url.pathname.startsWith('/assets')) {
@@ -82,11 +85,12 @@ vlessWServer.on('connection', async function connection(ws) {
       .pipeTo(
         new WritableStream({
           async write(chunk: Buffer, controller) {
-            const vlessBuffer = chunk.buffer.slice(chunk.byteOffset);
             if (remoteConnection) {
-              await wsAsyncWrite(remoteConnection, vlessBuffer);
+              await wsAsyncWrite(remoteConnection, chunk);
+              // remoteConnection.write(chunk);
               return;
             }
+            const vlessBuffer = chunk.buffer.slice(chunk.byteOffset);
             const {
               hasError,
               message,
@@ -206,7 +210,7 @@ async function connect2Remote(port, host, log: Function): Promise<Socket> {
   });
 }
 
-async function wsAsyncWrite(ws: Socket, chunk: ArrayBuffer) {
+async function wsAsyncWrite(ws: Socket, chunk: Buffer) {
   return new Promise((resolve, reject) => {
     ws.write(Buffer.from(chunk), (error) => {
       if (error) {
