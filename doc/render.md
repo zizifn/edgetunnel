@@ -18,6 +18,8 @@ https://render.com/
 
 需要填写如下信息，具体请参考下图.
 
+> 个人体验，美区速度最好。
+
 | 选项          | 值                                      |
 | ------------- | --------------------------------------- |
 | Build Command | `npm install; npm run node-vless:build` |
