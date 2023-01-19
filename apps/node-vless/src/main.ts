@@ -209,7 +209,7 @@ async function connect2Remote(port, host, log: Function): Promise<Socket> {
 async function wsAsyncWrite(ws: Socket, chunk: ArrayBuffer) {
   return new Promise((resolve, reject) => {
     ws.write(Buffer.from(chunk), (error) => {
-      if (error || ws.closed) {
+      if (error) {
         reject(error);
       } else {
         resolve('');
