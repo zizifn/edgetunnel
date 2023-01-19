@@ -2,10 +2,15 @@
   "name": "edge-bypass",
   "version": "0.0.0",
   "license": "MIT",
+  "engines": {
+    "node": "^18"
+  },
   "scripts": {
     "start": "nx serve",
     "build": "nx build",
     "cf-page": "nx build cf-page",
+    "node-vless:build": "nx build cf-page --configuration=production && nx build node-vless",
+    "node-vless:start": "node dist/apps/node-vless/main.js",
     "test": "nx test"
   },
   "private": true,
@@ -14,6 +19,8 @@
     "@heroicons/react": "^2.0.13",
     "commander": "^9.4.1",
     "core-js": "^3.6.5",
+    "lodash": "^4.17.21",
+    "pretty-cache-header": "^1.0.0",
     "qrcode": "^1.5.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -21,7 +28,8 @@
     "tslib": "^2.3.0",
     "undici": "^5.13.0",
     "uuid": "^9.0.0",
-    "wrangler": "^2.6.2"
+    "wrangler": "^2.6.2",
+    "ws": "^8.12.0"
   },
   "devDependencies": {
     "@babel/preset-react": "^7.14.5",
@@ -40,6 +48,7 @@
     "@nrwl/workspace": "15.2.4",
     "@testing-library/react": "13.4.0",
     "@types/jest": "28.1.1",
+    "@types/lodash": "^4.14.191",
     "@types/node": "18.11.9",
     "@types/qrcode": "^1.5.0",
     "@types/react": "18.0.25",

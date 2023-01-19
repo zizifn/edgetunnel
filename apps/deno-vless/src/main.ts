@@ -29,7 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
   const { socket, response } = Deno.upgradeWebSocket(req);
   socket.addEventListener('open', () => {});
 
-  let test: Deno.TcpConn | null = null;
+  // let test: Deno.TcpConn | null = null;
   // test!.writable.abort();
   //
   processWebSocket({
