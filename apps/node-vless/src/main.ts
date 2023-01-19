@@ -179,13 +179,9 @@ server.on('upgrade', function upgrade(request, socket, head) {
   console.log('upgrade');
   const { pathname } = parse(request.url);
 
-  if (pathname === '/foo') {
-    vlessWServer.handleUpgrade(request, socket, head, function done(ws) {
-      vlessWServer.emit('connection', ws, request);
-    });
-  } else {
-    socket.destroy();
-  }
+  vlessWServer.handleUpgrade(request, socket, head, function done(ws) {
+    vlessWServer.emit('connection', ws, request);
+  });
 });
 
 server.listen(port, () => {
