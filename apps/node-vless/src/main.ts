@@ -86,7 +86,7 @@ vlessWServer.on('connection', async function connection(ws) {
         new WritableStream({
           async write(chunk: Buffer, controller) {
             if (remoteConnection) {
-              await wsAsyncWrite(remoteConnection, chunk);
+              await socketAsyncWrite(remoteConnection, chunk);
               // remoteConnection.write(chunk);
               return;
             }
@@ -150,7 +150,7 @@ vlessWServer.on('connection', async function connection(ws) {
           }
         },
         async write(chunk: Uint8Array, controller) {
-          ws.send(chunk);
+          await wsAsyncWrite(ws, chunk);
         },
         close() {
           console.log(
@@ -206,9 +206,21 @@ async function connect2Remote(port, host, log: Function): Promise<Socket> {
   });
 }
 
-async function wsAsyncWrite(ws: Socket, chunk: Buffer) {
+async function socketAsyncWrite(ws: Socket, chunk: Buffer) {
   return new Promise((resolve, reject) => {
-    ws.write(Buffer.from(chunk), (error) => {
+    ws.write(chunk, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve('');
+      }
+    });
+  });
+}
+
+async function wsAsyncWrite(ws: WebSocket, chunk: Uint8Array) {
+  return new Promise((resolve, reject) => {
+    ws.send(chunk, (error) => {
       if (error) {
         reject(error);
       } else {

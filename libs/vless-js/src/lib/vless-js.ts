@@ -176,6 +176,8 @@ export function makeReadableWebSocketStream(
         // console.log('MESSAGE', vlessBuffer);
 
         // console.log(`message is ${vlessBuffer.byteLength}`);
+        // this is not backpressure, but backpressure is depends on underying websocket can pasue
+        // https://streams.spec.whatwg.org/#example-rs-push-backpressure
         controller.enqueue(vlessBuffer);
       });
       ws.addEventListener('error', (e: any) => {
