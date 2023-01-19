@@ -50,7 +50,6 @@ const server = createServer((req, resp) => {
   const basicAuth = req.headers.authorization || '';
   const authStringBase64 = basicAuth.split(' ')?.[1] || '';
   const authString = Buffer.from(authStringBase64, 'base64').toString('ascii');
-  console.log('-----authString--', authString);
   if (authString && authString.includes(userID)) {
     resp.writeHead(302, {
       'content-type': 'text/html; charset=utf-8',
@@ -176,7 +175,6 @@ vlessWServer.on('connection', async function connection(ws) {
 });
 
 server.on('upgrade', function upgrade(request, socket, head) {
-  console.log('upgrade');
   const { pathname } = parse(request.url);
 
   vlessWServer.handleUpgrade(request, socket, head, function done(ws) {
