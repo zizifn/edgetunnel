@@ -42,9 +42,7 @@ https://blog.cloudflare.com/introducing-socket-workers/
 
 ## V2ray Edge server --- Node.js
 
-很多 Node.js 的平台都是支持 docker 的，所以可以直接部署原版。但是既然很多人要，我就写一个，但是我不承若一定回答关于 Node.js 平台的所有问题。因为太多了。
-
-### railway.app
+很多 Node.js 的平台都是支持 docker 的，所以可以直接部署原版。但是既然很多人要，我就写一个。我目前仅仅 render 平台。
 
 ### render.com
 

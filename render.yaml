@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: zizifn
+    env: node
+    rootDir:.
+    buildCommand: npm run node-vless:build
+    startCommand: npm run node-vless:start
