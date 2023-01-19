@@ -9,7 +9,7 @@
     "start": "nx serve",
     "build": "nx build",
     "cf-page": "nx build cf-page",
-    "node-vless:build": "nx build cf-page --configuration=production && nx build node-vless --configuration=production",
+    "node-vless:build": "nx build cf-page --configuration=production && nx build node-vless",
     "node-vless:start": "node dist/apps/node-vless/main.js",
     "test": "nx test"
   },
