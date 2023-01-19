@@ -18,10 +18,10 @@ https://render.com/
 
 需要填写如下信息，具体请参考下图.
 
-| 选项          | 值  |
-| ------------- | --- |
-| Build Command | 3   |
-| Start Command | 3   |
+| 选项          | 值                                      |
+| ------------- | --------------------------------------- |
+| Build Command | `npm install; npm run node-vless:build` |
+| Start Command | `npm run node-vless:start`              |
 
 ![render3](./render3.jpg)
 
