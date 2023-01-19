@@ -1,8 +1,4 @@
 import { serve } from 'https://deno.land/std@0.170.0/http/server.ts';
-import * as uuid from 'https://jspm.dev/uuid';
-import * as lodash from 'https://jspm.dev/lodash-es';
-import { serveClient } from './deno/client.ts';
-import { processWebSocket } from '../../../libs/vless-js/src/lib/vless-js.ts';
 
 const handler = async (req: Request) => {
   console.log('start');
