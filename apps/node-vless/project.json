@@ -1,0 +1,61 @@
+{
+  "name": "node-vless",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/node-vless/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/node-vless",
+        "main": "apps/node-vless/src/main.ts",
+        "tsConfig": "apps/node-vless/tsconfig.app.json",
+        "assets": ["apps/node-vless/src/assets"]
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/node-vless/src/environments/environment.ts",
+              "with": "apps/node-vless/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/js:node",
+      "options": {
+        "buildTarget": "node-vless:build"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "node-vless:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/node-vless/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/node-vless/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "implicitDependencies": ["cf-page"],
+  "tags": []
+}

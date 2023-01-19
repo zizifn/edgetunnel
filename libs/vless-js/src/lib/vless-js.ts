@@ -2,7 +2,7 @@ export function vlessJs(): string {
   return 'vless-js';
 }
 
-function delay(ms: number) {
+export function delay(ms: number) {
   return new Promise((resolve, rej) => {
     setTimeout(resolve, ms);
   });
@@ -163,16 +163,22 @@ export async function processWebSocket({
   return;
 }
 
-function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
+export function makeReadableWebSocketStream(
+  ws: WebSocket | any,
+  log: Function
+) {
   let readableStreamCancel = false;
   return new ReadableStream<ArrayBuffer>({
     start(controller) {
-      ws.addEventListener('message', async (e) => {
+      ws.addEventListener('message', async (e: { data: ArrayBuffer }) => {
+        // console.log('MESSAGE');
         const vlessBuffer: ArrayBuffer = e.data;
+        // console.log('MESSAGE', vlessBuffer);
+
         // console.log(`message is ${vlessBuffer.byteLength}`);
         controller.enqueue(vlessBuffer);
       });
-      ws.addEventListener('error', (e) => {
+      ws.addEventListener('error', (e: any) => {
         log('socket has error');
         readableStreamCancel = true;
         controller.error(e);
@@ -202,13 +208,19 @@ function makeReadableWebSocketStream(ws: WebSocket, log: Function) {
   });
 }
 
-function closeWebSocket(socket: WebSocket) {
+export function closeWebSocket(socket: WebSocket | any) {
   if (socket.readyState === socket.OPEN) {
     socket.close();
   }
 }
 
-function processVlessHeader(
+//https://github.com/v2ray/v2ray-core/issues/2636
+// 1 字节	  16 字节     1 字节	       M 字节	      1 字节  2 字节   1 字节	 S 字节	X 字节
+// 协议版本	  等价 UUID	  附加信息长度 M	附加信息 ProtoBuf  指令	    端口	地址类型   地址	请求数据
+
+// 1 字节	              1 字节	      N 字节	         Y 字节
+// 协议版本，与请求的一致	附加信息长度 N	附加信息 ProtoBuf	响应数据
+export function processVlessHeader(
   vlessBuffer: ArrayBuffer,
   userID: string,
   uuidLib: any,

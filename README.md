@@ -42,15 +42,14 @@ https://blog.cloudflare.com/introducing-socket-workers/
 
 ## V2ray Edge server --- Node.js
 
-很多 Node.js 的平台都是支持 docker 的，所以可以直接部署原版。但是既然很多人要，我就写一个，但是我不承若一定回答关于 Node.js 平台的所有问题。因为太多了。
-
-### railway.app
+很多 Node.js 的平台都是支持 docker 的，所以可以直接部署原版。但是既然很多人要，我就写一个。我目前仅仅 render 平台。
 
 ### render.com
 
 ## 客户端 v2rayN 配置
 
 > ⚠️ 由于 edge 平台限制，无法转发 UDP 包。请在配置时候，把 DNS 的策略改成 "Asis", 否则会影响速度。
+> 请不要开启 ipv6 优先。
 
 > [ DNS 科普文章](https://tachyondevel.medium.com/%E6%BC%AB%E8%B0%88%E5%90%84%E7%A7%8D%E9%BB%91%E7%A7%91%E6%8A%80%E5%BC%8F-dns-%E6%8A%80%E6%9C%AF%E5%9C%A8%E4%BB%A3%E7%90%86%E7%8E%AF%E5%A2%83%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8-62c50e58cbd0)
 
