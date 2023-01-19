@@ -28,8 +28,6 @@
           ]
         }
       }
-
-      
     },
     "serve": {
       "executor": "@nrwl/js:node",
@@ -58,5 +56,6 @@
       }
     }
   },
+  "implicitDependencies": ["cf-page"],
   "tags": []
 }

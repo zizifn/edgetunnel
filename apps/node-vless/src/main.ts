@@ -27,6 +27,14 @@ const server = createServer((req, resp) => {
     return index401(req, resp);
   }
   const url = new URL(req.url, `http://${req.headers['host']}`);
+  // health check
+  if (req.method === 'GET' && url.pathname.startsWith('/health')) {
+    resp.writeHead(200);
+    resp.write('health 200');
+    resp.end();
+    return;
+  }
+
   // index page
   if (url.pathname.includes(userID)) {
     const index = 'dist/apps/cf-page/index.html';

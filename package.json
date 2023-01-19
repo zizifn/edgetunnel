@@ -2,6 +2,9 @@
   "name": "edge-bypass",
   "version": "0.0.0",
   "license": "MIT",
+  "engines": {
+    "node": "^18"
+  },
   "scripts": {
     "start": "nx serve",
     "build": "nx build",
