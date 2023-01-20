@@ -40,6 +40,7 @@ https://raw.githubusercontent.com/zizifn/edgetunnel/main/doc/deno-deploy2.gif
 
 > 如果遇到 deno 生成域名不能访问的情况，请自己在 setting 里面绑定自己域名。
 > 只要 deno 网站可以访问，你生成的服务就应该可以访问。
+> 目前移动宽带貌似有这种问题。
 
 不要慌张, 把你设置的 `UUID` 输入到弹出的用户名或者密码中。
 
