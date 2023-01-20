@@ -2,6 +2,10 @@
 
 ## 登录 render 账户
 
+## Render Web APP 每月有 100GB 出站流量限制
+
+如果使用 AWS ip 注册 Render 账户，会被要求绑定信用卡才能使用 Web APP。如果出现需要绑卡提示，建议更换 ip 注册。
+
 https://render.com/
 
 ## 访问 https://dashboard.render.com/
@@ -18,7 +22,7 @@ https://render.com/
 
 需要填写如下信息，具体请参考下图.
 
-> 个人体验，美区速度最好。
+> Render 入口为 Cloudflare cdn，如果可以优选到亚洲地区 cloudflare ip，新加坡区速度最好。否则 cloudflare 默认美国线路，选美区速度最好。
 
 | 选项          | 值                                      |
 | ------------- | --------------------------------------- |
