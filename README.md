@@ -112,3 +112,7 @@ addEventListener('fetch', (event) => {
 ## 不支持 VMESS
 
 VMESS 协议过于复杂，并且所有 edge 平台都支持 HTTPS， 所以无需 VMESS.
+
+# 反馈与交流
+
+如果有问题，请使用 https://t.me/edgetunnel 进行交流。
