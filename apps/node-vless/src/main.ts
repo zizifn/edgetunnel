@@ -13,7 +13,6 @@ import {
 } from 'vless-js';
 import { connect, Socket } from 'node:net';
 import { Duplex, Readable } from 'stream';
-import { resolve } from 'path';
 
 const port = process.env.PORT;
 const userID = process.env.UUID || '';
