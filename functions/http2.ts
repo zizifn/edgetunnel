@@ -8,7 +8,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       new TransformStream({
         transform(chunk, controller) {
           console.log('test');
-          controller.enqueue(new TextEncoder().encode('xxxxx'));
+          controller.enqueue(
+            new TextEncoder().encode(`${chunk} +  ${new Date()}`)
+          );
         },
       })
     ) || 'default';
