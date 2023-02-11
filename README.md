@@ -4,8 +4,6 @@
 
 本项目通过，使用 `js` 实现 `VLESS`协议， 使得 **V2ray** 可以部署到一些 Edge 或者 Serverless 平台上。
 
-**v2ray-heroku 由于 heroku 取消免费，项目已经死了。这里是新的项目。**
-
 > For international user, I write this readme in Chinese. But I understand English pretty well, if you has any issue, please open it in Github.
 
 > 项目正在完善阶段，欢迎大家使用，如果发现 bug， 请开 issue。
