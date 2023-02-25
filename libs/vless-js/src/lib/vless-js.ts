@@ -262,6 +262,10 @@ export function processVlessHeader(
   // 0x02 UDP
   // 0x03 MUX
   if (command === 1) {
+    // return {
+    //   hasError: true,
+    //   message: `command ${command} is not support, command 01-tcp,02-udp,03-mux`,
+    // };
   } else {
     isUDP = true;
     // controller.error(
