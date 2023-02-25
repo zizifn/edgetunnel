@@ -6,6 +6,8 @@ import * as uuid from 'uuid';
 import * as lodash from 'lodash';
 import { createReadStream } from 'node:fs';
 import { setDefaultResultOrder } from 'node:dns';
+import { createSocket } from 'node:dgram';
+
 import {
   makeReadableWebSocketStream,
   processVlessHeader,
@@ -79,7 +81,7 @@ vlessWServer.on('connection', async function connection(ws) {
     const log = (info: string, event?: any) => {
       console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
     };
-    let remoteConnection: Socket = null;
+    let remoteConnection: Duplex = null;
     let remoteConnectionReadyResolve: Function;
 
     const readableWebSocketStream = makeReadableWebSocketStream(ws, log);
@@ -103,6 +105,7 @@ vlessWServer.on('connection', async function connection(ws) {
               addressRemote,
               rawDataIndex,
               vlessVersion,
+              isUDP,
             } = processVlessHeader(vlessBuffer, userID, uuid, lodash);
             address = addressRemote || '';
             portWithRandomLog = `${portRemote}--${Math.random()}`;
@@ -112,10 +115,14 @@ vlessWServer.on('connection', async function connection(ws) {
             // const addressType = requestAddr >> 42
             // const addressLength = requestAddr & 0x0f;
             console.log(`[${address}:${portWithRandomLog}] connecting`);
-            remoteConnection = await connect2Remote(portRemote, address, log);
             vlessResponseHeader = new Uint8Array([vlessVersion![0], 0]);
 
             const rawClientData = vlessBuffer.slice(rawDataIndex!);
+            if (isUDP) {
+              remoteConnection = makeUDPSocketStream(portRemote, address);
+            } else {
+              remoteConnection = await connect2Remote(portRemote, address, log);
+            }
             remoteConnection.write(new Uint8Array(rawClientData));
             remoteConnectionReadyResolve(remoteConnection);
           },
@@ -155,6 +162,7 @@ vlessWServer.on('connection', async function connection(ws) {
           }
         },
         async write(chunk: Uint8Array, controller) {
+          console.log('++++', new TextDecoder().decode(chunk));
           await wsAsyncWrite(ws, chunk);
         },
         close() {
@@ -188,9 +196,15 @@ server.on('upgrade', function upgrade(request, socket, head) {
   });
 });
 
-server.listen(port, () => {
-  console.log(`server listen in http://127.0.0.1:${port}`);
-});
+server.listen(
+  {
+    port: 4100,
+    host: '0.0.0.0',
+  },
+  () => {
+    console.log(`server listen in http://127.0.0.1:${port}`);
+  }
+);
 
 async function connect2Remote(port, host, log: Function): Promise<Socket> {
   return new Promise((resole, reject) => {
@@ -211,7 +225,7 @@ async function connect2Remote(port, host, log: Function): Promise<Socket> {
   });
 }
 
-async function socketAsyncWrite(ws: Socket, chunk: Buffer) {
+async function socketAsyncWrite(ws: Duplex, chunk: Buffer) {
   return new Promise((resolve, reject) => {
     ws.write(chunk, (error) => {
       if (error) {
@@ -233,4 +247,30 @@ async function wsAsyncWrite(ws: WebSocket, chunk: Uint8Array) {
       }
     });
   });
+}
+
+function makeUDPSocketStream(portRemote, address) {
+  const udpClient = createSocket('udp4');
+
+  const myDuplex = new Duplex({
+    read(size) {
+      console.log('----------');
+      // ...
+    },
+    write(chunk, encoding, callback) {
+      console.log('udp send', chunk.toString());
+      udpClient.send(chunk, portRemote, address, (err) => {
+        if (err) {
+          console.error('Failed to send packet !!');
+        } else {
+          console.log('Packet send !!');
+        }
+      });
+    },
+  });
+  udpClient.on('message', (message, info) => {
+    myDuplex.push(message);
+  });
+
+  return myDuplex;
 }
