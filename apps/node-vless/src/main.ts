@@ -5,6 +5,7 @@ import { index401, serverStaticFile } from './app/utils';
 import * as uuid from 'uuid';
 import * as lodash from 'lodash';
 import { createReadStream } from 'node:fs';
+import { setDefaultResultOrder } from 'node:dns';
 import {
   makeReadableWebSocketStream,
   processVlessHeader,
@@ -16,6 +17,12 @@ import { Duplex, Readable } from 'stream';
 
 const port = process.env.PORT;
 const userID = process.env.UUID || '';
+//'ipv4first' or 'verbatim'
+const dnOder = process.env.DNSORDER || 'verbatim';
+if (dnOder === 'ipv4first') {
+  setDefaultResultOrder(dnOder);
+}
+
 let isVaildUser = uuid.validate(userID);
 if (!isVaildUser) {
   console.log('not set valid UUID');
@@ -191,6 +198,7 @@ async function connect2Remote(port, host, log: Function): Promise<Socket> {
       {
         port: port,
         host: host,
+        autoSelectFamily: true,
       },
       () => {
         log(`connected`);
