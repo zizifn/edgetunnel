@@ -12,8 +12,12 @@
         "outputPath": "apps/deno-vless/src/client"
       },
       "configurations": {
-        "development": {},
-        "production": {}
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
       }
     },
     "serve": {

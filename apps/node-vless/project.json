@@ -13,7 +13,10 @@
         "outputPath": "dist/apps/node-vless",
         "main": "apps/node-vless/src/main.ts",
         "tsConfig": "apps/node-vless/tsconfig.app.json",
-        "assets": ["apps/node-vless/src/assets"]
+        "assets": ["apps/node-vless/src/assets"],
+        "webpackConfig": "apps/node-vless/webpack.config.js",
+        "isolatedConfig": true,
+        "babelUpwardRootMode": true
       },
       "configurations": {
         "production": {
