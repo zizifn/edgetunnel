@@ -12,8 +12,12 @@
         "outputPath": "dist/apps/cf-page"
       },
       "configurations": {
-        "development": {},
-        "production": {}
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
       }
     },
     "serve": {
