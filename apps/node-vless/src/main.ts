@@ -16,8 +16,11 @@ import {
 } from 'vless-js';
 import { connect, Socket } from 'node:net';
 import { Duplex, Readable } from 'stream';
-import { TransformStream } from 'node:stream/web';
-
+import {
+  TransformStream,
+  ReadableStream,
+  WritableStream,
+} from 'node:stream/web';
 const port = process.env.PORT;
 const userID = process.env.UUID || '';
 //'ipv4first' or 'verbatim'
@@ -96,8 +99,10 @@ vlessWServer.on('connection', async function connection(ws) {
           async write(chunk: Buffer, controller) {
             if (udpClientStream) {
               const writer = udpClientStream.writable.getWriter();
-              writer.write(chunk);
+              // nodejs buffer will fill some byte, need offset is
+              writer.write(chunk.buffer.slice(chunk.byteOffset));
               writer.releaseLock();
+              return;
             }
             if (remoteConnection) {
               await socketAsyncWrite(remoteConnection, chunk);
@@ -115,7 +120,9 @@ vlessWServer.on('connection', async function connection(ws) {
               isUDP,
             } = processVlessHeader(vlessBuffer, userID, uuid, lodash);
             address = addressRemote || '';
-            portWithRandomLog = `${portRemote}--${Math.random()}`;
+            portWithRandomLog = `${portRemote}--${Math.random()} ${
+              isUDP ? 'udp ' : 'tcp '
+            } `;
             if (hasError) {
               controller.error(`[${address}:${portWithRandomLog}] ${message} `);
             }
@@ -124,7 +131,6 @@ vlessWServer.on('connection', async function connection(ws) {
             console.log(`[${address}:${portWithRandomLog}] connecting`);
             vlessResponseHeader = new Uint8Array([vlessVersion![0], 0]);
             const rawClientData = vlessBuffer.slice(rawDataIndex!);
-            ws.send(vlessResponseHeader!);
             if (isUDP) {
               udpClientStream = makeUDPSocketStream(portRemote, address);
               const writer = udpClientStream.writable.getWriter();
@@ -138,6 +144,9 @@ vlessWServer.on('connection', async function connection(ws) {
             }
           },
           close() {
+            // if (udpClientStream) {
+            //   udpClientStream.writable.close();
+            // }
             console.log(
               `[${address}:${portWithRandomLog}] readableWebSocketStream is close`
             );
@@ -176,7 +185,10 @@ vlessWServer.on('connection', async function connection(ws) {
           }
         },
         async write(chunk: Uint8Array, controller) {
-          await wsAsyncWrite(ws, chunk);
+          // console.log('ws write', chunk);
+          if (ws.readyState === ws.OPEN) {
+            await wsAsyncWrite(ws, chunk);
+          }
         },
         close() {
           console.log(
@@ -278,22 +290,27 @@ function makeUDPSocketStream(portRemote, address) {
     },
 
     transform(chunk: ArrayBuffer, controller) {
-      const lengthBuffer = chunk.slice(0, 2);
-      // port is big-Endian in raw data etc 80 == 0x005d
-      const udpPakcetLength = new DataView(lengthBuffer).getInt16(0);
-      const udpData = new Uint8Array(chunk.slice(2));
-      console.log('-----', chunk, udpData.length, udpPakcetLength);
-      if (udpData.length === udpPakcetLength) {
-        console.log('-----', chunk);
+      for (let index = 0; index < chunk.byteLength; ) {
+        const lengthBuffer = chunk.slice(index, index + 2);
+        const udpPakcetLength = new DataView(lengthBuffer).getInt16(0);
+        const udpData = new Uint8Array(
+          chunk.slice(index + 2, index + 2 + udpPakcetLength)
+        );
+        index = index + 2 + udpPakcetLength;
+
         udpClient.send(udpData, portRemote, address, (err) => {
           if (err) {
-            controller.error('Failed to send packet !!');
+            console.log(err);
+            controller.error('Failed to send UDP packet !!');
             udpClient.close();
-          } else {
-            console.log('Packet send !!!');
           }
         });
+        index = index;
       }
+
+      // console.log('dns chunk', chunk);
+      // console.log(portRemote, address);
+      // port is big-Endian in raw data etc 80 == 0x005d
     },
 
     flush(controller) {
