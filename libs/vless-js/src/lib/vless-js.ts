@@ -53,9 +53,15 @@ export async function processWebSocket({
               addressRemote,
               rawDataIndex,
               vlessVersion,
+              isUDP,
             } = processVlessHeader(vlessBuffer, userID, uuid, lodash);
             address = addressRemote || '';
             portWithRandomLog = `${portRemote}--${Math.random()}`;
+            if (isUDP) {
+              controller.error(
+                `[${address}:${portWithRandomLog}] command udp is not support `
+              );
+            }
             if (hasError) {
               controller.error(`[${address}:${portWithRandomLog}] ${message} `);
             }
@@ -262,22 +268,13 @@ export function processVlessHeader(
   // 0x02 UDP
   // 0x03 MUX
   if (command === 1) {
-    // return {
-    //   hasError: true,
-    //   message: `command ${command} is not support, command 01-tcp,02-udp,03-mux`,
-    // };
-  } else {
+  } else if (command === 2) {
     isUDP = true;
-    // controller.error(
-    //   `command ${command} is not support, command 01-tcp,02-udp,03-mux`
-    // );
-    // return {
-    //   hasError: true,
-    //   message: `command ${command} is not support, command 01-tcp,02-udp,03-mux`,
-    // };
-    // console.log(
-    //   `command ${command} is not support, command 01-tcp,02-udp,03-mux`
-    // );
+  } else {
+    return {
+      hasError: true,
+      message: `command ${command} is not support, command 01-tcp,02-udp,03-mux`,
+    };
   }
   const portIndex = 18 + optLength + 1;
   const portBuffer = vlessBuffer.slice(portIndex, portIndex + 2);
