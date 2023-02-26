@@ -290,6 +290,8 @@ function makeUDPSocketStream(portRemote, address) {
     },
 
     transform(chunk: ArrayBuffer, controller) {
+      // seems v2ray will use same web socket for dns query..
+      // And v2ray will combine A record and AAAA record into one ws message and use 2 btye for dns query length
       for (let index = 0; index < chunk.byteLength; ) {
         const lengthBuffer = chunk.slice(index, index + 2);
         const udpPakcetLength = new DataView(lengthBuffer).getInt16(0);
