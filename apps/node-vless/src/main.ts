@@ -99,8 +99,14 @@ vlessWServer.on('connection', async function connection(ws) {
           async write(chunk: Buffer, controller) {
             if (udpClientStream) {
               const writer = udpClientStream.writable.getWriter();
-              // nodejs buffer will fill some byte, need offset is
-              writer.write(chunk.buffer.slice(chunk.byteOffset));
+              // nodejs buffer to ArrayBuffer issue
+              // https://nodejs.org/dist/latest-v18.x/docs/api/buffer.html#bufbuffer
+              writer.write(
+                chunk.buffer.slice(
+                  chunk.byteOffset,
+                  chunk.byteOffset + chunk.length
+                )
+              );
               writer.releaseLock();
               return;
             }
@@ -109,7 +115,10 @@ vlessWServer.on('connection', async function connection(ws) {
               // remoteConnection.write(chunk);
               return;
             }
-            const vlessBuffer = chunk.buffer.slice(chunk.byteOffset);
+            const vlessBuffer = chunk.buffer.slice(
+              chunk.byteOffset,
+              chunk.byteOffset + chunk.length
+            );
             const {
               hasError,
               message,
@@ -290,8 +299,8 @@ function makeUDPSocketStream(portRemote, address) {
     },
 
     transform(chunk: ArrayBuffer, controller) {
-      // seems v2ray will use same web socket for dns query..
-      // And v2ray will combine A record and AAAA record into one ws message and use 2 btye for dns query length
+      //seems v2ray will use same web socket for dns query..
+      //And v2ray will combine A record and AAAA record into one ws message and use 2 btye for dns query length
       for (let index = 0; index < chunk.byteLength; ) {
         const lengthBuffer = chunk.slice(index, index + 2);
         const udpPakcetLength = new DataView(lengthBuffer).getInt16(0);
@@ -299,7 +308,6 @@ function makeUDPSocketStream(portRemote, address) {
           chunk.slice(index + 2, index + 2 + udpPakcetLength)
         );
         index = index + 2 + udpPakcetLength;
-
         udpClient.send(udpData, portRemote, address, (err) => {
           if (err) {
             console.log(err);
