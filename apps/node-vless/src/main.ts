@@ -78,7 +78,7 @@ const server = createServer((req, resp) => {
 });
 const vlessWServer = new WebSocketServer({ noServer: true });
 
-vlessWServer.on('connection', async function connection(ws) {
+vlessWServer.on('connection', async function connection(ws, request) {
   let address = '';
   let portWithRandomLog = '';
   try {
@@ -88,11 +88,15 @@ vlessWServer.on('connection', async function connection(ws) {
     let remoteConnection: Duplex = null;
     let udpClientStream: TransformStream = null;
     let remoteConnectionReadyResolve: Function;
-
-    const readableWebSocketStream = makeReadableWebSocketStream(ws, log);
+    const earlyDataHeader = request.headers['sec-websocket-protocol'];
+    const readableWebSocketStream = makeReadableWebSocketStream(
+      ws,
+      earlyDataHeader,
+      log
+    );
     let vlessResponseHeader: Uint8Array | null = null;
 
-    // ws --> remote
+    // ws  --> remote
     readableWebSocketStream
       .pipeTo(
         new WritableStream({
@@ -153,7 +157,7 @@ vlessWServer.on('connection', async function connection(ws) {
             }
           },
           close() {
-            // if (udpClientStream) {
+            // if (udpClientStream ) {
             //   udpClientStream.writable.close();
             // }
             console.log(
@@ -161,6 +165,7 @@ vlessWServer.on('connection', async function connection(ws) {
             );
           },
           abort(reason) {
+            // TODO: log can be remove, abort will catch by catch block
             console.log(
               `[${address}:${portWithRandomLog}] readableWebSocketStream is abort`,
               JSON.stringify(reason)

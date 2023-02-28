@@ -31,7 +31,11 @@ export async function processWebSocket({
     const log = (info: string, event?: any) => {
       console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
     };
-    const readableWebSocketStream = makeReadableWebSocketStream(webSocket, log);
+    const readableWebSocketStream = makeReadableWebSocketStream(
+      webSocket,
+      '',
+      log
+    );
     let vlessResponseHeader: Uint8Array | null = null;
 
     // ws --> remote
@@ -171,6 +175,7 @@ export async function processWebSocket({
 
 export function makeReadableWebSocketStream(
   ws: WebSocket | any,
+  earlyDataHeader: string,
   log: Function
 ) {
   let readableStreamCancel = false;
@@ -203,9 +208,23 @@ export function makeReadableWebSocketStream(
           log(`websocketStream can't close DUE to `, error);
         }
       });
+      // header ws 0rtt
+      const { earlyData, error } = base64ToArrayBuffer(earlyDataHeader);
+      if (error) {
+        log(`earlyDataHeader has invaild base64`);
+        closeWebSocket(ws);
+        return;
+      }
+      if (earlyData) {
+        controller.enqueue(earlyData);
+      }
     },
-    pull(controller) {},
+    pull(controller) {
+      // if ws can stop read if stream is full, we can implement backpressure
+      // https://streams.spec.whatwg.org/#example-rs-push-backpressure
+    },
     cancel(reason) {
+      // TODO: log can be remove, if writestream has error, write stream will has log
       log(`websocketStream is cancel DUE to `, reason);
       if (readableStreamCancel) {
         return;
@@ -214,6 +233,21 @@ export function makeReadableWebSocketStream(
       closeWebSocket(ws);
     },
   });
+}
+
+function base64ToArrayBuffer(base64Str: string) {
+  if (!base64Str) {
+    return { error: null };
+  }
+  try {
+    // go use modified Base64 for URL rfc4648 which js atob nor support
+    base64Str = base64Str.replace(/-/g, '+').replace(/_/g, '/');
+    const decode = atob(base64Str);
+    const arryBuffer = Uint8Array.from(decode, (c) => c.charCodeAt(0));
+    return { earlyData: arryBuffer, error: null };
+  } catch (error) {
+    return { error };
+  }
 }
 
 export function closeWebSocket(socket: WebSocket | any) {

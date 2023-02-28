@@ -45,3 +45,4 @@ Thumbs.db
 
 **/.dev.vars
 wrangler.toml
+.npmrc

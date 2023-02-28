@@ -16,7 +16,8 @@
         "assets": ["apps/node-vless/src/assets"],
         "webpackConfig": "apps/node-vless/webpack.config.js",
         "isolatedConfig": true,
-        "babelUpwardRootMode": true
+        "babelUpwardRootMode": true,
+        "sourceMap": true
       },
       "configurations": {
         "production": {
