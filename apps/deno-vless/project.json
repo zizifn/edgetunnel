@@ -1,37 +1,37 @@
 {
-  "name": "deno-vless2",
+  "name": "deno-vless",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "sourceRoot": "apps/deno-vless2/src",
+  "sourceRoot": "apps/deno-vless/src",
   "targets": {
     "build": {
       "executor": "@nrwl/deno:bundle",
-      "outputs": ["dist/apps/deno-vless2"],
+      "outputs": ["dist/apps/deno-vless"],
       "options": {
-        "main": "apps/deno-vless2/src/main.ts",
-        "outputFile": "dist/apps/deno-vless2/main.js",
-        "denoConfig": "apps/deno-vless2/deno.json"
+        "main": "apps/deno-vless/src/main.ts",
+        "outputFile": "dist/apps/deno-vless/main.js",
+        "denoConfig": "apps/deno-vless/deno.json"
       }
     },
     "serve": {
       "executor": "@nrwl/deno:run",
       "options": {
-        "buildTarget": "deno-vless2:build",
+        "buildTarget": "deno-vless:build",
         "watch": true
       }
     },
     "test": {
       "executor": "@nrwl/deno:test",
-      "outputs": ["coverage/apps/deno-vless2"],
+      "outputs": ["coverage/apps/deno-vless"],
       "options": {
-        "coverageDirectory": "coverage/apps/deno-vless2",
-        "denoConfig": "apps/deno-vless2/deno.json"
+        "coverageDirectory": "coverage/apps/deno-vless",
+        "denoConfig": "apps/deno-vless/deno.json"
       }
     },
     "lint": {
       "executor": "@nrwl/deno:lint",
       "options": {
-        "denoConfig": "apps/deno-vless2/deno.json"
+        "denoConfig": "apps/deno-vless/deno.json"
       }
     }
   },
