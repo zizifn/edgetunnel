@@ -35,5 +35,6 @@
       }
     }
   },
+  "implicitDependencies": ["cf-page"],
   "tags": []
 }
