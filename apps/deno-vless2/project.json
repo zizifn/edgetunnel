@@ -1,0 +1,39 @@
+{
+  "name": "deno-vless2",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/deno-vless2/src",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/deno:bundle",
+      "outputs": ["dist/apps/deno-vless2"],
+      "options": {
+        "main": "apps/deno-vless2/src/main.ts",
+        "outputFile": "dist/apps/deno-vless2/main.js",
+        "denoConfig": "apps/deno-vless2/deno.json"
+      }
+    },
+    "serve": {
+      "executor": "@nrwl/deno:run",
+      "options": {
+        "buildTarget": "deno-vless2:build",
+        "watch": true
+      }
+    },
+    "test": {
+      "executor": "@nrwl/deno:test",
+      "outputs": ["coverage/apps/deno-vless2"],
+      "options": {
+        "coverageDirectory": "coverage/apps/deno-vless2",
+        "denoConfig": "apps/deno-vless2/deno.json"
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/deno:lint",
+      "options": {
+        "denoConfig": "apps/deno-vless2/deno.json"
+      }
+    }
+  },
+  "tags": []
+}
