@@ -50,6 +50,7 @@ export function makeReadableWebSocketStream(
         return;
       }
       if (earlyData) {
+        log(`enable earlyData 0rtt in http header`);
         controller.enqueue(earlyData);
       }
     },
