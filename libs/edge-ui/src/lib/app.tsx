@@ -209,7 +209,7 @@ function QRcodeImg({ text }: { text: string }) {
   }
 
   return (
-    <div className="flex flex-col border border-blue-300 overflow-hidden w-[420px] h-[420px] justify-start items-center">
+    <div className="flex flex-col border border-blue-300 overflow-hidden w-[500px] h-[420px] justify-start items-center">
       <img
         src={codeImg}
         width="350"
@@ -218,7 +218,9 @@ function QRcodeImg({ text }: { text: string }) {
         className="border-spacing-1"
       />
       <div className="flex flex-grow w-full bg-gray-200">
-        <span className="flex-grow">{text}</span>
+        <span className="flex-grow break-normal overflow-scroll w-4/5">
+          {text}
+        </span>
         <div className="w-6 h-6 ml-auto">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -315,7 +317,7 @@ function ShareActions({
     }
     return `vless://${uuid}@${
       url.hostname
-    }:443?encryption=none&security=tls&type=ws&${pathParam || ''}#${
+    }:443?encryption=none&security=tls&type=ws${pathParam || ''}#${
       url.hostname
     }`;
   }
