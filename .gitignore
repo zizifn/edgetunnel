@@ -1,7 +1,13 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
 # compiled output
-dist
+# https://theapache64.github.io/git-do-not-ignore/
+!dist/
+dist/*
+!dist/apps/
+dist/apps/*
+!dist/apps/cf-page
+
 tmp
 /out-tsc
 
@@ -45,3 +51,4 @@ Thumbs.db
 
 **/.dev.vars
 wrangler.toml
+.npmrc

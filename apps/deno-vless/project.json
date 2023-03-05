@@ -1,62 +1,40 @@
 {
   "name": "deno-vless",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/deno-vless/src",
   "projectType": "application",
+  "sourceRoot": "apps/deno-vless/src",
   "targets": {
     "build": {
-      "executor": "@nrwl/vite:build",
-      "outputs": ["{options.outputPath}"],
-      "defaultConfiguration": "production",
+      "executor": "@nrwl/deno:bundle",
+      "outputs": ["dist/apps/deno-vless"],
       "options": {
-        "outputPath": "apps/deno-vless/src/client"
-      },
-      "configurations": {
-        "development": {
-          "mode": "development"
-        },
-        "production": {
-          "mode": "production"
-        }
+        "main": "apps/deno-vless/src/main.ts",
+        "outputFile": "dist/apps/deno-vless/main.js",
+        "denoConfig": "apps/deno-vless/deno.json"
       }
     },
     "serve": {
-      "executor": "@nrwl/vite:dev-server",
-      "defaultConfiguration": "development",
+      "executor": "@nrwl/deno:run",
       "options": {
-        "buildTarget": "deno-vless:build"
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "deno-vless:build:development",
-          "hmr": true
-        },
-        "production": {
-          "buildTarget": "deno-vless:build:production",
-          "hmr": false
-        }
-      }
-    },
-    "serve-deno": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "deno run --allow-net --allow-read --allow-write --allow-env --watch apps/deno-vless/src/main.ts"
+        "buildTarget": "deno-vless:build",
+        "watch": true
       }
     },
     "test": {
-      "executor": "@nrwl/vite:test",
-      "outputs": ["{projectRoot}/coverage"],
+      "executor": "@nrwl/deno:test",
+      "outputs": ["coverage/apps/deno-vless"],
       "options": {
-        "passWithNoTests": true
+        "coverageDirectory": "coverage/apps/deno-vless",
+        "denoConfig": "apps/deno-vless/deno.json"
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "outputs": ["{options.outputFile}"],
+      "executor": "@nrwl/deno:lint",
       "options": {
-        "lintFilePatterns": ["apps/deno-vless/**/*.{ts,tsx,js,jsx}"]
+        "denoConfig": "apps/deno-vless/deno.json"
       }
     }
   },
+  "implicitDependencies": ["cf-page"],
   "tags": []
 }

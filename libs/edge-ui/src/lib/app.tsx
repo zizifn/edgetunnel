@@ -4,12 +4,19 @@ import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import QRCode from 'qrcode';
 import { Fragment, useEffect, useState } from 'react';
 import { validate as uuidValidate } from 'uuid';
+import { V2Option } from './model';
 export function EdgeApp() {
   const [text, setText] = useState('');
   const [show, setShow] = useState(false);
+  const [v2Option, setV2Option] = useState<V2Option>({
+    ws0Rtt: false,
+  });
   function handleShare(text: string) {
     setText(text);
     setShow(true);
+  }
+  function handleV2Option(option: V2Option) {
+    setV2Option(option);
   }
 
   useEffect(() => {
@@ -29,13 +36,61 @@ export function EdgeApp() {
         <Warning></Warning>
         <div className="flex flex-col h-full ite">
           <QRcodeImg text={text}></QRcodeImg>
-          <ShareActions handleShare={handleShare}></ShareActions>
+          <V2Options handleV2Option={handleV2Option}></V2Options>
+          <ShareActions
+            handleShare={handleShare}
+            v2option={v2Option}
+          ></ShareActions>
           <SetUpAlert></SetUpAlert>
           <ShareAnything handleShare={handleShare}></ShareAnything>
         </div>
       </div>
       <ShareNotifications show={show} setShow={setShow}></ShareNotifications>
     </>
+  );
+}
+
+function V2Options({
+  handleV2Option,
+}: {
+  handleV2Option: (option: V2Option) => void;
+}) {
+  const [ws0Rtt, setWs0Rtt] = useState(false);
+  return (
+    <fieldset className="mt-2 border-dashed border-2 border-indigo-600">
+      <legend className="sr-only">Notifications</legend>
+      <div className="space-y-5">
+        <div className="relative flex items-start">
+          <div className="flex h-6 items-center">
+            <input
+              id="ws0rtt"
+              aria-describedby="comments-description"
+              name="ws0rtt"
+              type="checkbox"
+              checked={ws0Rtt}
+              onChange={(event) => {
+                setWs0Rtt(!ws0Rtt);
+                handleV2Option({
+                  ws0Rtt: !ws0Rtt,
+                });
+              }}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+            />
+          </div>
+          <div className="ml-3">
+            <label
+              htmlFor="ws0rtt"
+              className="text-sm font-medium leading-6 text-gray-900"
+            >
+              WS 0RTT
+            </label>
+            <p id="comments-description" className="text-sm text-gray-500">
+              Enable WS 0RTT
+            </p>
+          </div>
+        </div>
+      </div>
+    </fieldset>
   );
 }
 
@@ -154,7 +209,7 @@ function QRcodeImg({ text }: { text: string }) {
   }
 
   return (
-    <div className="flex flex-col border border-blue-300 overflow-hidden w-[420px] h-[420px] justify-start items-center">
+    <div className="flex flex-col border border-blue-300 overflow-hidden w-[500px] h-[420px] justify-start items-center">
       <img
         src={codeImg}
         width="350"
@@ -163,7 +218,9 @@ function QRcodeImg({ text }: { text: string }) {
         className="border-spacing-1"
       />
       <div className="flex flex-grow w-full bg-gray-200">
-        <span className="flex-grow">{text}</span>
+        <span className="flex-grow break-normal overflow-scroll w-4/5">
+          {text}
+        </span>
         <div className="w-6 h-6 ml-auto">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -240,8 +297,10 @@ function ShareAnything({
 
 function ShareActions({
   handleShare,
+  v2option,
 }: {
   handleShare: (text: string) => void;
+  v2option: V2Option;
 }) {
   function getPageURL() {
     return window.location.href;
@@ -249,7 +308,18 @@ function ShareActions({
   function getVlessURL() {
     const url = new URL(window.location.href);
     const uuid = url.pathname.split('/').find(uuidValidate);
-    return `vless://${uuid}@${url.hostname}:443?encryption=none&security=tls&type=ws#v2ray-edge`;
+    let pathParam = '';
+    if (v2option.ws0Rtt) {
+      pathParam = `${pathParam}?ed=2048`;
+    }
+    if (pathParam) {
+      pathParam = `&path=${encodeURIComponent(pathParam)}`;
+    }
+    return `vless://${uuid}@${
+      url.hostname
+    }:443?encryption=none&security=tls&type=ws${pathParam || ''}#${
+      url.hostname
+    }`;
   }
   return (
     <span className="inline-flex self-center mt-4 rounded-md shadow-sm isolate">

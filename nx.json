@@ -50,5 +50,6 @@
       }
     }
   },
-  "defaultProject": "cf-page"
+  "defaultProject": "cf-page",
+  "plugins": ["@nrwl/deno"]
 }
