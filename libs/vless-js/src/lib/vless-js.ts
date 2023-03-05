@@ -217,13 +217,3 @@ export function processVlessHeader(
     isUDP,
   };
 }
-
-function chunk<T>(array: ArrayBuffer, size: number) {
-  const result = [];
-  for (let index = 0; index < array.byteLength; ) {
-    const end = index + size;
-    result.push(array.slice(index, end));
-    index = end;
-  }
-  return result;
-}
