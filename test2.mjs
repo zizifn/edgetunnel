@@ -1,28 +1,28 @@
-import { ReadableStream } from 'stream/web';
+const a = new Uint8Array([1, 2]);
 
-try {
-  let i = 0;
-  const writeable = new WritableStream({
-    start(controller) {
-      console.log('start');
-    },
-    write(chunk, con) {
-      console.log('write', chunk);
-    },
-    abort(reason) {
-      console.log('abort', reason);
-    },
-  });
+console.log(a);
+console.log(a.buffer);
 
-  // const write = writeable.getWriter();
-  await writeable.abort('1111');
-  // await write.write('111');
+const b = Buffer.from([1, 2]);
 
-  console.log('end--------');
+console.log(b);
+console.log(b.buffer);
 
-  //   for await (const iterator of readableStream) {
-  //     console.log(iterator);
-  //   }
-} catch (error) {
-  console.log('---end---', error);
+function base64ToArrayBuffer(base64Str) {
+  console.log(base64Str);
+  try {
+    // go use modified Base64 for URL rfc4648 which js atob nor support
+    base64Str = base64Str.replace(/-/g, '+').replace(/_/g, '/');
+    console.log(base64Str);
+    const decode = atob(base64Str);
+    console.log(decode);
+    const arrybuffer = Uint8Array.from(decode, (c) => c.charCodeAt(0)).buffer;
+    return;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
 }
+const str = base64ToArrayBuffer(
+  'AOKDkCEjE0J_l3yhsd7Hms4AAQG7Ag13d3cuYmFpZHUuY29tFgMDALwBAAC4AwNj_iSlI337rp-44I2NpQTGV00LB8ckDg17QcGu3fNkoAAAJMAswCvAMMAvwCTAI8AowCfACsAJwBTAEwCdAJwAPQA8ADUALwEAAGsAAAASABAAAA13d3cuYmFpZHUuY29tAAUABQEAAAAAAAoACAAGAB0AFwAYAAsAAgEAAA0AGgAYCAQIBQgGBAEFAQIBBAMFAwIDAgIGAQYDACMAAAAQAAsACQhodHRwLzEuMQAXAAD_AQABAA'
+);

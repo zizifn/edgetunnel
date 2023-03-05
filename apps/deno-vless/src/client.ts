@@ -6,16 +6,13 @@ async function serveClient(req: Request, basePath: string) {
   const pathname = new URL(req.url).pathname;
   if (pathname.startsWith('/assets')) {
     const resp = await serveDir(req, {
-      fsRoot: `${Deno.cwd()}/apps/deno-vless/src/client`,
+      fsRoot: `${Deno.cwd()}/dist/apps/cf-page`,
     });
     resp.headers.set('cache-control', 'public, max-age=2592000');
     return resp;
   }
   if (pathname.includes(basePath)) {
-    return await serveFile(
-      req,
-      `${Deno.cwd()}/apps/deno-vless/src/client/index.html`
-    );
+    return await serveFile(req, `${Deno.cwd()}/dist/apps/cf-page/index.html`);
   }
   const basicAuth = req.headers.get('Authorization') || '';
   const authString = basicAuth.split(' ')?.[1] || '';

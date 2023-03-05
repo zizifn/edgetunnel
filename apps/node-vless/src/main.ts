@@ -2,8 +2,7 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 import { index401, serverStaticFile } from './app/utils';
-import * as uuid from 'uuid';
-import * as lodash from 'lodash';
+import { validate } from 'uuid';
 import { createReadStream } from 'node:fs';
 import { setDefaultResultOrder } from 'node:dns';
 import { createSocket, Socket as UDPSocket } from 'node:dgram';
@@ -29,7 +28,7 @@ if (dnOder === 'ipv4first') {
   setDefaultResultOrder(dnOder);
 }
 
-let isVaildUser = uuid.validate(userID);
+let isVaildUser = validate(userID);
 if (!isVaildUser) {
   console.log('not set valid UUID');
 }
@@ -78,7 +77,7 @@ const server = createServer((req, resp) => {
 });
 const vlessWServer = new WebSocketServer({ noServer: true });
 
-vlessWServer.on('connection', async function connection(ws) {
+vlessWServer.on('connection', async function connection(ws, request) {
   let address = '';
   let portWithRandomLog = '';
   try {
@@ -88,15 +87,22 @@ vlessWServer.on('connection', async function connection(ws) {
     let remoteConnection: Duplex = null;
     let udpClientStream: TransformStream = null;
     let remoteConnectionReadyResolve: Function;
-
-    const readableWebSocketStream = makeReadableWebSocketStream(ws, log);
+    const earlyDataHeader = request.headers['sec-websocket-protocol'];
+    const readableWebSocketStream = makeReadableWebSocketStream(
+      ws,
+      earlyDataHeader,
+      log
+    );
     let vlessResponseHeader: Uint8Array | null = null;
 
-    // ws --> remote
+    // ws  --> remote
     readableWebSocketStream
       .pipeTo(
         new WritableStream({
           async write(chunk: Buffer, controller) {
+            if (!Buffer.isBuffer(chunk)) {
+              chunk = Buffer.from(chunk);
+            }
             if (udpClientStream) {
               const writer = udpClientStream.writable.getWriter();
               // nodejs buffer to ArrayBuffer issue
@@ -127,7 +133,7 @@ vlessWServer.on('connection', async function connection(ws) {
               rawDataIndex,
               vlessVersion,
               isUDP,
-            } = processVlessHeader(vlessBuffer, userID, uuid, lodash);
+            } = processVlessHeader(vlessBuffer, userID);
             address = addressRemote || '';
             portWithRandomLog = `${portRemote}--${Math.random()} ${
               isUDP ? 'udp ' : 'tcp '
@@ -153,7 +159,7 @@ vlessWServer.on('connection', async function connection(ws) {
             }
           },
           close() {
-            // if (udpClientStream) {
+            // if (udpClientStream ) {
             //   udpClientStream.writable.close();
             // }
             console.log(
@@ -161,6 +167,7 @@ vlessWServer.on('connection', async function connection(ws) {
             );
           },
           abort(reason) {
+            // TODO: log can be remove, abort will catch by catch block
             console.log(
               `[${address}:${portWithRandomLog}] readableWebSocketStream is abort`,
               JSON.stringify(reason)

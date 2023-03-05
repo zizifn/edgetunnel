@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "vless-js": "./libs/vless-js/src/lib/vless-js.ts",
+    "uuid": "https://jspm.dev/uuid",
+    "lodash": "https://jspm.dev/lodash-es"
+  }
+}

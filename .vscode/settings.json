@@ -2,9 +2,11 @@
   "deno.codeLens.implementations": true,
   "deno.codeLens.references": true,
   "deno.enablePaths": [
-    "apps/deno-bypass",
     "apps/deno-vless/src/deno",
     "apps/deno-vless/src/main.ts",
-    "apps/deno-vless/src/deno-test.ts"
-  ]
+    "apps/deno-vless/src/deno-test.ts",
+    "apps/deno-vless2"
+  ],
+  "deno.unstable": true,
+  "deno.importMap": "./import_map.json"
 }
