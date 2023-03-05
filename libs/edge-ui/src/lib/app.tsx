@@ -308,13 +308,16 @@ function ShareActions({
     const uuid = url.pathname.split('/').find(uuidValidate);
     let pathParam = '';
     if (v2option.ws0Rtt) {
-      pathParam = `&${pathParam}?ed=2048`;
+      pathParam = `${pathParam}?ed=2048`;
+    }
+    if (pathParam) {
+      pathParam = `&path=${encodeURIComponent(pathParam)}`;
     }
     return `vless://${uuid}@${
       url.hostname
-    }:443?encryption=none&security=tls&type=ws${
-      encodeURIComponent(pathParam) || ''
-    }#${url.hostname}`;
+    }:443?encryption=none&security=tls&type=ws&${pathParam || ''}#${
+      url.hostname
+    }`;
   }
   return (
     <span className="inline-flex self-center mt-4 rounded-md shadow-sm isolate">
