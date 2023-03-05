@@ -1,3 +1,4 @@
+import { stringify } from 'uuid';
 export function vlessJs(): string {
   return 'vless-js';
 }
@@ -99,9 +100,9 @@ export function closeWebSocket(socket: WebSocket | any) {
 // 协议版本，与请求的一致	附加信息长度 N	附加信息 ProtoBuf	响应数据
 export function processVlessHeader(
   vlessBuffer: ArrayBuffer,
-  userID: string,
-  uuidLib: any,
-  lodash: any
+  userID: string
+  // uuidLib: any,
+  // lodash: any
 ) {
   if (vlessBuffer.byteLength < 24) {
     // console.log('invalid data');
@@ -114,7 +115,7 @@ export function processVlessHeader(
   const version = new Uint8Array(vlessBuffer.slice(0, 1));
   let isValidUser = false;
   let isUDP = false;
-  if (uuidLib.stringify(new Uint8Array(vlessBuffer.slice(1, 17))) === userID) {
+  if (stringify(new Uint8Array(vlessBuffer.slice(1, 17))) === userID) {
     isValidUser = true;
   }
   if (!isValidUser) {
@@ -180,25 +181,27 @@ export function processVlessHeader(
       break;
     case 3:
       addressLength = 16;
-      const addressChunkBy2: number[][] = lodash.chunk(
-        new Uint8Array(
-          vlessBuffer.slice(
-            addressValueIndex,
-            addressValueIndex + addressLength
-          )
-        ),
-        2,
-        null
+      const dataView = new DataView(
+        vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
       );
-      // 2001:0db8:85a3:0000:0000:8a2e:0370:7334
-      addressValue = addressChunkBy2
-        .map((items) =>
-          items.map((item) => item.toString(16).padStart(2, '0')).join('')
-        )
-        .join(':');
+      const ipv6 = [];
+      for (let i = 0; i < 8; i++) {
+        ipv6.push(dataView.getUint16(i * 2).toString(16));
+      }
+      addressValue = ipv6.join(':');
       if (addressValue) {
         addressValue = `[${addressValue}]`;
       }
+      console.log('----------------', addressValue);
+      // 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+      // addressValue = addressChunkBy2
+      //   .map((items) =>
+      //     items.map((item) => item.toString(16).padStart(2, '0')).join('')
+      //   )
+      //   .join(':');
+      // if (addressValue) {
+      //   addressValue = `[${addressValue}]`;
+      // }
 
       break;
     default:
@@ -221,4 +224,14 @@ export function processVlessHeader(
     vlessVersion: version,
     isUDP,
   };
+}
+
+function chunk<T>(array: ArrayBuffer, size: number) {
+  const result = [];
+  for (let index = 0; index < array.byteLength; ) {
+    const end = index + size;
+    result.push(array.slice(index, end));
+    index = end;
+  }
+  return result;
 }

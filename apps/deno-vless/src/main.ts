@@ -46,7 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
         hostname,
       });
     },
-    libs: { uuid, lodash },
+    // libs: { uuid, lodash },
   });
   return response;
 };
@@ -55,12 +55,12 @@ async function processWebSocket({
   userID,
   webSocket,
   rawTCPFactory,
-  libs: { uuid, lodash },
-}: {
+}: // libs: { uuid, lodash },
+{
   userID: string;
   webSocket: WebSocket;
   rawTCPFactory: (port: number, hostname: string) => Promise<any>;
-  libs: { uuid: any; lodash: any };
+  // libs: { uuid: any; lodash: any };
 }) {
   let address = '';
   let portWithRandomLog = '';
@@ -102,7 +102,7 @@ async function processWebSocket({
               rawDataIndex,
               vlessVersion,
               isUDP,
-            } = processVlessHeader(vlessBuffer, userID, uuid, lodash);
+            } = processVlessHeader(vlessBuffer, userID);
             address = addressRemote || '';
             portWithRandomLog = `${portRemote}--${Math.random()}`;
             if (isUDP) {
