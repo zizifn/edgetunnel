@@ -184,25 +184,17 @@ export function processVlessHeader(
       const dataView = new DataView(
         vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
       );
+      // 2001:0db8:85a3:0000:0000:8a2e:0370:7334
       const ipv6 = [];
       for (let i = 0; i < 8; i++) {
         ipv6.push(dataView.getUint16(i * 2).toString(16));
       }
       addressValue = ipv6.join(':');
-      if (addressValue) {
-        addressValue = `[${addressValue}]`;
-      }
-      console.log('----------------', addressValue);
-      // 2001:0db8:85a3:0000:0000:8a2e:0370:7334
-      // addressValue = addressChunkBy2
-      //   .map((items) =>
-      //     items.map((item) => item.toString(16).padStart(2, '0')).join('')
-      //   )
-      //   .join(':');
+      // console.log('---------', addressValue)
+      // seems no need add [] for ipv6
       // if (addressValue) {
       //   addressValue = `[${addressValue}]`;
       // }
-
       break;
     default:
       console.log(`invild  addressType is ${addressType}`);
