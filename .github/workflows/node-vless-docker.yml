@@ -1,4 +1,4 @@
-name: k8s-app-build
+name: node-vless-docker
 on:
   workflow_dispatch:
 jobs:
