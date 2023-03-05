@@ -18,10 +18,8 @@ export function makeReadableWebSocketStream(
   return new ReadableStream<ArrayBuffer>({
     start(controller) {
       ws.addEventListener('message', async (e: { data: ArrayBuffer }) => {
-        // console.log('MESSAGE');
         const vlessBuffer: ArrayBuffer = e.data;
         // console.log('MESSAGE', vlessBuffer);
-
         // console.log(`message is ${vlessBuffer.byteLength}`);
         // this is not backpressure, but backpressure is depends on underying websocket can pasue
         // https://streams.spec.whatwg.org/#example-rs-push-backpressure
@@ -35,7 +33,7 @@ export function makeReadableWebSocketStream(
       ws.addEventListener('close', () => {
         try {
           log('webSocket is close');
-          // is stream is cancel, skill controller.close
+          // is stream is cancel, skip controller.close
           if (readableStreamCancel) {
             return;
           }
@@ -76,11 +74,11 @@ function base64ToArrayBuffer(base64Str: string) {
     return { error: null };
   }
   try {
-    // go use modified Base64 for URL rfc4648 which js atob nor support
+    // go use modified Base64 for URL rfc4648 which js atob not support
     base64Str = base64Str.replace(/-/g, '+').replace(/_/g, '/');
     const decode = atob(base64Str);
     const arryBuffer = Uint8Array.from(decode, (c) => c.charCodeAt(0));
-    return { earlyData: arryBuffer, error: null };
+    return { earlyData: arryBuffer.buffer, error: null };
   } catch (error) {
     return { error };
   }
@@ -93,9 +91,9 @@ export function closeWebSocket(socket: WebSocket | any) {
 }
 
 //https://github.com/v2ray/v2ray-core/issues/2636
-// 1 字节	  16 字节     1 字节	       M 字节	      1 字节  2 字节   1 字节	 S 字节	X 字节
-// 协议版本	  等价 UUID	  附加信息长度 M	附加信息 ProtoBuf  指令	    端口	地址类型   地址	请求数据
-
+// 1 字节	  16 字节       1 字节	       M 字节	              1 字节            2 字节      1 字节	      S 字节	      X 字节
+// 协议版本	  等价 UUID	  附加信息长度 M	(附加信息 ProtoBuf)  指令(udp/tcp)	    端口	      地址类型      地址	        请求数据
+// 00                   00                                  01                 01bb(443)   02(ip/host)
 // 1 字节	              1 字节	      N 字节	         Y 字节
 // 协议版本，与请求的一致	附加信息长度 N	附加信息 ProtoBuf	响应数据
 export function processVlessHeader(

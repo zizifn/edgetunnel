@@ -1,6 +1,5 @@
 import { serve } from 'https://deno.land/std@0.170.0/http/server.ts';
 import * as uuid from 'https://jspm.dev/uuid';
-import * as lodash from 'https://jspm.dev/lodash-es';
 import { serveClient } from './client.ts';
 import {
   closeWebSocket,
@@ -37,16 +36,18 @@ const handler = async (req: Request): Promise<Response> => {
   // let test: Deno.TcpConn | null = null;
   // test!.writable.abort();
   //
+  const earlyDataHeader = req.headers.get('sec-websocket-protocol') || '';
+
   processWebSocket({
     userID,
     webSocket: socket,
-    rawTCPFactory: (port: number, hostname: string) => {
-      return Deno.connect({
-        port,
-        hostname,
-      });
-    },
-    // libs: { uuid, lodash },
+    earlyDataHeader,
+    // rawTCPFactory: (port: number, hostname: string) => {
+    //   return Deno.connect({
+    //     port,
+    //     hostname,
+    //   });
+    // },
   });
   return response;
 };
@@ -54,12 +55,13 @@ const handler = async (req: Request): Promise<Response> => {
 async function processWebSocket({
   userID,
   webSocket,
-  rawTCPFactory,
+  earlyDataHeader,
 }: // libs: { uuid, lodash },
 {
   userID: string;
   webSocket: WebSocket;
-  rawTCPFactory: (port: number, hostname: string) => Promise<any>;
+  earlyDataHeader: string;
+  // rawTCPFactory: (port: number, hostname: string) => Promise<any>;
   // libs: { uuid: any; lodash: any };
 }) {
   let address = '';
@@ -77,7 +79,7 @@ async function processWebSocket({
     };
     const readableWebSocketStream = makeReadableWebSocketStream(
       webSocket,
-      '',
+      earlyDataHeader,
       log
     );
     let vlessResponseHeader: Uint8Array | null = null;
@@ -106,9 +108,11 @@ async function processWebSocket({
             address = addressRemote || '';
             portWithRandomLog = `${portRemote}--${Math.random()}`;
             if (isUDP) {
+              console.log('udp');
               controller.error(
                 `[${address}:${portWithRandomLog}] command udp is not support `
               );
+              return;
             }
             if (hasError) {
               controller.error(`[${address}:${portWithRandomLog}] ${message} `);
@@ -116,7 +120,10 @@ async function processWebSocket({
             // const addressType = requestAddr >> 4;
             // const addressLength = requestAddr & 0x0f;
             console.log(`[${address}:${portWithRandomLog}] connecting`);
-            remoteConnection = await rawTCPFactory(portRemote!, address!);
+            remoteConnection = await Deno.connect({
+              port: portRemote!,
+              hostname: address,
+            });
             vlessResponseHeader = new Uint8Array([vlessVersion![0], 0]);
             const rawClientData = vlessBuffer.slice(rawDataIndex!);
             await remoteConnection!.write(new Uint8Array(rawClientData));
