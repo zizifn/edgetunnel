@@ -107,7 +107,7 @@ vlessWServer.on('connection', async function connection(ws, request) {
               const writer = udpClientStream.writable.getWriter();
               // nodejs buffer to ArrayBuffer issue
               // https://nodejs.org/dist/latest-v18.x/docs/api/buffer.html#bufbuffer
-              writer.write(
+              await writer.write(
                 chunk.buffer.slice(
                   chunk.byteOffset,
                   chunk.byteOffset + chunk.length
@@ -149,7 +149,7 @@ vlessWServer.on('connection', async function connection(ws, request) {
             if (isUDP) {
               udpClientStream = makeUDPSocketStream(portRemote, address);
               const writer = udpClientStream.writable.getWriter();
-              writer.write(rawClientData);
+              writer.write(rawClientData).catch(error=>console.log)
               writer.releaseLock();
               remoteConnectionReadyResolve(udpClientStream);
             } else {
@@ -301,11 +301,12 @@ function makeUDPSocketStream(portRemote, address) {
         );
       });
       udpClient.on('error', (error) => {
+        console.log('udpClient error event', error);
         controller.error(error);
       });
     },
 
-    transform(chunk: ArrayBuffer, controller) {
+    async transform(chunk: ArrayBuffer, controller) {
       //seems v2ray will use same web socket for dns query..
       //And v2ray will combine A record and AAAA record into one ws message and use 2 btye for dns query length
       for (let index = 0; index < chunk.byteLength; ) {
@@ -315,13 +316,16 @@ function makeUDPSocketStream(portRemote, address) {
           chunk.slice(index + 2, index + 2 + udpPakcetLength)
         );
         index = index + 2 + udpPakcetLength;
+       await new Promise((resolve, reject)=>{
         udpClient.send(udpData, portRemote, address, (err) => {
           if (err) {
-            console.log(err);
-            controller.error('Failed to send UDP packet !!');
+            console.log('udps send error', err);
+            controller.error(`Failed to send UDP packet !! ${err}`);
             safeCloseUDP(udpClient);
           }
+          resolve(true)
         });
+       })
         index = index;
       }
 
