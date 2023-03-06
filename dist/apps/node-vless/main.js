@@ -5698,7 +5698,7 @@ function processVlessHeader(vlessBuffer, userID
         // controller.error('in valid user');
         return {
             hasError: true,
-            message: 'in valid user',
+            message: 'invalid user',
         };
     }
     const optLength = new Uint8Array(vlessBuffer.slice(17, 18))[0];
@@ -6297,7 +6297,7 @@ function makeUDPSocketStream(portRemote, address) {
                     if (err) {
                         console.log(err);
                         controller.error('Failed to send UDP packet !!');
-                        udpClient.close();
+                        safeCloseUDP(udpClient);
                     }
                 });
                 index = index;
@@ -6307,11 +6307,19 @@ function makeUDPSocketStream(portRemote, address) {
             // port is big-Endian in raw data etc 80 == 0x005d
         },
         flush(controller) {
-            udpClient.close();
+            safeCloseUDP(udpClient);
             controller.terminate();
         },
     });
     return transformStream;
+}
+function safeCloseUDP(client) {
+    try {
+        client.close();
+    }
+    catch (error) {
+        console.log('error close udp', error);
+    }
 }
 
 })();
