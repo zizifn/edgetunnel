@@ -193,6 +193,7 @@ vlessWServer.on('connection', async function connection(ws, request) {
       responseStream = Readable.toWeb(remoteConnection);
     }
 
+    // if readable not pipe can't wait fro writeable write method
     await responseStream.pipeTo(
       new WritableStream({
         start() {
@@ -253,7 +254,7 @@ async function connect2Remote(port, host, log: Function): Promise<Socket> {
       {
         port: port,
         host: host,
-        autoSelectFamily: true,
+        // autoSelectFamily: true,
       },
       () => {
         log(`connected`);
