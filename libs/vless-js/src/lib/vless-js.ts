@@ -121,7 +121,7 @@ export function processVlessHeader(
     // controller.error('in valid user');
     return {
       hasError: true,
-      message: 'in valid user',
+      message: 'invalid user',
     };
   }
 

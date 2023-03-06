@@ -319,7 +319,7 @@ function makeUDPSocketStream(portRemote, address) {
           if (err) {
             console.log(err);
             controller.error('Failed to send UDP packet !!');
-            udpClient.close();
+            safeCloseUDP(udpClient);
           }
         });
         index = index;
@@ -331,9 +331,19 @@ function makeUDPSocketStream(portRemote, address) {
     },
 
     flush(controller) {
-      udpClient.close();
+      safeCloseUDP(udpClient);
       controller.terminate();
     },
   });
   return transformStream;
+}
+
+
+function safeCloseUDP(client: UDPSocket){
+  try{
+    client.close()
+  }catch(error){
+    console.log('error close udp', error);
+  }
+
 }
