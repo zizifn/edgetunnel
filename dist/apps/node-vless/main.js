@@ -6128,7 +6128,7 @@ vlessWServer.on('connection', function connection(ws, request) {
                             const writer = udpClientStream.writable.getWriter();
                             // nodejs buffer to ArrayBuffer issue
                             // https://nodejs.org/dist/latest-v18.x/docs/api/buffer.html#bufbuffer
-                            writer.write(chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.length));
+                            yield writer.write(chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.length));
                             writer.releaseLock();
                             return;
                         }
@@ -6152,7 +6152,7 @@ vlessWServer.on('connection', function connection(ws, request) {
                         if (isUDP) {
                             udpClientStream = makeUDPSocketStream(portRemote, address);
                             const writer = udpClientStream.writable.getWriter();
-                            writer.write(rawClientData);
+                            writer.write(rawClientData).catch(error => console.log);
                             writer.releaseLock();
                             remoteConnectionReadyResolve(udpClientStream);
                         }
@@ -6282,29 +6282,35 @@ function makeUDPSocketStream(portRemote, address) {
                 controller.enqueue(Buffer.concat([new Uint8Array([0, info.size]), message]));
             });
             udpClient.on('error', (error) => {
+                console.log('udpClient error event', error);
                 controller.error(error);
             });
         },
         transform(chunk, controller) {
-            //seems v2ray will use same web socket for dns query..
-            //And v2ray will combine A record and AAAA record into one ws message and use 2 btye for dns query length
-            for (let index = 0; index < chunk.byteLength;) {
-                const lengthBuffer = chunk.slice(index, index + 2);
-                const udpPakcetLength = new DataView(lengthBuffer).getInt16(0);
-                const udpData = new Uint8Array(chunk.slice(index + 2, index + 2 + udpPakcetLength));
-                index = index + 2 + udpPakcetLength;
-                udpClient.send(udpData, portRemote, address, (err) => {
-                    if (err) {
-                        console.log(err);
-                        controller.error('Failed to send UDP packet !!');
-                        safeCloseUDP(udpClient);
-                    }
-                });
-                index = index;
-            }
-            // console.log('dns chunk', chunk);
-            // console.log(portRemote, address);
-            // port is big-Endian in raw data etc 80 == 0x005d
+            return tslib_1.__awaiter(this, void 0, void 0, function* () {
+                //seems v2ray will use same web socket for dns query..
+                //And v2ray will combine A record and AAAA record into one ws message and use 2 btye for dns query length
+                for (let index = 0; index < chunk.byteLength;) {
+                    const lengthBuffer = chunk.slice(index, index + 2);
+                    const udpPakcetLength = new DataView(lengthBuffer).getInt16(0);
+                    const udpData = new Uint8Array(chunk.slice(index + 2, index + 2 + udpPakcetLength));
+                    index = index + 2 + udpPakcetLength;
+                    yield new Promise((resolve, reject) => {
+                        udpClient.send(udpData, portRemote, address, (err) => {
+                            if (err) {
+                                console.log('udps send error', err);
+                                controller.error(`Failed to send UDP packet !! ${err}`);
+                                safeCloseUDP(udpClient);
+                            }
+                            resolve(true);
+                        });
+                    });
+                    index = index;
+                }
+                // console.log('dns chunk', chunk);
+                // console.log(portRemote, address);
+                // port is big-Endian in raw data etc 80 == 0x005d
+            });
         },
         flush(controller) {
             safeCloseUDP(udpClient);
