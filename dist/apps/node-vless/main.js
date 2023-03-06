@@ -6187,6 +6187,7 @@ vlessWServer.on('connection', function connection(ws, request) {
             if (remoteConnection) {
                 responseStream = stream_1.Readable.toWeb(remoteConnection);
             }
+            // if readable not pipe can't wait fro writeable write method
             yield responseStream.pipeTo(new web_1.WritableStream({
                 start() {
                     if (ws.readyState === ws.OPEN) {
@@ -6234,7 +6235,7 @@ function connect2Remote(port, host, log) {
             const remoteSocket = (0, node_net_1.connect)({
                 port: port,
                 host: host,
-                autoSelectFamily: true,
+                // autoSelectFamily: true,
             }, () => {
                 log(`connected`);
                 resole(remoteSocket);
