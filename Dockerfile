@@ -7,4 +7,6 @@ WORKDIR /app
 
 COPY dist dist/
 
+EXPOSE 4100
+
 CMD [ "node", "./dist/apps/node-vless/main.js" ]
