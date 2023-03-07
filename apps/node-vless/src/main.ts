@@ -254,6 +254,7 @@ async function connect2Remote(port, host, log: Function): Promise<Socket> {
       {
         port: port,
         host: host,
+        // https://github.com/nodejs/node/pull/46587
         // autoSelectFamily: true,
       },
       () => {
