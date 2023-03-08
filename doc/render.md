@@ -24,12 +24,11 @@ https://render.com/
 
 > Render 入口为 Cloudflare cdn，如果可以优选到亚洲地区 cloudflare ip，新加坡区速度最好。否则 cloudflare 默认美国线路，选美区速度最好。
 
-| 选项          | 值                                      |
-| ------------- | --------------------------------------- |
-| Build Command | `npm install; npm run node-vless:build` |
-| Start Command | `npm run node-vless:start`              |
-
-![render3](./render3.jpg)
+![render3](./render3-1.png)
 
 **⚠️ 添加环境变量 UUID**
-![render4](./render4.jpg)
+![render4](./render4-1.png)
+
+## 访问主页面
+
+输入UUID，就可以访问服务。
