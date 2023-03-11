@@ -33,4 +33,4 @@ jobs:
           # context: ./temp11
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: zizifn/node-vless:latest,zizifn/node-vless:1.0.${{ github.run_id }}
+          tags: zizifn/node-vless:latest,zizifn/node-vless:1.0.${{ github.run_number }}
