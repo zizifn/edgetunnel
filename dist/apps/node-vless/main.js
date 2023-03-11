@@ -5596,6 +5596,10 @@ function makeReadableWebSocketStream(ws, earlyDataHeader, log) {
     return new ReadableStream({
         start(controller) {
             ws.addEventListener('message', (e) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+                // is stream is cancel, skip controller.enqueue
+                if (readableStreamCancel) {
+                    return;
+                }
                 const vlessBuffer = e.data;
                 // console.log('MESSAGE', vlessBuffer);
                 // console.log(`message is ${vlessBuffer.byteLength}`);
@@ -6235,6 +6239,7 @@ function connect2Remote(port, host, log) {
             const remoteSocket = (0, node_net_1.connect)({
                 port: port,
                 host: host,
+                // https://github.com/nodejs/node/pull/46587
                 // autoSelectFamily: true,
             }, () => {
                 log(`connected`);

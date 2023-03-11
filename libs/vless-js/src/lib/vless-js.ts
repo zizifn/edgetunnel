@@ -18,6 +18,10 @@ export function makeReadableWebSocketStream(
   return new ReadableStream<ArrayBuffer>({
     start(controller) {
       ws.addEventListener('message', async (e: { data: ArrayBuffer }) => {
+        // is stream is cancel, skip controller.enqueue
+        if (readableStreamCancel) {
+          return;
+        }
         const vlessBuffer: ArrayBuffer = e.data;
         // console.log('MESSAGE', vlessBuffer);
         // console.log(`message is ${vlessBuffer.byteLength}`);
