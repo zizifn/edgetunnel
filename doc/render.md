@@ -26,6 +26,13 @@ https://render.com/
 
 ![render3](./render3-1.png)
 
+> 如果你不喜欢docker，可以直接写 npm 命令。
+> 
+> | 选项          | 值                                      |
+> | ------------- | --------------------------------------- |
+> | Build Command | `npm install; npm run node-vless:build` |
+> | Start Command | `npm run node-vless:start`              |
+
 **⚠️ 添加环境变量 UUID**
 ![render4](./render4-1.png)
 
