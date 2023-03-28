@@ -7,5 +7,6 @@
     "denoland.vscode-deno",
     "GitHub.copilot",
     "GitHub.copilot-labs",
+    "eamodio.gitlens"
   ]
 }
