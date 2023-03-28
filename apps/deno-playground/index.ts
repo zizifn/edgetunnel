@@ -38,13 +38,43 @@ async function serveClient(req: Request, basePath: string) {
     // 获取 Authorization 头信息
     const basicAuth = req.headers.get('Authorization') || '';
     const authString = basicAuth.split(' ')?.[1] || '';
-    console.log(basePath);
-    console.log(req);
+    // console.log(basePath);
+    // console.log(req);
 
     // 判断是否为 info 请求并且验证通过
     const pathname = new URL(req.url).pathname;
-    if (pathname.startsWith('/info') && atob(authString).includes(basePath)) {
-        // 获取环境变量和请求信息
+    // if (pathname.startsWith('/info') && atob(authString).includes(basePath)) {
+    //     // 获取环境变量和请求信息
+    //     const env = Deno.env.toObject();
+    //     const responseObj = {
+    //         message: 'hello world',
+    //         upgradeHeader: req.headers.get('upgrade') || '',
+    //         authString: authString,
+    //         uuidValidate: basePath,
+    //         method: req.method,
+    //         environment: env,
+    //         url: req.url,
+    //         proto: req.proto,
+    //         headers: Object.fromEntries(req.headers.entries()),
+    //         body: req.body ? new TextDecoder().decode(await req.arrayBuffer()) : undefined,
+    //     };
+    //     const responseBody = JSON.stringify(responseObj);
+    //     return new Response(responseBody, {
+    //         status: 200,
+    //         headers: {
+    //             'content-type': 'application/json; charset=utf-8',
+    //         },
+    //     });
+    // }
+
+    // 如果是包含 basePath 的请求，构造 vless URL 返回
+    if (pathname.includes(basePath)) {
+        const url = new URL(req.url);
+        const uuid = Deno.env.get('UUID') || basePath;;
+        console.log(uuid);
+        const hostname = url.hostname;
+        const vlessURL = getVlessURL(uuid, hostname, { ws0Rtt: true });
+         // 获取环境变量和请求信息
         const env = Deno.env.toObject();
         const responseObj = {
             message: 'hello world',
@@ -59,22 +89,6 @@ async function serveClient(req: Request, basePath: string) {
             body: req.body ? new TextDecoder().decode(await req.arrayBuffer()) : undefined,
         };
         const responseBody = JSON.stringify(responseObj);
-        return new Response(responseBody, {
-            status: 200,
-            headers: {
-                'content-type': 'application/json; charset=utf-8',
-            },
-        });
-    }
-
-    // 如果是包含 basePath 的请求，构造 vless URL 返回
-    if (pathname.includes(basePath)) {
-        const url = new URL(req.url);
-        const uuid = Deno.env.get('UUID') || basePath;;
-        console.log(uuid);
-        const hostname = url.hostname;
-        const vlessURL = getVlessURL(uuid, hostname, { ws0Rtt: true });
-
         const result = `
   *******************************************
   ${atob('VjItcmF5Tjo=')}
@@ -87,7 +101,9 @@ async function serveClient(req: Request, basePath: string) {
   *******************************************
   ${atob('Q2xhc2g6')}
   ----------------------------
-  - {name: Argo-Vless, type: vless, server: ${hostname}, port: 443, uuid: ${uuid}, tls: true, servername: ${hostname}, skip-cert-verify: false, network: ws, ws-opts: {path: /${encodeURIComponent(generateRandomString(Math.floor(Math.random() * 11) + 10))}?ed=2048, headers: { Host: ${hostname}}}, udp: false}`;
+  - {name: Argo-Vless, type: vless, server: ${hostname}, port: 443, uuid: ${uuid}, tls: true, servername: ${hostname}, skip-cert-verify: false, network: ws, ws-opts: {path: /${encodeURIComponent(generateRandomString(Math.floor(Math.random() * 11) + 10))}?ed=2048, headers: { Host: ${hostname}}}, udp: false}
+  *******************************************
+  ${responseBody}`;
 
         return new Response(result, {
             status: 200,
@@ -96,17 +112,18 @@ async function serveClient(req: Request, basePath: string) {
             },
         });
     }
-    console.log(authString);
-    console.log(basicAuth);
+    // console.log(authString);
+    // console.log(basicAuth);
     // 查找用户
     const user = users.find(user => {
     const decoded = atob(authString);
     return user.username + ':' + user.password === decoded && user.uuid === basePath;
   });
-    if (atob(authString).includes(basePath) || user) {
+    // console.log(user)
+    if (atob(authString).includes(basePath)) {
     // if (user) {
-        console.log(basePath);
-        console.log('302');
+        // console.log(basePath);
+        // console.log('302');
         return new Response(``, {
             status: 302,
             headers: {
@@ -142,12 +159,9 @@ if (!isVaildUser) {
 const handler = async (req: Request): Promise < Response > => {
     if (!isVaildUser) {
         // 如果用户 ID 无效
-        const response = await fetch("https://401.deno.dev");
-        // 发起 HTTP 请求
-        const body = await response.text();
         // 取得响应文本
-        return new Response(body, {
-            status: 200
+        return new Response('body', {
+            status: 401
         });
         // 返回响应
 
@@ -158,7 +172,7 @@ const handler = async (req: Request): Promise < Response > => {
     console.log(upgrade);
     // 如果请求头不是 websocket，返回普通 HTTP 响应
     if (upgrade.toLowerCase() != 'websocket') {
-        console.log('not websocket request header get upgrade is ' + upgrade);
+        console.log('not websocket request get upgrade is ' + upgrade);
         return await serveClient(req, userID);
     }
     const {
@@ -175,12 +189,12 @@ const handler = async (req: Request): Promise < Response > => {
     userID,
     webSocket: socket,
     earlyDataHeader,
-    // rawTCPFactory: (port: number, hostname: string) => {
-    //   return Deno.connect({
-    //     port,
-    //     hostname,
-    //   });
-    // },
+    rawTCPFactory: (port: number, hostname: string) => {
+      return Deno.connect({
+        port,
+        hostname,
+      });
+    },
   });
   return response;
 };
