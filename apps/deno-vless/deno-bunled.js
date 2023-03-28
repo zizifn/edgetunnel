@@ -200,16 +200,16 @@ class Server {
     }
     async #serveHttp(httpConn, connInfo1) {
         while(!this.#closed){
-            let requestEvent1;
+            let requestEvent;
             try {
-                requestEvent1 = await httpConn.nextRequest();
+                requestEvent = await httpConn.nextRequest();
             } catch  {
                 break;
             }
-            if (requestEvent1 === null) {
+            if (requestEvent === null) {
                 break;
             }
-            this.#respond(requestEvent1, connInfo1);
+            this.#respond(requestEvent, connInfo1);
         }
         this.#closeHttpConn(httpConn);
     }
@@ -219,8 +219,8 @@ class Server {
             let conn;
             try {
                 conn = await listener.accept();
-            } catch (error1) {
-                if (error1 instanceof Deno.errors.BadResource || error1 instanceof Deno.errors.InvalidData || error1 instanceof Deno.errors.UnexpectedEof || error1 instanceof Deno.errors.ConnectionReset || error1 instanceof Deno.errors.NotConnected) {
+            } catch (error) {
+                if (error instanceof Deno.errors.BadResource || error instanceof Deno.errors.InvalidData || error instanceof Deno.errors.UnexpectedEof || error instanceof Deno.errors.ConnectionReset || error instanceof Deno.errors.NotConnected) {
                     if (!acceptBackoffDelay) {
                         acceptBackoffDelay = INITIAL_ACCEPT_BACKOFF_DELAY;
                     } else {
@@ -240,27 +240,27 @@ class Server {
                     }
                     continue;
                 }
-                throw error1;
+                throw error;
             }
             acceptBackoffDelay = undefined;
-            let httpConn1;
+            let httpConn;
             try {
-                httpConn1 = Deno.serveHttp(conn);
+                httpConn = Deno.serveHttp(conn);
             } catch  {
                 continue;
             }
-            this.#trackHttpConnection(httpConn1);
-            const connInfo2 = {
+            this.#trackHttpConnection(httpConn);
+            const connInfo = {
                 localAddr: conn.localAddr,
                 remoteAddr: conn.remoteAddr
             };
-            this.#serveHttp(httpConn1, connInfo2);
+            this.#serveHttp(httpConn, connInfo);
         }
     }
-    #closeHttpConn(httpConn2) {
-        this.#untrackHttpConnection(httpConn2);
+    #closeHttpConn(httpConn1) {
+        this.#untrackHttpConnection(httpConn1);
         try {
-            httpConn2.close();
+            httpConn1.close();
         } catch  {}
     }
     #trackListener(listener1) {
@@ -269,11 +269,11 @@ class Server {
     #untrackListener(listener2) {
         this.#listeners.delete(listener2);
     }
-    #trackHttpConnection(httpConn3) {
-        this.#httpConnections.add(httpConn3);
+    #trackHttpConnection(httpConn2) {
+        this.#httpConnections.add(httpConn2);
     }
-    #untrackHttpConnection(httpConn4) {
-        this.#httpConnections.delete(httpConn4);
+    #untrackHttpConnection(httpConn3) {
+        this.#httpConnections.delete(httpConn3);
     }
 }
 function hostnameForDisplay(hostname) {
@@ -580,32 +580,32 @@ function sha1(bytes) {
     const l = bytes.length / 4 + 2;
     const N = Math.ceil(l / 16);
     const M = new Array(N);
-    for(let i1 = 0; i1 < N; ++i1){
+    for(let i = 0; i < N; ++i){
         const arr = new Uint32Array(16);
         for(let j = 0; j < 16; ++j){
-            arr[j] = bytes[i1 * 64 + j * 4] << 24 | bytes[i1 * 64 + j * 4 + 1] << 16 | bytes[i1 * 64 + j * 4 + 2] << 8 | bytes[i1 * 64 + j * 4 + 3];
+            arr[j] = bytes[i * 64 + j * 4] << 24 | bytes[i * 64 + j * 4 + 1] << 16 | bytes[i * 64 + j * 4 + 2] << 8 | bytes[i * 64 + j * 4 + 3];
         }
-        M[i1] = arr;
+        M[i] = arr;
     }
     M[N - 1][14] = (bytes.length - 1) * 8 / Math.pow(2, 32);
     M[N - 1][14] = Math.floor(M[N - 1][14]);
     M[N - 1][15] = (bytes.length - 1) * 8 & 0xffffffff;
-    for(let i2 = 0; i2 < N; ++i2){
+    for(let i = 0; i < N; ++i){
         const W = new Uint32Array(80);
         for(let t = 0; t < 16; ++t){
-            W[t] = M[i2][t];
+            W[t] = M[i][t];
         }
-        for(let t1 = 16; t1 < 80; ++t1){
-            W[t1] = ROTL(W[t1 - 3] ^ W[t1 - 8] ^ W[t1 - 14] ^ W[t1 - 16], 1);
+        for(let t = 16; t < 80; ++t){
+            W[t] = ROTL(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
         }
         let a = H[0];
         let b = H[1];
         let c = H[2];
         let d = H[3];
         let e = H[4];
-        for(let t2 = 0; t2 < 80; ++t2){
-            const s = Math.floor(t2 / 20);
-            const T = ROTL(a, 5) + f(s, b, c, d) + e + K[s] + W[t2] >>> 0;
+        for(let t = 0; t < 80; ++t){
+            const s = Math.floor(t / 20);
+            const T = ROTL(a, 5) + f(s, b, c, d) + e + K[s] + W[t] >>> 0;
             e = d;
             d = c;
             c = ROTL(b, 30) >>> 0;
@@ -644,16 +644,26 @@ function sha1(bytes) {
 v35('v5', 0x50, sha1);
 async function serveClient(req, basePath) {
     const url = new URL(req.url);
-    if (url.pathname.startsWith('/assets')) {
-        const resp = await fetch(`https://raw.githubusercontent.com/zizifn/edgetunnel/main/dist/apps/cf-page${url.hostname}`);
-        if (url.hostname.endsWith('.js')) {
-            resp.headers.set('content-type', 'application/javascript');
+    if (url.pathname.startsWith('/assets') || url.pathname.includes(basePath)) {
+        let targetUrl = `https://raw.githubusercontent.com/zizifn/edgetunnel/main/dist/apps/cf-page${url.pathname}`;
+        if (url.pathname.includes(basePath)) {
+            targetUrl = `https://raw.githubusercontent.com/zizifn/edgetunnel/main/dist/apps/cf-page/index.html`;
         }
-        if (url.hostname.endsWith('.css')) {
-            resp.headers.set('content-type', 'text/css');
+        console.log(targetUrl);
+        const resp = await fetch(targetUrl);
+        const modifiedHeaders = new Headers(resp.headers);
+        modifiedHeaders.delete('content-security-policy');
+        if (url.pathname.endsWith('.js')) {
+            modifiedHeaders.set('content-type', 'application/javascript');
+        } else if (url.pathname.endsWith('.css')) {
+            modifiedHeaders.set('content-type', 'text/css');
+        } else if (url.pathname.includes(basePath)) {
+            modifiedHeaders.set('content-type', 'text/html; charset=utf-8');
         }
-        resp.headers.set('cache-control', 'public, max-age=2592000');
-        return resp;
+        return new Response(resp.body, {
+            status: resp.status,
+            headers: modifiedHeaders
+        });
     }
     const basicAuth = req.headers.get('Authorization') || '';
     const authString = basicAuth.split(' ')?.[1] || '';
@@ -836,7 +846,8 @@ if (!isVaildUser) {
 }
 const handler = async (req)=>{
     if (!isVaildUser) {
-        return new Response('', {
+        const index401 = await Deno.readFile(`${Deno.cwd()}/dist/apps/cf-page/401.html`);
+        return new Response(index401, {
             status: 401,
             headers: {
                 'content-type': 'text/html; charset=utf-8'
