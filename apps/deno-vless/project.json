@@ -20,6 +20,13 @@
         "watch": true
       }
     },
+    "deno-bunled": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/deno-vless",
+        "command": "deno bundle src/main.ts deno-bunled.js"
+      }
+    },
     "test": {
       "executor": "@nrwl/deno:test",
       "outputs": ["coverage/apps/deno-vless"],
