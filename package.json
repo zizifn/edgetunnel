@@ -77,6 +77,7 @@
     "prettier": "2.8.1",
     "prettier-plugin-toml": "0.3.1",
     "react-test-renderer": "18.2.0",
+    "supabase": "^1.45.3",
     "tailwindcss": "^3.2.4",
     "ts-jest": "29.0.5",
     "ts-node": "10.9.1",
