@@ -4,6 +4,9 @@
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
     "firsttris.vscode-jest-runner",
-    "denoland.vscode-deno"
+    "denoland.vscode-deno",
+    "GitHub.copilot",
+    "GitHub.copilot-labs",
+    "eamodio.gitlens"
   ]
 }
