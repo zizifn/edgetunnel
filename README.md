@@ -2,7 +2,7 @@
 
 > 由于 deno deploy 的限制，免费用户目前无法部署。
 
-Due to restrictions of deno deploy, free users can't deploy currently. Please check the Telegram group for more information.
+> Due to restrictions of deno deploy, free users can't deploy currently. Please check the Telegram group for more information.
 > https://deno.com/deploy/docs/pricing-and-limits#tls-proxying
 
 众所周知，V2ray 是基于 `go` 的，导致原版 V2ray 无法部署到基于 `javaScript (V8)` 的平台上。
