@@ -1,6 +1,7 @@
 # V2ray Edge（Beta）
 
 > 由于 deno deploy 的限制，免费用户目前无法部署。
+
 Due to restrictions of deno deploy, free users can't deploy currently. Please check the Telegram group for more information.
 > https://deno.com/deploy/docs/pricing-and-limits#tls-proxying
 
