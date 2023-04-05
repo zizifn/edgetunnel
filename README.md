@@ -1,9 +1,12 @@
 # V2ray Edge（Beta）
 
 > 由于 deno deploy 的限制，免费用户目前无法部署。
+> 貌似 Render 封号。
 
 > Due to restrictions of deno deploy, free users can't deploy currently. Please check the Telegram group for more information.
 > https://deno.com/deploy/docs/pricing-and-limits#tls-proxying
+
+> Seems Render also banned this project..
 
 众所周知，V2ray 是基于 `go` 的，导致原版 V2ray 无法部署到基于 `javaScript (V8)` 的平台上。
 
@@ -44,9 +47,11 @@ https://blog.cloudflare.com/introducing-socket-workers/
 
 很多 Node.js 的平台都是支持 docker 的，所以可以直接部署原版。但是既然很多人要，我就写一个。我目前仅仅维护 render 平台的文档。理论上其他平台都一样。
 
-### render.com
+### ~~render.com~~
+> 貌似 Render 封号。
+> Seems Render also banned this project..
 
-[render](./doc/render.md)
+~~[render](./doc/render.md)~~
 
 ### Docker
 
