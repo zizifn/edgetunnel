@@ -6,7 +6,7 @@
     "node": "^18"
   },
   "scripts": {
-    "start": "nx serve",
+    "start": "node dist/apps/node-vless/main.js",
     "build": "nx build",
     "cf-page": "nx build cf-page",
     "node-vless:build": "nx build cf-page --configuration=production && nx build node-vless --configurations=production",
