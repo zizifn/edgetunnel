@@ -3,4 +3,5 @@ export {
   makeReadableWebSocketStream,
   closeWebSocket,
   processVlessHeader,
+  vlessJs,
 } from './lib/vless-js';
