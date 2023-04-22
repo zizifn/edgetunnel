@@ -5562,12 +5562,13 @@ exports.serverIndexPage = serverIndexPage;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.processVlessHeader = exports.closeWebSocket = exports.makeReadableWebSocketStream = exports.delay = void 0;
+exports.vlessJs = exports.processVlessHeader = exports.closeWebSocket = exports.makeReadableWebSocketStream = exports.delay = void 0;
 var vless_js_1 = __webpack_require__("../../libs/vless-js/src/lib/vless-js.ts");
 Object.defineProperty(exports, "delay", ({ enumerable: true, get: function () { return vless_js_1.delay; } }));
 Object.defineProperty(exports, "makeReadableWebSocketStream", ({ enumerable: true, get: function () { return vless_js_1.makeReadableWebSocketStream; } }));
 Object.defineProperty(exports, "closeWebSocket", ({ enumerable: true, get: function () { return vless_js_1.closeWebSocket; } }));
 Object.defineProperty(exports, "processVlessHeader", ({ enumerable: true, get: function () { return vless_js_1.processVlessHeader; } }));
+Object.defineProperty(exports, "vlessJs", ({ enumerable: true, get: function () { return vless_js_1.vlessJs; } }));
 
 
 /***/ }),
@@ -6267,9 +6268,9 @@ function socketAsyncWrite(ws, chunk) {
 }
 function wsAsyncWrite(ws, chunk) {
     return tslib_1.__awaiter(this, void 0, void 0, function* () {
-        // 20m not transmitted to the network
-        while (ws.bufferedAmount > 1024 * 1024 * 20) {
-            yield (0, vless_js_1.delay)(10);
+        // 1m not transmitted to the network
+        while (ws.bufferedAmount > 1024 * 1024 * 10) {
+            yield (0, vless_js_1.delay)(1);
         }
         return new Promise((resolve, reject) => {
             ws.send(chunk, (error) => {

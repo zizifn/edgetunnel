@@ -281,9 +281,9 @@ async function socketAsyncWrite(ws: Duplex, chunk: Buffer) {
 }
 
 async function wsAsyncWrite(ws: WebSocket, chunk: Uint8Array) {
-  // 20m not transmitted to the network
-  while (ws.bufferedAmount > 1024 * 1024 * 20) {
-    await delay(10);
+  // 1m not transmitted to the network
+  while (ws.bufferedAmount > 1024 * 1024 * 10) {
+    await delay(1);
   }
   return new Promise((resolve, reject) => {
     ws.send(chunk, (error) => {
