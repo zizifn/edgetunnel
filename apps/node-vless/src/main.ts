@@ -149,7 +149,7 @@ vlessWServer.on('connection', async function connection(ws, request) {
             if (isUDP) {
               udpClientStream = makeUDPSocketStream(portRemote, address);
               const writer = udpClientStream.writable.getWriter();
-              writer.write(rawClientData).catch(error=>console.log)
+              writer.write(rawClientData).catch((error) => console.log);
               writer.releaseLock();
               remoteConnectionReadyResolve(udpClientStream);
             } else {
@@ -281,6 +281,10 @@ async function socketAsyncWrite(ws: Duplex, chunk: Buffer) {
 }
 
 async function wsAsyncWrite(ws: WebSocket, chunk: Uint8Array) {
+  // 20m not transmitted to the network
+  while (ws.bufferedAmount > 1024 * 20) {
+    await delay(10);
+  }
   return new Promise((resolve, reject) => {
     ws.send(chunk, (error) => {
       if (error) {
@@ -318,16 +322,16 @@ function makeUDPSocketStream(portRemote, address) {
           chunk.slice(index + 2, index + 2 + udpPakcetLength)
         );
         index = index + 2 + udpPakcetLength;
-       await new Promise((resolve, reject)=>{
-        udpClient.send(udpData, portRemote, address, (err) => {
-          if (err) {
-            console.log('udps send error', err);
-            controller.error(`Failed to send UDP packet !! ${err}`);
-            safeCloseUDP(udpClient);
-          }
-          resolve(true)
+        await new Promise((resolve, reject) => {
+          udpClient.send(udpData, portRemote, address, (err) => {
+            if (err) {
+              console.log('udps send error', err);
+              controller.error(`Failed to send UDP packet !! ${err}`);
+              safeCloseUDP(udpClient);
+            }
+            resolve(true);
+          });
         });
-       })
         index = index;
       }
 
@@ -344,12 +348,10 @@ function makeUDPSocketStream(portRemote, address) {
   return transformStream;
 }
 
-
-function safeCloseUDP(client: UDPSocket){
-  try{
-    client.close()
-  }catch(error){
+function safeCloseUDP(client: UDPSocket) {
+  try {
+    client.close();
+  } catch (error) {
     console.log('error close udp', error);
   }
-
 }
