@@ -1,7 +1,7 @@
 export {
   delay,
   makeReadableWebSocketStream,
-  closeWebSocket,
+  safeCloseWebSocket as closeWebSocket,
   processVlessHeader,
   vlessJs,
 } from './lib/vless-js';

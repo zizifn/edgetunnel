@@ -50,7 +50,7 @@ export function makeReadableWebSocketStream(
       const { earlyData, error } = base64ToArrayBuffer(earlyDataHeader);
       if (error) {
         log(`earlyDataHeader has invaild base64`);
-        closeWebSocket(ws);
+        safeCloseWebSocket(ws);
         return;
       }
       if (earlyData) {
@@ -68,7 +68,7 @@ export function makeReadableWebSocketStream(
         return;
       }
       readableStreamCancel = true;
-      closeWebSocket(ws);
+      safeCloseWebSocket(ws);
     },
   });
 }
@@ -88,9 +88,13 @@ function base64ToArrayBuffer(base64Str: string) {
   }
 }
 
-export function closeWebSocket(socket: WebSocket | any) {
-  if (socket.readyState === socket.OPEN) {
-    socket.close();
+export function safeCloseWebSocket(socket: WebSocket | any) {
+  try {
+    if (socket.readyState === socket.OPEN) {
+      socket.close();
+    }
+  } catch (error) {
+    console.error('safeCloseWebSocket error', error);
   }
 }
 
