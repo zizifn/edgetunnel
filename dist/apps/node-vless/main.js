@@ -6268,7 +6268,7 @@ function socketAsyncWrite(ws, chunk) {
 function wsAsyncWrite(ws, chunk) {
     return tslib_1.__awaiter(this, void 0, void 0, function* () {
         // 20m not transmitted to the network
-        while (ws.bufferedAmount > 1024 * 20) {
+        while (ws.bufferedAmount > 1024 * 1024 * 20) {
             yield (0, vless_js_1.delay)(10);
         }
         return new Promise((resolve, reject) => {
