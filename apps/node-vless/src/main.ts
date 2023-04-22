@@ -14,7 +14,7 @@ import {
   closeWebSocket,
 } from 'vless-js';
 import { connect, Socket } from 'node:net';
-import { Duplex, Readable } from 'stream';
+import { Duplex, Readable, Writable } from 'stream';
 import {
   TransformStream,
   ReadableStream,
@@ -162,6 +162,7 @@ vlessWServer.on('connection', async function connection(ws, request) {
             // if (udpClientStream ) {
             //   udpClientStream.writable.close();
             // }
+            // (remoteConnection as Socket).end();
             console.log(
               `[${address}:${portWithRandomLog}] readableWebSocketStream is close`
             );
@@ -190,9 +191,34 @@ vlessWServer.on('connection', async function connection(ws, request) {
     // remote --> ws
     let responseStream = udpClientStream?.readable;
     if (remoteConnection) {
-      responseStream = Readable.toWeb(remoteConnection);
+      // ignore type error
+      // @ts-ignore
+      responseStream = Readable.toWeb(remoteConnection, {
+        strategy: {
+          // due to nodejs issue https://github.com/nodejs/node/issues/46347
+          highWaterMark: 1000, // 1000 * tcp mtu(64kb) = 64mb
+        },
+      });
     }
+    let count = 0;
 
+    // ws.send(vlessResponseHeader!);
+    // remoteConnection.pipe(
+    //   new Writable({
+    //     async write(chunk: Uint8Array, encoding, callback) {
+    //       count += chunk.byteLength;
+    //       console.log('ws write', count / (1024 * 1024));
+    //       console.log(
+    //         '-----++++',
+    //         (remoteConnection as Socket).bytesRead / (1024 * 1024)
+    //       );
+    //       if (ws.readyState === ws.OPEN) {
+    //         await wsAsyncWrite(ws, chunk);
+    //         callback();
+    //       }
+    //     },
+    //   })
+    // );
     // if readable not pipe can't wait fro writeable write method
     await responseStream.pipeTo(
       new WritableStream({
@@ -202,9 +228,21 @@ vlessWServer.on('connection', async function connection(ws, request) {
           }
         },
         async write(chunk: Uint8Array, controller) {
-          // console.log('ws write', chunk);
+          // count += chunk.byteLength;
+          // console.log('ws write', count / (1024 * 1024));
+          // console.log(
+          //   '-----++++',
+          //   (remoteConnection as Socket).bytesRead / (1024 * 1024),
+          //   (remoteConnection as Socket).readableHighWaterMark
+          // );
+          // we have issue there, maybe beacsue nodejs web stream has bug.
+          // socket web stream will read more data from socket
           if (ws.readyState === ws.OPEN) {
             await wsAsyncWrite(ws, chunk);
+          } else {
+            if (!(remoteConnection as Socket).destroyed) {
+              (remoteConnection as Socket).destroy();
+            }
           }
         },
         close() {
@@ -281,10 +319,6 @@ async function socketAsyncWrite(ws: Duplex, chunk: Buffer) {
 }
 
 async function wsAsyncWrite(ws: WebSocket, chunk: Uint8Array) {
-  // 5m not transmitted to the network
-  while (ws.bufferedAmount > 1024 * 1024 * 5) {
-    await delay(1);
-  }
   return new Promise((resolve, reject) => {
     ws.send(chunk, (error) => {
       if (error) {

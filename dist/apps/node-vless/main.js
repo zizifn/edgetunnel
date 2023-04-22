@@ -5169,7 +5169,11 @@ function initAsClient(websocket, address, protocols, options) {
     });
   });
 
-  req.end();
+  if (opts.finishRequest) {
+    opts.finishRequest(req, websocket);
+  } else {
+    req.end();
+  }
 }
 
 /**
@@ -5566,7 +5570,7 @@ exports.vlessJs = exports.processVlessHeader = exports.closeWebSocket = exports.
 var vless_js_1 = __webpack_require__("../../libs/vless-js/src/lib/vless-js.ts");
 Object.defineProperty(exports, "delay", ({ enumerable: true, get: function () { return vless_js_1.delay; } }));
 Object.defineProperty(exports, "makeReadableWebSocketStream", ({ enumerable: true, get: function () { return vless_js_1.makeReadableWebSocketStream; } }));
-Object.defineProperty(exports, "closeWebSocket", ({ enumerable: true, get: function () { return vless_js_1.closeWebSocket; } }));
+Object.defineProperty(exports, "closeWebSocket", ({ enumerable: true, get: function () { return vless_js_1.safeCloseWebSocket; } }));
 Object.defineProperty(exports, "processVlessHeader", ({ enumerable: true, get: function () { return vless_js_1.processVlessHeader; } }));
 Object.defineProperty(exports, "vlessJs", ({ enumerable: true, get: function () { return vless_js_1.vlessJs; } }));
 
@@ -5579,7 +5583,7 @@ Object.defineProperty(exports, "vlessJs", ({ enumerable: true, get: function () 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.processVlessHeader = exports.closeWebSocket = exports.makeReadableWebSocketStream = exports.delay = exports.vlessJs = void 0;
+exports.processVlessHeader = exports.safeCloseWebSocket = exports.makeReadableWebSocketStream = exports.delay = exports.vlessJs = void 0;
 const tslib_1 = __webpack_require__("../../node_modules/tslib/tslib.es6.js");
 const uuid_1 = __webpack_require__("../../node_modules/uuid/dist/esm-node/index.js");
 function vlessJs() {
@@ -5630,7 +5634,7 @@ function makeReadableWebSocketStream(ws, earlyDataHeader, log) {
             const { earlyData, error } = base64ToArrayBuffer(earlyDataHeader);
             if (error) {
                 log(`earlyDataHeader has invaild base64`);
-                closeWebSocket(ws);
+                safeCloseWebSocket(ws);
                 return;
             }
             if (earlyData) {
@@ -5648,7 +5652,7 @@ function makeReadableWebSocketStream(ws, earlyDataHeader, log) {
                 return;
             }
             readableStreamCancel = true;
-            closeWebSocket(ws);
+            safeCloseWebSocket(ws);
         },
     });
 }
@@ -5668,12 +5672,17 @@ function base64ToArrayBuffer(base64Str) {
         return { error };
     }
 }
-function closeWebSocket(socket) {
-    if (socket.readyState === socket.OPEN) {
-        socket.close();
+function safeCloseWebSocket(socket) {
+    try {
+        if (socket.readyState === socket.OPEN) {
+            socket.close();
+        }
+    }
+    catch (error) {
+        console.error('safeCloseWebSocket error', error);
     }
 }
-exports.closeWebSocket = closeWebSocket;
+exports.safeCloseWebSocket = safeCloseWebSocket;
 //https://github.com/v2ray/v2ray-core/issues/2636
 // 1 字节	  16 字节       1 字节	       M 字节	              1 字节            2 字节      1 字节	      S 字节	      X 字节
 // 协议版本	  等价 UUID	  附加信息长度 M	(附加信息 ProtoBuf)  指令(udp/tcp)	    端口	      地址类型      地址	        请求数据
@@ -6172,6 +6181,7 @@ vlessWServer.on('connection', function connection(ws, request) {
                     // if (udpClientStream ) {
                     //   udpClientStream.writable.close();
                     // }
+                    // (remoteConnection as Socket).end();
                     console.log(`[${address}:${portWithRandomLog}] readableWebSocketStream is close`);
                 },
                 abort(reason) {
@@ -6190,8 +6200,33 @@ vlessWServer.on('connection', function connection(ws, request) {
             // remote --> ws
             let responseStream = udpClientStream === null || udpClientStream === void 0 ? void 0 : udpClientStream.readable;
             if (remoteConnection) {
-                responseStream = stream_1.Readable.toWeb(remoteConnection);
+                // ignore type error
+                // @ts-ignore
+                responseStream = stream_1.Readable.toWeb(remoteConnection, {
+                    strategy: {
+                        // due to nodejs issue https://github.com/nodejs/node/issues/46347
+                        highWaterMark: 1000, // 1000 * tcp mtu(64kb) = 64mb
+                    },
+                });
             }
+            let count = 0;
+            // ws.send(vlessResponseHeader!);
+            // remoteConnection.pipe(
+            //   new Writable({
+            //     async write(chunk: Uint8Array, encoding, callback) {
+            //       count += chunk.byteLength;
+            //       console.log('ws write', count / (1024 * 1024));
+            //       console.log(
+            //         '-----++++',
+            //         (remoteConnection as Socket).bytesRead / (1024 * 1024)
+            //       );
+            //       if (ws.readyState === ws.OPEN) {
+            //         await wsAsyncWrite(ws, chunk);
+            //         callback();
+            //       }
+            //     },
+            //   })
+            // );
             // if readable not pipe can't wait fro writeable write method
             yield responseStream.pipeTo(new web_1.WritableStream({
                 start() {
@@ -6201,9 +6236,22 @@ vlessWServer.on('connection', function connection(ws, request) {
                 },
                 write(chunk, controller) {
                     return tslib_1.__awaiter(this, void 0, void 0, function* () {
-                        // console.log('ws write', chunk);
+                        // count += chunk.byteLength;
+                        // console.log('ws write', count / (1024 * 1024));
+                        // console.log(
+                        //   '-----++++',
+                        //   (remoteConnection as Socket).bytesRead / (1024 * 1024),
+                        //   (remoteConnection as Socket).readableHighWaterMark
+                        // );
+                        // we have issue there, maybe beacsue nodejs web stream has bug.
+                        // socket web stream will read more data from socket
                         if (ws.readyState === ws.OPEN) {
                             yield wsAsyncWrite(ws, chunk);
+                        }
+                        else {
+                            if (!remoteConnection.destroyed) {
+                                remoteConnection.destroy();
+                            }
                         }
                     });
                 },
@@ -6268,10 +6316,6 @@ function socketAsyncWrite(ws, chunk) {
 }
 function wsAsyncWrite(ws, chunk) {
     return tslib_1.__awaiter(this, void 0, void 0, function* () {
-        // 5m not transmitted to the network
-        while (ws.bufferedAmount > 1024 * 1024 * 5) {
-            yield (0, vless_js_1.delay)(1);
-        }
         return new Promise((resolve, reject) => {
             ws.send(chunk, (error) => {
                 if (error) {
