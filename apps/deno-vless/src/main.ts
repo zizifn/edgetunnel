@@ -2,7 +2,7 @@ import { serve } from 'https://deno.land/std@0.170.0/http/server.ts';
 import * as uuid from 'https://jspm.dev/uuid';
 import { serveClient } from './client.ts';
 import {
-  closeWebSocket,
+  safeCloseWebSocket,
   delay,
   makeReadableWebSocketStream,
   processVlessHeader,
@@ -148,7 +148,7 @@ async function processWebSocket({
           error.stack || error
         );
         // error is cancel readable stream anyway, no need close websocket in here
-        // closeWebSocket(webSocket);
+        // safeCloseWebSocket(webSocket);
         // close remote conn
         // remoteConnection?.close();
       });
@@ -206,7 +206,7 @@ async function processWebSocket({
           );
         },
         abort(reason) {
-          closeWebSocket(webSocket);
+          safeCloseWebSocket(webSocket);
           console.error(
             `[${address}:${portWithRandomLog}] remoteConnection!.readable abort`,
             reason
@@ -219,7 +219,7 @@ async function processWebSocket({
       `[${address}:${portWithRandomLog}] processWebSocket has exception `,
       error.stack || error
     );
-    closeWebSocket(webSocket);
+    safeCloseWebSocket(webSocket);
   }
   return;
 }
