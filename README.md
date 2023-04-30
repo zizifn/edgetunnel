@@ -99,6 +99,7 @@ const targetHost = 'xxx.xxxx.dev'; //你的 edge function 的hostname
 addEventListener('fetch', (event) => {
   let url = new URL(event.request.url);
   url.hostname = targetHost;
+  url.port = '443';
   let request = new Request(url, event.request);
   event.respondWith(fetch(request));
 });
