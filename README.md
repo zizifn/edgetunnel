@@ -60,6 +60,20 @@ docker run -d -p 4600:4100 -e UUID=ce6d9073-7085-4cb1-a64d-382489a2af94 zizifn/n
 ```
 > 如果你想让 DNS IPV4 优先， 请设置环境变量DNSORDER=ipv4first
 
+### Command 
+
+``` bash
+export UUID=ce6d9073-7085-4cb1-a64d-382489a2af94 PORT=4100 node  ./dist/apps/node-vless/main.js
+```
+
+小内存：
+
+``` bash
+export UUID=ce6d9073-7085-4cb1-a64d-382489a2af94 PORT=4100 SMALLRAM=true node  ./dist/apps/node-vless/main.js
+```
+> 如果你想让 DNS IPV4 优先， 请设置环境变量DNSORDER=ipv4first
+
+
 
 ## 客户端 v2rayN 配置
 

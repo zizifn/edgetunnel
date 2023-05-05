@@ -5169,7 +5169,11 @@ function initAsClient(websocket, address, protocols, options) {
     });
   });
 
-  req.end();
+  if (opts.finishRequest) {
+    opts.finishRequest(req, websocket);
+  } else {
+    req.end();
+  }
 }
 
 /**
