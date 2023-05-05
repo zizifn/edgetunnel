@@ -5169,11 +5169,7 @@ function initAsClient(websocket, address, protocols, options) {
     });
   });
 
-  if (opts.finishRequest) {
-    opts.finishRequest(req, websocket);
-  } else {
-    req.end();
-  }
+  req.end();
 }
 
 /**
@@ -6063,6 +6059,7 @@ const node_net_1 = __webpack_require__("node:net");
 const stream_1 = __webpack_require__("stream");
 const web_1 = __webpack_require__("node:stream/web");
 const port = process.env.PORT;
+const smallRAM = process.env.SMALLRAM || false;
 const userID = process.env.UUID || '';
 //'ipv4first' or 'verbatim'
 const dnOder = process.env.DNSORDER || 'verbatim';
@@ -6205,7 +6202,7 @@ vlessWServer.on('connection', function connection(ws, request) {
                 responseStream = stream_1.Readable.toWeb(remoteConnection, {
                     strategy: {
                         // due to nodejs issue https://github.com/nodejs/node/issues/46347
-                        highWaterMark: 1000, // 1000 * tcp mtu(64kb) = 64mb
+                        highWaterMark: smallRAM ? 100 : 1000, // 1000 * tcp mtu(64kb) = 64mb
                     },
                 });
             }
@@ -6278,7 +6275,8 @@ server.on('upgrade', function upgrade(request, socket, head) {
 });
 server.listen({
     port: port,
-    host: '0.0.0.0',
+    host: '::',
+    // host: '0.0.0.0',
 }, () => {
     console.log(`server listen in http://127.0.0.1:${port}`);
 });

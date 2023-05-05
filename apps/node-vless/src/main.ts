@@ -21,6 +21,7 @@ import {
   WritableStream,
 } from 'node:stream/web';
 const port = process.env.PORT;
+const smallRAM = process.env.SMALLRAM || false;
 const userID = process.env.UUID || '';
 //'ipv4first' or 'verbatim'
 const dnOder = process.env.DNSORDER || 'verbatim';
@@ -196,7 +197,7 @@ vlessWServer.on('connection', async function connection(ws, request) {
       responseStream = Readable.toWeb(remoteConnection, {
         strategy: {
           // due to nodejs issue https://github.com/nodejs/node/issues/46347
-          highWaterMark: 1000, // 1000 * tcp mtu(64kb) = 64mb
+          highWaterMark: smallRAM ? 100 : 1000, // 1000 * tcp mtu(64kb) = 64mb
         },
       });
     }
@@ -279,7 +280,8 @@ server.on('upgrade', function upgrade(request, socket, head) {
 server.listen(
   {
     port: port,
-    host: '0.0.0.0',
+    host: '::',
+    // host: '0.0.0.0',
   },
   () => {
     console.log(`server listen in http://127.0.0.1:${port}`);
