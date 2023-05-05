@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "engines": {
-    "node": "^18"
+    "node": "^20"
   },
   "scripts": {
     "start": "node dist/apps/node-vless/main.js",
