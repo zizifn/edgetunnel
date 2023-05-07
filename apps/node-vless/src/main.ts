@@ -338,6 +338,7 @@ function makeUDPSocketStream(portRemote, address) {
     start(controller) {
       /* … */
       udpClient.on('message', (message, info) => {
+        console.log('udp package received', message);
         controller.enqueue(
           Buffer.concat([new Uint8Array([0, info.size]), message])
         );
@@ -365,6 +366,7 @@ function makeUDPSocketStream(portRemote, address) {
               controller.error(`Failed to send UDP packet !! ${err}`);
               safeCloseUDP(udpClient);
             }
+            console.log('udp package sent', udpData);
             resolve(true);
           });
         });

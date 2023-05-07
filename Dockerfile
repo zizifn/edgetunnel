@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:slim
 
 ENV NODE_ENV=production
 ENV PORT=4100
