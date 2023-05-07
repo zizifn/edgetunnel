@@ -6336,8 +6336,11 @@ function makeUDPSocketStream(portRemote, address) {
         start(controller) {
             /* … */
             udpClient.on('message', (message, info) => {
-                console.log('udp package received', Buffer.from(message).toString('hex'));
-                controller.enqueue(Buffer.concat([new Uint8Array([0, info.size]), message]));
+                console.log(`udp package received ${info.size} bytes from ${info.address}:${info.port}`, Buffer.from(message).toString('hex'));
+                controller.enqueue(Buffer.concat([
+                    new Uint8Array([(info.size >> 8) & 0xff, info.size & 0xff]),
+                    message,
+                ]));
             });
             udpClient.on('error', (error) => {
                 console.log('udpClient error event', error);
