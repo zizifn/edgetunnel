@@ -141,6 +141,7 @@ vlessWServer.on('connection', async function connection(ws, request) {
             } `;
             if (hasError) {
               controller.error(`[${address}:${portWithRandomLog}] ${message} `);
+              return;
             }
             // const addressType = requestAddr >> 42
             // const addressLength = requestAddr & 0x0f;
@@ -148,6 +149,10 @@ vlessWServer.on('connection', async function connection(ws, request) {
             vlessResponseHeader = new Uint8Array([vlessVersion![0], 0]);
             const rawClientData = vlessBuffer.slice(rawDataIndex!);
             if (isUDP) {
+              // 如果仅仅是针对DNS， 这样是没有必要的。因为xray 客户端 DNS A/AAA query 都有长度 header，
+              // 所以直接和 DNS server over TCP。所以无需 runtime 支持 UDP API。
+              // DNS over UDP 和 TCP 唯一的区别就是 Header section format 多了长度
+              //  https://www.rfc-editor.org/rfc/rfc1035#section-4.2.2
               udpClientStream = makeUDPSocketStream(portRemote, address);
               const writer = udpClientStream.writable.getWriter();
               writer.write(rawClientData).catch((error) => console.log);
