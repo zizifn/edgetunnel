@@ -6166,8 +6166,8 @@ vlessWServer.on('connection', function connection(ws, request) {
                         vlessResponseHeader = new Uint8Array([vlessVersion[0], 0]);
                         const rawClientData = vlessBuffer.slice(rawDataIndex);
                         if (isUDP) {
-                            // 如果仅仅是针对DNS， 这样是没有必要的。因为xray 客户端 DNS A/AAA query 都有长度，
-                            // 所以直接和 DNS server 建立 TCP 就可以。所以无需 runtime 支持 UDP API。
+                            // 如果仅仅是针对DNS， 这样是没有必要的。因为xray 客户端 DNS A/AAA query 都有长度 header，
+                            // 所以直接和 DNS server over TCP。所以无需 runtime 支持 UDP API。
                             // DNS over UDP 和 TCP 唯一的区别就是 Header section format 多了长度
                             //  https://www.rfc-editor.org/rfc/rfc1035#section-4.2.2
                             udpClientStream = makeUDPSocketStream(portRemote, address);
@@ -6341,7 +6341,10 @@ function makeUDPSocketStream(portRemote, address) {
         start(controller) {
             /* … */
             udpClient.on('message', (message, info) => {
-                console.log(`udp package received ${info.size} bytes from ${info.address}:${info.port}`, Buffer.from(message).toString('hex'));
+                // console.log(
+                //   `udp package received ${info.size} bytes from ${info.address}:${info.port}`,
+                //   Buffer.from(message).toString('hex')
+                // );
                 controller.enqueue(Buffer.concat([
                     new Uint8Array([(info.size >> 8) & 0xff, info.size & 0xff]),
                     message,
@@ -6368,7 +6371,10 @@ function makeUDPSocketStream(portRemote, address) {
                                 controller.error(`Failed to send UDP packet !! ${err}`);
                                 safeCloseUDP(udpClient);
                             }
-                            console.log('udp package sent', Buffer.from(udpData).toString('hex'));
+                            // console.log(
+                            //   'udp package sent',
+                            //   Buffer.from(udpData).toString('hex')
+                            // );
                             resolve(true);
                         });
                     });
