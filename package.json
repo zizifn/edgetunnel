@@ -77,7 +77,7 @@
     "prettier": "2.8.1",
     "prettier-plugin-toml": "0.3.1",
     "react-test-renderer": "18.2.0",
-    "tailwindcss": "^3.2.4",
+    "tailwindcss": "^3.3.2",
     "ts-jest": "29.1.0",
     "ts-node": "10.9.1",
     "typescript": "5.0.4",
@@ -85,6 +85,6 @@
     "vite-plugin-eslint": "1.8.1",
     "vite-tsconfig-paths": "4.2.0",
     "vitest": "0.31.0",
-    "wrangler": "^2.11.1"
+    "wrangler": "^2.20.0"
   }
 }
