@@ -35,6 +35,7 @@
   "devDependencies": {
     "@babel/preset-react": "^7.18.6",
     "@cloudflare/workers-types": "^4.20230511.0",
+    "@miniflare/tre": "^3.0.0-next.13",
     "@nrwl/deno": "^0.157.0",
     "@nx/cypress": "16.1.4",
     "@nx/eslint-plugin": "16.1.4",
