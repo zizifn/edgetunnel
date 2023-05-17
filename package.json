@@ -13,7 +13,8 @@
     "node-vless:bunled": "nx build cf-page --configuration=production && nx build node-vless --skip-nx-cache --configurations=production -- --externalDependencies=none",
     "node-vless:start": "node dist/apps/node-vless/main.js",
     "deno-vless:bunled": "nx deno-bunled deno-vless",
-    "test": "nx test"
+    "test": "nx test",
+    "cf-worker": "wrangler dev ./libs/cf-worker-vless/src/index.ts --experimental-local"
   },
   "private": true,
   "dependencies": {
