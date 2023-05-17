@@ -3,12 +3,21 @@ export function vlessJs(): string {
   return 'vless-js';
 }
 
+const WS_READY_STATE_OPEN = 1;
+
 export function delay(ms: number) {
   return new Promise((resolve, rej) => {
     setTimeout(resolve, ms);
   });
 }
 
+/**
+ * we need make sure read websocket message in order
+ * @param ws
+ * @param earlyDataHeader
+ * @param log
+ * @returns
+ */
 export function makeReadableWebSocketStream(
   ws: WebSocket | any,
   earlyDataHeader: string,
@@ -90,7 +99,7 @@ function base64ToArrayBuffer(base64Str: string) {
 
 export function safeCloseWebSocket(socket: WebSocket | any) {
   try {
-    if (socket.readyState === socket.OPEN) {
+    if (socket.readyState === WS_READY_STATE_OPEN) {
       socket.close();
     }
   } catch (error) {
