@@ -15,6 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@edge-bypass/cf-worker-vless": ["libs/cf-worker-vless/src/index.ts"],
       "edge-ui": ["libs/edge-ui/src/index.ts"],
       "vless-js": ["libs/vless-js/src/index.ts"]
     }

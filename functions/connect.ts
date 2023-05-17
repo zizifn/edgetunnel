@@ -2,7 +2,7 @@
 // @ts-ignore
 import { connect } from 'cloudflare:sockets';
 
-export const onRequest: PagesFunction<Env> = async (context) => {
+export const onRequest: PagesFunction<any> = async (context) => {
   console.log('start fetch');
   const socket = connect({
     hostname: 'neverssl.com',

@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "lib": ["esnext"],
+    "types": ["@cloudflare/workers-types"],
+    "paths": {
+      "vless-js": ["../vless-js/src/index.ts"]
+    }
+  }
+}
