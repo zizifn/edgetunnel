@@ -27,6 +27,7 @@ export function makeReadableWebSocketStream(
   return new ReadableStream<ArrayBuffer>({
     start(controller) {
       ws.addEventListener('message', async (e: { data: ArrayBuffer }) => {
+        // console.log('-----', e.data);
         // is stream is cancel, skip controller.enqueue
         if (readableStreamCancel) {
           return;
