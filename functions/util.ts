@@ -33,4 +33,11 @@ const index401 = `
 
 </html>`;
 
-export { index401 };
+const page404 = `
+<!DOCTYPE html>
+<html lang="en">
+<div class="theme-default-content"><h1>404</h1><blockquote>There's nothing here.</blockquote><a href="/" class="">Take me home</a></div>
+</html>
+`;
+
+export { index401, page404 };
