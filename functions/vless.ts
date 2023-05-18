@@ -22,7 +22,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const upgradeHeader = context.request.headers.get('Upgrade');
   if (!upgradeHeader || upgradeHeader !== 'websocket') {
     return new Response(`Expected Upgrade: websocket`, {
-      status: 426,
+      status: 404,
     });
   }
 
