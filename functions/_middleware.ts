@@ -48,7 +48,7 @@ function authentication(context: EventContext<any, any, any>) {
         status: 302,
         headers: {
           'content-type': 'text/html; charset=utf-8',
-          Location: `./${userID}`,
+          Location: `./${userID}?wspath=${encodeURIComponent('/vless')}`,
         },
       });
     } else {
