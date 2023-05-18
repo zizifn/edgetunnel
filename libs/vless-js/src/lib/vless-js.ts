@@ -39,6 +39,10 @@ export function makeReadableWebSocketStream(
         // https://streams.spec.whatwg.org/#example-rs-push-backpressure
         controller.enqueue(vlessBuffer);
       });
+
+      // The event means that the client closed the client -> server stream.
+      // However, the server -> client stream is still open until you call close() on the server side.
+      // The WebSocket protocol says that a separate close message must be sent in each direction to fully close the socket.
       ws.addEventListener('error', (e: any) => {
         log('socket has error');
         readableStreamCancel = true;

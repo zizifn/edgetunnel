@@ -24,7 +24,11 @@ export default {
       }
     });
     webSocket.addEventListener('close', async (event) => {
-      console.log('-------------close-----------------', event);
+      console.log(
+        '-------------close-----------------',
+        event,
+        webSocket.readyState
+      );
       webSocket.close();
     });
 
