@@ -42,6 +42,6 @@
       }
     }
   },
-  "implicitDependencies": ["cf-page"],
+  "implicitDependencies": ["cf-page-vless"],
   "tags": []
 }

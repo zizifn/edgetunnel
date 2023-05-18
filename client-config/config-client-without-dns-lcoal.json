@@ -57,11 +57,11 @@
   "routing": {
     "domainStrategy": "IPIfNonMatch",
     "rules": [
-      // {
-      //   "type": "field",
-      //   "ip": ["8.8.8.8"],
-      //   "outboundTag": "zizi-ws"
-      // },
+      {
+        "type": "field",
+        "ip": ["8.8.8.8"],
+        "outboundTag": "zizi-ws"
+      },
       {
         "type": "field",
         "ip": ["geoip:private"],

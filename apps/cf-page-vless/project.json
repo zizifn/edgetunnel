@@ -1,7 +1,7 @@
 {
-  "name": "cf-page",
+  "name": "cf-page-vless",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/cf-page/src",
+  "sourceRoot": "apps/cf-page-vless/src",
   "projectType": "application",
   "targets": {
     "build": {
@@ -9,7 +9,7 @@
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/cf-page"
+        "outputPath": "dist/apps/cf-page-vless"
       },
       "configurations": {
         "development": {
@@ -24,15 +24,15 @@
       "executor": "@nx/vite:dev-server",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "cf-page:build"
+        "buildTarget": "cf-page-vless:build"
       },
       "configurations": {
         "development": {
-          "buildTarget": "cf-page:build:development",
+          "buildTarget": "cf-page-vless:build:development",
           "hmr": true
         },
         "production": {
-          "buildTarget": "cf-page:build:production",
+          "buildTarget": "cf-page-vless:build:production",
           "hmr": false
         }
       }
@@ -40,7 +40,7 @@
     "serve-cf-page": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "wrangler pages dev dist/apps/cf-page"
+        "command": "wrangler pages dev dist/apps/cf-page-vless"
       },
       "dependsOn": ["^build"]
     },
@@ -55,7 +55,7 @@
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/cf-page/**/*.{ts,tsx,js,jsx}"]
+        "lintFilePatterns": ["apps/cf-page-vless/**/*.{ts,tsx,js,jsx}"]
       }
     }
   },
