@@ -29,10 +29,10 @@
         "vnext": [
           {
             "address": "127.0.0.1",
-            "port": 4200,
+            "port": 8788,
             "users": [
               {
-                "id": "e2839021-2313-427f-977c-a1b1dec79ace",
+                "id": "1a403b79-039b-4dc2-9b45-1ad13197b99a",
                 "encryption": "none",
                 "level": 0
               }
@@ -41,10 +41,10 @@
         ]
       },
       "streamSettings": {
-        "network": "ws"
-        // "wsSettings": {
-        //   "path": "/node-vless"
-        // }
+        "network": "ws",
+        "wsSettings": {
+          "path": "/vless"
+        }
         // "security": "tls"
       },
       "tag": "zizi-ws"

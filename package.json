@@ -8,9 +8,9 @@
   "scripts": {
     "start": "node dist/apps/node-vless/main.js",
     "build": "nx build",
-    "cf-page": "nx build cf-page",
-    "node-vless:build": "nx build cf-page --configuration=production && nx build node-vless --configurations=production",
-    "node-vless:bunled": "nx build cf-page --configuration=production && nx build node-vless --skip-nx-cache --configurations=production -- --externalDependencies=none",
+    "cf-page-vless": "wrangler pages dev dist/apps/cf-page-vless",
+    "node-vless:build": "nx build cf-page-vless --configuration=production && nx build node-vless --configurations=production",
+    "node-vless:bunled": "nx build cf-page-vless --configuration=production && nx build node-vless --skip-nx-cache --configurations=production -- --externalDependencies=none",
     "node-vless:start": "node dist/apps/node-vless/main.js",
     "deno-vless:bunled": "nx deno-bunled deno-vless",
     "test": "nx test",
