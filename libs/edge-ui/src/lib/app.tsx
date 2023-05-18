@@ -308,18 +308,29 @@ function ShareActions({
   function getVlessURL() {
     const url = new URL(window.location.href);
     const uuid = url.pathname.split('/').find(uuidValidate);
-    let pathParam = '';
+    let port = url.port;
+    const isHttps = url.protocol === 'https:';
+    if (!port) {
+      if (isHttps) {
+        port = '443';
+      } else {
+        port = '80';
+      }
+    }
+    let pathParam = url.searchParams.get('wspath') || '';
     if (v2option.ws0Rtt) {
       pathParam = `${pathParam}?ed=2048`;
     }
     if (pathParam) {
       pathParam = `&path=${encodeURIComponent(pathParam)}`;
     }
+    let tls = '';
+    if (isHttps) {
+      tls = `&security=tls`;
+    }
     return `vless://${uuid}@${
       url.hostname
-    }:443?encryption=none&security=tls&type=ws${pathParam || ''}#${
-      url.hostname
-    }`;
+    }:${port}?encryption=none${tls}&type=ws${pathParam || ''}#${url.hostname}`;
   }
   return (
     <span className="inline-flex self-center mt-4 rounded-md shadow-sm isolate">
