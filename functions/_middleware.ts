@@ -1,6 +1,6 @@
 import { index401 } from './util';
 import { parse, stringify, validate } from 'uuid';
-const skipUrls = ['ws', 'assets', 'http2', 'connect'];
+const skipUrls = ['ws', 'assets', 'http2', 'connect', 'vless'];
 
 async function errorHandling(context: EventContext<any, any, any>) {
   try {
