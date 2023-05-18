@@ -172,7 +172,7 @@ export default {
 
 function safeCloseWebSocket(ws: WebSocket) {
   try {
-    if (ws.readyState === WebSocket.READY_STATE_OPEN) {
+    if (ws.readyState !== WebSocket.READY_STATE_CLOSED) {
       ws.close();
     }
   } catch (error) {
