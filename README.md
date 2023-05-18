@@ -48,6 +48,7 @@ https://blog.cloudflare.com/introducing-socket-workers/
 很多 Node.js 的平台都是支持 docker 的，所以可以直接部署原版。但是既然很多人要，我就写一个。我目前仅仅维护 render 平台的文档。理论上其他平台都一样。
 
 ### ~~render.com~~
+
 > 貌似 Render 封号。
 > Seems Render also banned this project..
 
@@ -55,25 +56,25 @@ https://blog.cloudflare.com/introducing-socket-workers/
 
 ### Docker
 
-``` bash
+```bash
 docker run -d -p 4600:4100 -e UUID=ce6d9073-7085-4cb1-a64d-382489a2af94 zizifn/node-vless:latest
 ```
-> 如果你想让 DNS IPV4 优先， 请设置环境变量DNSORDER=ipv4first
 
-### Command 
+> 如果你想让 DNS IPV4 优先， 请设置环境变量 DNSORDER=ipv4first
 
-``` bash
+### Command
+
+```bash
 export UUID=ce6d9073-7085-4cb1-a64d-382489a2af94 PORT=4100 node  ./dist/apps/node-vless/main.js
 ```
 
 小内存：
 
-``` bash
+```bash
 export UUID=ce6d9073-7085-4cb1-a64d-382489a2af94 PORT=4100 SMALLRAM=true node  ./dist/apps/node-vless/main.js
 ```
-> 如果你想让 DNS IPV4 优先， 请设置环境变量DNSORDER=ipv4first
 
-
+> 如果你想让 DNS IPV4 优先， 请设置环境变量 DNSORDER=ipv4first
 
 ## 客户端 v2rayN 配置
 
@@ -146,3 +147,5 @@ VMESS 协议过于复杂，并且所有 edge 平台都支持 HTTPS， 所以无�
 # 反馈与交流
 
 如果有问题，请使用 https://t.me/edgetunnel 进行交流。
+
+triiger build
