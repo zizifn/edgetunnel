@@ -1,6 +1,5 @@
-import { index401 } from './util';
+import { index401, page404 } from './util';
 import { parse, stringify, validate } from 'uuid';
-const skipUrls = ['ws', 'assets', 'http2', 'connect', 'vless'];
 
 async function errorHandling(context: EventContext<any, any, any>) {
   try {
@@ -10,7 +9,16 @@ async function errorHandling(context: EventContext<any, any, any>) {
   }
 }
 
-function authentication(context: EventContext<any, any, any>) {
+async function authentication(
+  context: EventContext<
+    any,
+    any,
+    {
+      digestUUID: string;
+    }
+  >
+) {
+  // context.data It’s an arbitrary object you can attach data to that will persist during the request. The most common use-cases are for middleware that handles auth and may need to set context.data.username or similar.
   // if not set UUID, return 401 page
   const userID = context.env['UUID'] || '';
   let isVaildUser = validate(userID);
@@ -23,8 +31,8 @@ function authentication(context: EventContext<any, any, any>) {
     });
   }
   // skip authentication
+  const url = new URL(context.request.url);
   if (
-    skipUrls.filter((url) => context.request.url.includes(url)).length ||
     // if url has uuid, skip auth
     context.request.url.includes(userID)
   ) {
@@ -44,16 +52,24 @@ function authentication(context: EventContext<any, any, any>) {
   } else {
     const url = new URL(context.request.url);
     if (url.pathname === '/') {
+      const wspath = `/vless/${userID}`;
       return new Response(``, {
         status: 302,
         headers: {
           'content-type': 'text/html; charset=utf-8',
-          Location: `./${userID}?wspath=${encodeURIComponent('/vless')}`,
+          Location: `./${userID}?wspath=${encodeURIComponent(wspath)}`,
         },
       });
-    } else {
+    }
+    if (url.pathname.startsWith('/assets')) {
       return context.next();
     }
+    return new Response(page404, {
+      status: 404,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+      },
+    });
   }
 }
 

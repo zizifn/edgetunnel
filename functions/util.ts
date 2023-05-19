@@ -34,10 +34,23 @@ const index401 = `
 </html>`;
 
 const page404 = `
-<!DOCTYPE html>
-<html lang="en">
-<div class="theme-default-content"><h1>404</h1><blockquote>There's nothing here.</blockquote><a href="/" class="">Take me home</a></div>
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx/1.23.4</center>
+</body>
 </html>
 `;
 
-export { index401, page404 };
+async function digestMessage(message: string) {
+  const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8); // hash the message
+  const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join(''); // convert bytes to hex string
+  return hashHex;
+}
+
+export { index401, page404, digestMessage };

@@ -2,7 +2,8 @@ interface Env {
   KV: KVNamespace;
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request }) => {
+export const onRequest: PagesFunction<Env> = async ({ request, data }) => {
+  console.log(data);
   const upgradeHeader = request.headers.get('Upgrade');
   if (!upgradeHeader || upgradeHeader !== 'websocket') {
     return new Response('Expected Upgrade: websocket', { status: 426 });

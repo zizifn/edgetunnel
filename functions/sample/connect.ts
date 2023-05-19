@@ -3,6 +3,7 @@
 import { connect } from 'cloudflare:sockets';
 
 export const onRequest: PagesFunction<any> = async (context) => {
+  context.params.user;
   console.log('start fetch');
   const socket = connect({
     hostname: 'neverssl.com',

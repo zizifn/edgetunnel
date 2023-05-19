@@ -4,7 +4,7 @@ import {
   vlessJs,
 } from 'vless-js';
 import { connect } from 'cloudflare:sockets';
-import { page404 } from './util';
+import { page404 } from '../util';
 
 interface Env {
   KV: KVNamespace;
@@ -12,21 +12,31 @@ interface Env {
 }
 
 export const onRequest: PagesFunction<Env> = async (context) => {
+  const userID = context.env['UUID'];
+  if (context.params.wspath !== userID) {
+    return new Response(``, {
+      status: 401,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'WWW-Authenticate': 'Basic',
+      },
+    });
+  }
+  console.log(context.params.wspath);
   let address = '';
   let portWithRandomLog = '';
-  const userID = context.env['UUID'];
 
   const log = (info: string, event?: any) => {
     console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
   };
 
   const upgradeHeader = context.request.headers.get('Upgrade');
+  // index page
   if (!upgradeHeader || upgradeHeader !== 'websocket') {
-    return new Response(``, {
-      status: 401,
+    return new Response(`need Upgrade to ws`, {
+      status: 200,
       headers: {
         'content-type': 'text/html; charset=utf-8',
-        'WWW-Authenticate': 'Basic',
       },
     });
   }
