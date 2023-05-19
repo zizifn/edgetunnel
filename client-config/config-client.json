@@ -44,7 +44,7 @@
         "network": "ws",
         "wsSettings": {
           "headers": {
-            "Host": "vless-dev.121107.xyz"
+            "Host": "xxxxx.xxxx.xyz"
           }
         }
         // "security": "tls"
