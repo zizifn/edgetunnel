@@ -218,7 +218,7 @@ function QRcodeImg({ text }: { text: string }) {
         className="border-spacing-1"
       />
       <div className="flex flex-grow w-auto bg-gray-200">
-        <span className="flex-grow break-all break-word overflow-hidden w-4/5">
+        <span className="flex-grow break-all break-word overflow-hidden w-4/5 max-w-2xl">
           {text}
         </span>
         <div className="w-6 h-6 ml-auto mr-5px">
