@@ -14,7 +14,8 @@
     "node-vless:start": "node dist/apps/node-vless/main.js",
     "deno-vless:bunled": "nx deno-bunled deno-vless",
     "test": "nx test",
-    "cf-worker": "wrangler dev ./libs/cf-worker-vless/src/index.ts --experimental-local"
+    "cf-worker": "wrangler dev ./libs/cf-worker-vless/src/index.ts --experimental-local",
+    "cf-worker-publish": "wrangler deploy"
   },
   "private": true,
   "dependencies": {

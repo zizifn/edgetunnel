@@ -6,6 +6,6 @@ Running **V2ray** in the edge.
 
 https://edgetunnel.114567.xyz/
 
-# Feedback and Communication
+# Feedback
 
-If you have any questions, please use https://t.me/edgetunnel for communication.
+If you have any questions, please open GitHub issue or use https://t.me/edgetunnel for communication.
