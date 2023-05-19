@@ -21,7 +21,8 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     let address = '';
     let portWithRandomLog = '';
-    const userID = env.UUID;
+    const userID = env.UUID || '7f14e42a-f453-4c39-a762-019ee493237d';
+    const isVaildUUID = validate(userID);
 
     const log = (info: string, event?: any) => {
       console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
@@ -29,9 +30,22 @@ export default {
 
     const upgradeHeader = request.headers.get('Upgrade');
     if (!upgradeHeader || upgradeHeader !== 'websocket') {
-      return new Response(`Expected Upgrade: websocket--uuid--${userID}`, {
-        status: 426,
-      });
+      return new Response(
+        `<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found ${isVaildUUID ? '_-_' : ''}</h1></center>
+<hr><center>nginx/1.23.4</center>
+</body>
+</html>`,
+        {
+          status: 404,
+          headers: {
+            'content-type': 'text/html; charset=utf-8',
+            'WWW-Authenticate': 'Basic',
+          },
+        }
+      );
     }
 
     const webSocketPair = new WebSocketPair();
