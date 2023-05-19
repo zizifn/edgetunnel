@@ -326,11 +326,13 @@ function ShareActions({
     }
     let tls = '';
     if (isHttps) {
-      tls = `&security=tls`;
+      tls = `&security=tls&fp=randomized&sni=${url.hostname}`;
     }
     return `vless://${uuid}@${
       url.hostname
-    }:${port}?encryption=none${tls}&type=ws${pathParam || ''}#${url.hostname}`;
+    }:${port}?encryption=none${tls}&type=ws&host=${url.hostname}${
+      pathParam || ''
+    }#${url.hostname}`;
   }
   return (
     <span className="inline-flex self-center mt-4 rounded-md shadow-sm isolate">
@@ -344,7 +346,7 @@ function ShareActions({
       <button
         onClick={() => handleShare(getVlessURL())}
         type="button"
-        className="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
       >
         分享 V2ray
       </button>
