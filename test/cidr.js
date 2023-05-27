@@ -1,3 +1,36 @@
+function isIPv4InCFCIDR(ip) {
+	const currentIPNum = convertIp2Num(ip);
+	// if not valid number, return false
+	if(!currentIPNum){
+		return false;
+	}
+
+	// 134866688 / -256
+  // 134866689:     1000000010011110011100000001
+  // -256:      11111111111111111111100000000000
+  // 134866688      1000000010011110011100000000
+	return cidrNumberList.some(({ipNumber, ipMask}) => (currentIPNum & ipMask) === (ipNumber & ipMask));
+}
+
+/**
+ * 
+ * @param {string} ip 
+ */
+
+function convertIp2Num(ip){
+	const ipParts = ip.split('.');
+	if(ipParts.length !== 4){
+		return 0;
+	}
+	let ipNumber = 0;
+	for (const ipPart of ipParts) {
+		ipNumber  = (ipNumber << 8) + parseInt(ipPart, 10); // 8.9.231.0 --> 134866688// 134866688 --> 1000000010011110011100000000
+	}
+
+	return ipNumber >>> 0; // unsgined int
+}
+
+
 const cidrList = [
     "1.0.0.0/24",
     "1.1.1.0/24",
@@ -6535,71 +6568,25 @@ const cidrList = [
     "199.27.134.0/24",
     "199.27.135.0/24"
   ];
-  const cidrToRangeMask = (cidr) => {
-    const [ipRange, maskLength] = cidr.split('/');
-    const ipInt = ipRange.split('.').reduce((acc, val) => (acc << 8) + parseInt(val, 10), 0);
-    const ipMask = -1 << (32 - parseInt(maskLength, 10));
-    return [ipInt, ipMask];
-  };
 
-  console.log(cidrList.map(cidrToRangeMask));
-
-  const ipInt = "142.250.204.68".split('.').reduce((acc, val) => (acc << 8) + parseInt(val, 10), 0) >>> 0;
-  console.log(ipInt);
-
-
-  /**
- * Checks if an IPv4 address is within a CIDR range.
- *
- * @param {string} address The IPv4 address to check.
- * @param {string} cidr The CIDR range to check against.
- * @returns {boolean} `true` if the address is within the CIDR range, `false` otherwise.
- */
-function isIPv4InRange(address, cidr) {
-	// Parse the address and CIDR range
-	const addressParts = address.split('.').map(part => parseInt(part, 10));
+  /** @type { {ipNumber: number, ipMask: number}[]} */
+const cidrNumberList= []
+for (const cidr of cidrList) {
+	// 8.9.231.0/24
 	const [rangeAddress, rangePrefix] = cidr.split('/');
-	const rangeParts = rangeAddress.split('.').map(part => parseInt(part, 10));
-	const prefix = parseInt(rangePrefix, 10);
+	const prefix = parseInt(rangePrefix, 10); // 24
+	const ipMask = -1 << (32 - prefix); // -256
+  // const ipMask = ~(2 ** (32 - prefix) - 1);
 
-	// Convert the address and range to binary format
-	const addressBinary = addressParts.reduce((acc, part) => acc + part.toString(2).padStart(8, '0'), '');
-	const rangeBinary = rangeParts.reduce((acc, part) => acc + part.toString(2).padStart(8, '0'), '');
-
-	// Compare the bits up to the prefix length
-	for (let i = 0; i < prefix; i++) {
-		if (addressBinary[i] !== rangeBinary[i]) {
-			return false;
+	const ipNumber = convertIp2Num(rangeAddress);
+	cidrNumberList.push(
+		{
+			ipNumber, // 8.9.231.0 --> 134866688
+			ipMask // -256
 		}
-	}
-
-	return true;
+	)
 }
 
-/**
-* Checks if an IPv6 address is within a CIDR range.
-*
-* @param {string} address The IPv6 address to check.
-* @param {string} cidr The CIDR range to check against.
-* @returns {boolean} `true` if the address is within the CIDR range, `false` otherwise.
-*/
-function isIPv6InRange(address, cidr) {
-	// Parse the address and CIDR range
-	const addressParts = address.split(':').map(part => parseInt(part, 16));
-	const [rangeAddress, rangePrefix] = cidr.split('/');
-	const rangeParts = rangeAddress.split(':').map(part => parseInt(part, 16));
-	const prefix = parseInt(rangePrefix, 10);
+console.log(convertIp2Num('162.159.137.0'));
 
-	// Convert the address and range to binary format
-	const addressBinary = addressParts.reduce((acc, part) => acc + part.toString(2).padStart(16, '0'), '');
-	const rangeBinary = rangeParts.reduce((acc, part) => acc + part.toString(2).padStart(16, '0'), '');
-
-	// Compare the bits up to the prefix length
-	for (let i = 0; i < prefix; i++) {
-		if (addressBinary[i] !== rangeBinary[i]) {
-			return false;
-		}
-	}
-
-	return true;
-}
+console.log(isIPv4InCFCIDR('162.159.137.0'));
