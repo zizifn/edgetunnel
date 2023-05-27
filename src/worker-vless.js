@@ -460,7 +460,7 @@ async function isCloudFlareIP(addressType, addressRemote) {
   if(addressType === 2)
   {
     const domainIP = await doh(addressRemote);
-    // console.log(' domainIP ', domainIP);
+    console.log(' domainIP ', domainIP);
     return isIPv4InCFCIDR(domainIP);
   }
   return false;
@@ -554,7 +554,7 @@ function isIPv4InCFCIDR(ip) {
   // 134866689:     1000000010011110011100000001
   // -256:      11111111111111111111100000000000
   // 134866688      1000000010011110011100000000
-	return cidrNumberList.some(({ipNumber, ipMask}) => (currentIPNum & ipMask) === ipNumber);
+	return cidrNumberList.some(({ipNumber, ipMask}) => (currentIPNum & ipMask) === (ipNumber & ipMask));
 }
 
 /**
