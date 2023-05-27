@@ -3,3 +3,4 @@
 *-lock.*
 *.lock
 *.log
+dist
