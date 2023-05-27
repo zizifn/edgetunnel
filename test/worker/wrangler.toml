@@ -1,0 +1,6 @@
+name = "cf-worker-http-header" # todo
+main = "./cf-worker-http-header.js"
+compatibility_date = "2023-05-26"
+
+[vars]
+UUID = "example_dev_token"

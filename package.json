@@ -1,0 +1,21 @@
+{
+  "name": "edgetunnel",
+  "version": "1.0.0",
+  "description": "Delete code, but keep the project for the sake of memories. I'm only create this project for fun, for try new things and for learn by doing. **I'm even not write any outside marketing post for this project. Just for my own fun...** But I feel emotional damage by the community.",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev-vless": "wrangler dev src/worker-vless.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20230518.0",
+    "wrangler": "^3.0.1"
+  },
+  "dependencies": {
+    "ip-cidr": "^3.1.0",
+    "ip-range-check": "^0.2.0",
+    "ipaddr.js": "^2.0.1"
+  }
+}
