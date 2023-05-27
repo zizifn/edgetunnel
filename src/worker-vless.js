@@ -61,8 +61,7 @@ async function vlessOverWSHandler(request) {
 	const earlyDataHeader = request.headers.get('sec-websocket-protocol') || '';
 
   // only try to get client ip as redirect ip when client is not in China
-  const isCN = request.headers.get('cf-ipcountry')?.toUpperCase() !== 'CN';
-	const clientIP = isCN ?  request.headers.get('cf-connecting-ip') || '' : '';
+  const clientIP = getClientIp(request);
 
 	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyDataHeader, log);
 
@@ -147,6 +146,7 @@ async function vlessOverWSHandler(request) {
 		webSocket: client,
 	});
 }
+
 
 /**
  * 
@@ -382,7 +382,6 @@ function remoteSocketToWS(remoteSocket, webSocket, log, vlessResponseHeader) {
 							await delay(1);
 						}
 						webSocket.send(chunk);
-						console.log(chunk.byteLength);
 					} else {
 						controller.error(
 							'webSocket.readyState is not open, maybe close'
@@ -428,6 +427,17 @@ function base64ToArrayBuffer(base64Str) {
 }
 
 /**
+ * 
+ * @param {import("@cloudflare/workers-types").Request} request 
+ * @returns 
+ */
+function getClientIp(request) {
+  const isCN = request.headers.get('cf-ipcountry')?.toUpperCase() !== 'CN';
+  const clientIP = isCN ? request.headers.get('cf-connecting-ip') || '' : '';
+  return clientIP;
+}
+
+/**
  * 	// 1--> ipv4  addressLength =4
  *	// 2--> domain name addressLength=addressBuffer[1]
  *	// 3--> ipv6  addressLength =16
@@ -450,7 +460,7 @@ async function isCloudFlareIP(addressType, addressRemote) {
   if(addressType === 2)
   {
     const domainIP = await doh(addressRemote);
-    console.log(' domainIP ', domainIP);
+    // console.log(' domainIP ', domainIP);
     return isIPv4InCFCIDR(domainIP);
   }
   return false;
