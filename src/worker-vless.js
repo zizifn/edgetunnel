@@ -3,7 +3,7 @@ import { connect } from 'cloudflare:sockets';
 const userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
 // 1. 如果这个你不填写，并且你客户端的 IP 不是 China IP，那么就自动取你的客户端IP。有一定概率会失败。
-// 2. 如果你指定，你忽略一切条件，用你指定的IP。
+// 2. 如果你指定，忽略一切条件，用你指定的IP。
 let proxyIP = '';
 
 if (!isValidUUID(userID)) {
@@ -215,11 +215,8 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
 }
 
 //https://github.com/v2ray/v2ray-core/issues/2636
-// 1 字节	  16 字节       1 字节	       M 字节	              1 字节            2 字节      1 字节	      S 字节	      X 字节
-// 协议版本	  等价 UUID	  附加信息长度 M	(附加信息 ProtoBuf)  指令(udp/tcp)	    端口	      地址类型      地址	        请求数据
-// 00                   00                                  01                 01bb(443)   02(ip/host)
-// 1 字节	              1 字节	      N 字节	         Y 字节
-// 协议版本，与请求的一致	附加信息长度 N	附加信息 ProtoBuf	响应数据
+// protocol doc https://www.v2fly.org/chapter_02/protocols/vless.html
+// https://github.com/zizifn/excalidraw-backup/blob/main/v2ray-protocol.excalidraw
 
 /**
  * 
@@ -315,11 +312,7 @@ function processVlessHeader(
 				ipv6.push(dataView.getUint16(i * 2).toString(16));
 			}
 			addressValue = ipv6.join(':');
-			// console.log('---------', addressValue)
 			// seems no need add [] for ipv6
-			// if (addressValue) {
-			//   addressValue = `[${addressValue}]`;
-			// }
 			break;
 		default:
 			return {
@@ -328,8 +321,6 @@ function processVlessHeader(
 			};
 	}
 	if (!addressValue) {
-		// console.log(`[${address}:${port}] addressValue is empty`);
-		// controller.error(`[${address}:${portWithRandomLog}] addressValue is empty`);
 		return {
 			hasError: true,
 			message: `addressValue is empty, addressType is ${addressType}`,
@@ -7129,60 +7120,4 @@ for (const cidr of cidrList) {
 			ipMask // -256
 		}
 	)
-}
-
-/**
- * Checks if an IPv4 address is within a CIDR range.
- *
- * @param {string} address The IPv4 address to check.
- * @param {string} cidr The CIDR range to check against.
- * @returns {boolean} `true` if the address is within the CIDR range, `false` otherwise.
- */
-function isIPv4InRange(address, cidr) {
-	// Parse the address and CIDR range
-	const addressParts = address.split('.').map(part => parseInt(part, 10));
-	const [rangeAddress, rangePrefix] = cidr.split('/');
-	const rangeParts = rangeAddress.split('.').map(part => parseInt(part, 10));
-	const prefix = parseInt(rangePrefix, 10);
-
-	// Convert the address and range to binary format
-	const addressBinary = addressParts.reduce((acc, part) => acc + part.toString(2).padStart(8, '0'), '');
-	const rangeBinary = rangeParts.reduce((acc, part) => acc + part.toString(2).padStart(8, '0'), '');
-
-	// Compare the bits up to the prefix length
-	for (let i = 0; i < prefix; i++) {
-		if (addressBinary[i] !== rangeBinary[i]) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-/**
-* Checks if an IPv6 address is within a CIDR range.
-*
-* @param {string} address The IPv6 address to check.
-* @param {string} cidr The CIDR range to check against.
-* @returns {boolean} `true` if the address is within the CIDR range, `false` otherwise.
-*/
-function isIPv6InRange(address, cidr) {
-	// Parse the address and CIDR range
-	const addressParts = address.split(':').map(part => parseInt(part, 16));
-	const [rangeAddress, rangePrefix] = cidr.split('/');
-	const rangeParts = rangeAddress.split(':').map(part => parseInt(part, 16));
-	const prefix = parseInt(rangePrefix, 10);
-
-	// Convert the address and range to binary format
-	const addressBinary = addressParts.reduce((acc, part) => acc + part.toString(2).padStart(16, '0'), '');
-	const rangeBinary = rangeParts.reduce((acc, part) => acc + part.toString(2).padStart(16, '0'), '');
-
-	// Compare the bits up to the prefix length
-	for (let i = 0; i < prefix; i++) {
-		if (addressBinary[i] !== rangeBinary[i]) {
-			return false;
-		}
-	}
-
-	return true;
 }
