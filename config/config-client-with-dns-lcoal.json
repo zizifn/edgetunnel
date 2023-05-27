@@ -1,0 +1,72 @@
+{
+  "log": {
+    "loglevel": "debug"
+  },
+  "inbounds": [
+    {
+      "listen": "0.0.0.0",
+      "port": "4080",
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "ip": "0.0.0.0"
+      }
+    },
+    {
+      "listen": "0.0.0.0",
+      "port": "4081",
+      "protocol": "http"
+    }
+  ],
+  "dns": {
+    "servers": ["8.8.8.8"]
+  },
+  "outbounds": [
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "127.0.0.1",
+            "port": 8788,
+            "users": [
+              {
+                "id": "1a403b79-039b-4dc2-9b45-1ad13197b99a",
+                "encryption": "none",
+                "level": 0
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/vless"
+        }
+        // "security": "tls"
+      },
+      "tag": "zizi-ws"
+    },
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "ip": ["8.8.8.8"],
+        "outboundTag": "zizi-ws"
+      },
+      {
+        "type": "field",
+        "ip": ["geoip:private"],
+        "outboundTag": "zizi-ws"
+      }
+    ]
+  }
+}

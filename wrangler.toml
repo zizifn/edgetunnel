@@ -1,0 +1,7 @@
+name = "cf-worker-ws-dev" # todo
+#main = "test/worker/cf-cdn-cgi-trace2.js"
+main = "src/worker-vless.js"
+compatibility_date = "2023-05-26"
+
+[vars]
+UUID = "example_dev_token"
