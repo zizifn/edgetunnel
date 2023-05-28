@@ -562,6 +562,9 @@ function isIPv4InCFCIDR(ip) {
  */
 
 function convertIp2Num(ip){
+  if(!ip){
+    return 0;
+  }
 	const ipParts = ip.split('.');
 	if(ipParts.length !== 4){
 		return 0;
