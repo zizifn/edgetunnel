@@ -113,7 +113,7 @@ async function vlessOverWSHandler(request) {
 			const isCFIp = await isCloudFlareIP(addressType, addressRemote);
 			if(isCFIp) {
 				redirectIp = proxyIP || clientIP;
-        console.log(`is cf ip ${addressRemote} redirect to ${redirectIp}`);
+        console.log(`is cf ip ${addressRemote} redirect to ${redirectIp || '<not found any redirectIp>'}`);
 			}
 			const tcpSocket = connect({
 				hostname: redirectIp || addressRemote,
@@ -215,7 +215,6 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
 }
 
 //https://github.com/v2ray/v2ray-core/issues/2636
-// protocol doc https://www.v2fly.org/chapter_02/protocols/vless.html
 // https://github.com/zizifn/excalidraw-backup/blob/main/v2ray-protocol.excalidraw
 
 /**
@@ -229,8 +228,6 @@ function processVlessHeader(
 	userID
 ) {
 	if (vlessBuffer.byteLength < 24) {
-		// console.log('invalid data');
-		// controller.error('invalid data');
 		return {
 			hasError: true,
 			message: 'invalid data',
@@ -362,7 +359,7 @@ function remoteSocketToWS(remoteSocket, webSocket, log, vlessResponseHeader) {
 				 * @param {*} controller 
 				 */
 				async write(chunk, controller) {
-					remoteChunkCount++;
+					// remoteChunkCount++;
 					if (webSocket.readyState === WS_READY_STATE_OPEN) {
 
 						// if (remoteChunkCount < 20) {
@@ -377,10 +374,12 @@ function remoteSocketToWS(remoteSocket, webSocket, log, vlessResponseHeader) {
 						// 		await delay(500); // 4kb * 1000 = 4m/s
 						// 	}	
 						// } 
-						if (remoteChunkCount > 20000) {
-							// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
-							await delay(1);
-						}
+
+            // seems no need rate limit this, CF seems fix this..
+						// if (remoteChunkCount > 20000) {
+						// 	// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
+						// 	await delay(1);
+						// }
 						webSocket.send(chunk);
 					} else {
 						controller.error(
