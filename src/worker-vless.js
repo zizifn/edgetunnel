@@ -2,7 +2,7 @@ import { connect } from 'cloudflare:sockets';
 
 const userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
-// 1. 如果这个你不填写，并且你客户端的 IP 不是 China IP，那么就自动取你的客户端IP。有一定概率会失败。
+// 1. 如果这个你不填写，并且你客户端的 IP 不是 China IP，那么就自动取你的客户端填写的 Address。有一定概率会失败。
 // 2. 如果你指定，忽略一切条件，用你指定的IP。
 let proxyIP = '';
 
@@ -548,7 +548,7 @@ async function getRedirectIpForCFWebsite(isUDP, addressType, addressRemote, clie
   const isCFIp = await isCloudFlareIP(addressType, addressRemote);
   if (isCFIp) {
     redirectIp = proxyIP || clientIP;
-    
+
     // if is CF IP for DNS query, redirect to '8.8.8.8'
     if (isUDP) {
       redirectIp = '8.8.8.8';
