@@ -6590,3 +6590,7 @@ for (const cidr of cidrList) {
 console.log(convertIp2Num('162.159.137.0'));
 
 console.log(isIPv4InCFCIDR('162.159.137.0'));
+
+console.log(convertIp2Num('1.1.1.1'));
+
+console.log(isIPv4InCFCIDR('1.1.1.1'));

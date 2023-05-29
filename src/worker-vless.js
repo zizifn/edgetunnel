@@ -82,13 +82,13 @@ async function vlessOverWSHandler(request) {
 				hasError,
 				message,
 				portRemote,
-				addressRemote,
-				addressType,
+				addressRemote = '',
+				addressType = 2,
 				rawDataIndex,
 				vlessVersion = new Uint8Array([0, 0]),
-				isUDP,
+				isUDP = false,
 			} = processVlessHeader(chunk, userID);
-			address = addressRemote || '';
+			address = addressRemote;
 			portWithRandomLog = `${portRemote}--${Math.random()} ${isUDP ? 'udp ' : 'tcp '
 				} `;
 			// if UDP but port not DNS port, close it
@@ -110,24 +110,21 @@ async function vlessOverWSHandler(request) {
 			// get remote address IP
 			let redirectIp = '';
 			// due to cf connect method can't connect cf own ip, so we use proxy ip
-			const isCFIp = await isCloudFlareIP(addressType, addressRemote);
-			if(isCFIp) {
-				redirectIp = proxyIP || clientIP;
-        console.log(`is cf ip ${addressRemote} redirect to ${redirectIp || '<not found any redirectIp>'}`);
-			}
+      redirectIp = await getRedirectIpForCFWebsite(isUDP, addressType, addressRemote, clientIP);
+
 			const tcpSocket = connect({
 				hostname: redirectIp || addressRemote,
 				port: portRemote,
 			});
 			remoteSocket = tcpSocket;
-			log(`connected`);
+			log(`connected to ${redirectIp || addressRemote}`);
 			const writer = tcpSocket.writable.getWriter();
 			await writer.write(rawClientData); // first write, nomal is tls client hello
 			writer.releaseLock();
 
 			// when remoteSocket is ready, pass to websocket
 			// remote--> ws
-			remoteSocketToWS(tcpSocket, webSocket, log, vlessResponseHeader)
+			remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, log)
 			// let remoteConnectionReadyResolve = null;
 			// remoteConnectionReadyResolve(tcpSocket);
 		},
@@ -339,9 +336,10 @@ function processVlessHeader(
  * 
  * @param {import("@cloudflare/workers-types").Socket} remoteSocket 
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket 
+ * @param {Uint8Array} vlessResponseHeader 
  * @param {*} log 
  */
-function remoteSocketToWS(remoteSocket, webSocket, log, vlessResponseHeader) {
+function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, log) {
 	// remote--> ws
 	let remoteChunkCount = 0;
 	let chunks = [];
@@ -388,7 +386,7 @@ function remoteSocketToWS(remoteSocket, webSocket, log, vlessResponseHeader) {
 					}
 				},
 				close() {
-					log(`remoteConnection!.readable is close`);
+          log(`remoteConnection!.readable is close`);
 					safeCloseWebSocket(webSocket);
 				},
 				abort(reason) {
@@ -431,8 +429,8 @@ function base64ToArrayBuffer(base64Str) {
  * @returns 
  */
 function getClientIp(request) {
-  const isCN = request.headers.get('cf-ipcountry')?.toUpperCase() !== 'CN';
-  const clientIP = isCN ? request.headers.get('cf-connecting-ip') || '' : '';
+  const isNotCN = request.headers.get('cf-ipcountry')?.toUpperCase() !== 'CN';
+  const clientIP = isNotCN ? request.headers.get('cf-connecting-ip') || '' : '';
   return clientIP;
 }
 
@@ -535,6 +533,29 @@ function stringify(arr, offset = 0) {
 		throw TypeError("Stringified UUID is invalid");
 	}
 	return uuid;
+}
+
+/**
+ * 
+ * @param {boolean} isUDP 
+ * @param {number} addressType 
+ * @param {string} addressRemote 
+ * @param {string} clientIP 
+ * @returns 
+ */
+async function getRedirectIpForCFWebsite(isUDP, addressType, addressRemote, clientIP) {
+  let redirectIp = '';
+  const isCFIp = await isCloudFlareIP(addressType, addressRemote);
+  if (isCFIp) {
+    redirectIp = proxyIP || clientIP;
+    
+    // if is CF IP for DNS query, redirect to '8.8.8.8'
+    if (isUDP) {
+      redirectIp = '8.8.8.8';
+    }
+    console.log(`is cf ip ${addressRemote} redirect to ${redirectIp || '<not found any redirectIp>'}`);
+  }
+  return redirectIp;
 }
 
 /**
