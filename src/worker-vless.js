@@ -6,13 +6,13 @@ const userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
 // 1. 如果这个你不填写，并且你客户端的 IP 不是 China IP，那么就自动取你的客户端IP。有一定概率会失败。
 // 2. 如果你指定，忽略一切条件，用你指定的IP。
-let proxyIP = '';
+let proxyIP = ''
 
 // The list of domains covered by Cloudflare's Bringing-Your-Own plan. Manual maintenance required.
 // https://developers.cloudflare.com/byoip/
 const byoList = [
-	'render.com', 'openai.com'
-  ]; 
+	'render.com', 'chat.openai.com', 'docker.com'
+];
 
 
 
@@ -70,8 +70,8 @@ async function vlessOverWSHandler(request) {
 	};
 	const earlyDataHeader = request.headers.get('sec-websocket-protocol') || '';
 
-  // only try to get client ip as redirect ip when client is not in China
-  const clientIP = getClientIp(request);
+	// only try to get client ip as redirect ip when client is not in China
+	const clientIP = getClientIp(request);
 
 	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyDataHeader, log);
 
@@ -92,24 +92,20 @@ async function vlessOverWSHandler(request) {
 				hasError,
 				message,
 				portRemote,
-				addressRemote,
-				addressType,
+				addressRemote = '',
+				addressType = 2,
 				rawDataIndex,
 				vlessVersion = new Uint8Array([0, 0]),
 				isUDP,
 			} = processVlessHeader(chunk, userID);
-			address = addressRemote || '';
+			address = addressRemote;
 			portWithRandomLog = `${portRemote}--${Math.random()} ${isUDP ? 'udp ' : 'tcp '
 				} `;
 			// if UDP but port not DNS port, close it
-			if (isUDP) {
-				if (portRemote == 53) {
-					addressRemote = "8.8.4.4";
-				} else {
-					// controller.error('UDP proxy only enable for DNS which is port 53');
-					throw new Error('UDP proxy only enable for DNS which is port 53'); // cf seems has bug, controller.error will not end stream
-					return;
-				}
+			if (isUDP && portRemote !== 53) {
+				// controller.error('UDP proxy only enable for DNS which is port 53');
+				throw new Error('UDP proxy only enable for DNS which is port 53'); // cf seems has bug, controller.error will not end stream
+				return;
 			}
 			if (hasError) {
 				console.log('----------------------hasError----------', message);
@@ -123,11 +119,10 @@ async function vlessOverWSHandler(request) {
 			const rawClientData = chunk.slice(rawDataIndex);
 			// get remote address IP
 			let redirectIp = '';
-			// due to cf connect method can't connect cf own ip, so we use proxy ip
-			const isCFIp = await isCloudFlareIP(addressType, addressRemote);
-			if(isCFIp) {
-				redirectIp = proxyIP || clientIP;
-        console.log(`is cf ip ${addressRemote} redirect to ${redirectIp || '<not found any redirectIp>'}`);
+			if (isUDP) {
+				redirectIp = '8.8.4.4';
+			} else {
+				redirectIp = await getRedirectIpForCFWebsite(addressType, addressRemote, clientIP);
 			}
 			const tcpSocket = connect({
 				hostname: redirectIp || addressRemote,
@@ -141,7 +136,7 @@ async function vlessOverWSHandler(request) {
 
 			// when remoteSocket is ready, pass to websocket
 			// remote--> ws
-			remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, log)
+			remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, isUDP, log)
 			// let remoteConnectionReadyResolve = null;
 			// remoteConnectionReadyResolve(tcpSocket);
 		},
@@ -161,6 +156,24 @@ async function vlessOverWSHandler(request) {
 	});
 }
 
+
+/**
+ * 
+ * @param {number} addressType 
+ * @param {string} addressRemote 
+ * @param {string} clientIP 
+ * @returns 
+ */
+async function getRedirectIpForCFWebsite(addressType, addressRemote, clientIP) {
+	let redirectIp = '';
+	// due to cf connect method can't connect cf own ip, so we use proxy ip
+	const isCFIp = await isCloudFlareIP(addressType, addressRemote);
+	if (isCFIp) {
+		redirectIp = proxyIP || clientIP;
+		console.log(`is cf ip ${addressRemote} redirect to ${redirectIp || '<not found any redirectIp>'}`);
+	}
+	return redirectIp;
+}
 
 /**
  * 
@@ -356,7 +369,7 @@ function processVlessHeader(
  * @param {Uint8Array} vlessResponseHeader 
  * @param {*} log 
  */
-function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, log) {
+function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, isUDP, log) {
 	// remote--> ws
 	let remoteChunkCount = 0;
 	let chunks = [];
@@ -376,7 +389,7 @@ function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, log) {
 				async write(chunk, controller) {
 					// remoteChunkCount++;
 					if (webSocket.readyState === WS_READY_STATE_OPEN) {
-                        // seems no need rate limit this, CF seems fix this..
+						// seems no need rate limit this, CF seems fix this..
 						// if (remoteChunkCount > 20000) {
 						// 	// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
 						// 	await delay(1);
@@ -390,6 +403,9 @@ function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, log) {
 				},
 				close() {
 					log(`remoteConnection!.readable is close`);
+					if(isUDP){
+						safeCloseWebSocket(webSocket); 
+					}
 					// safeCloseWebSocket(webSocket); // no need server close websocket frist for some case will casue HTTP ERR_CONTENT_LENGTH_MISMATCH issue, client will send close event anyway.
 				},
 				abort(reason) {
@@ -432,9 +448,9 @@ function base64ToArrayBuffer(base64Str) {
  * @returns 
  */
 function getClientIp(request) {
-  const isNotCN = request.headers.get('cf-ipcountry')?.toUpperCase() !== 'CN';
-  const clientIP = isNotCN ? request.headers.get('cf-connecting-ip') || '' : '';
-  return clientIP;
+	const isNotCN = request.headers.get('cf-ipcountry')?.toUpperCase() !== 'CN';
+	const clientIP = isNotCN ? request.headers.get('cf-connecting-ip') || '' : '';
+	return clientIP;
 }
 
 /**
@@ -445,19 +461,19 @@ function getClientIp(request) {
  * @param {string | undefined} addressRemote 
  */
 async function isCloudFlareIP(addressType, addressRemote) {
-	if(!addressType || !addressRemote){
-		return false;
-	}
-	// not deal with ipv6
-	if (addressType === 3) {
+	if (!addressType || !addressRemote) {
 		return false;
 	}
 
-    if(addressType === 2)
-    {
-        return await isBehindCFv6(addressRemote);
-    }
-    return false;
+	// not deal with ipv6 & ipv4
+	if (addressType === 3 || addressType === 1) {
+		return false;
+	}
+	// only case about domian case
+	if (addressType === 2) {
+		return await isBehindCFv6(addressRemote);
+	}
+	return false;
 }
 
 
@@ -475,10 +491,13 @@ async function isBehindCFv6(domain) {
 				"Accept": "application/dns-json"
 			}
 		});
+		//https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/dns-json/
 		const data = await response.json();
 		const ans = data?.Answer;
-		//https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/dns-json/
-		return ans?.filter((record) => record.name === `${domain}.cdn.cloudflare.net` && record.type === 28).length > 1 || domainByoListCheck(domain, byoList); 
+		// here is the magic we think, 
+		// 1. if domain have AAAA for ${domain}.cdn.cloudflare.net, we think it use CF
+		// 2. if case 1 not match, we use a byoList to check if domain contains any keywords from byoList
+		return ans?.filter((record) => record.name === `${domain}.cdn.cloudflare.net` && record.type === 28).length > 1 || domainByoListCheck(domain, byoList);
 	} catch (err) {
 		console.error('isBehindCFv6 query error:', err);
 		return false;
@@ -493,12 +512,12 @@ async function isBehindCFv6(domain) {
  */
 function domainByoListCheck(domain, byoList) {
 	for (let keyword of byoList) {
-	  if (domain.includes(keyword)) {
-		return true;
-	  }
+		if (domain.includes(keyword)) {
+			return true;
+		}
 	}
 	return false;
-  }
+}
 
 
 
