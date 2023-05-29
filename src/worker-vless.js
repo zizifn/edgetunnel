@@ -492,8 +492,8 @@ async function isBehindCFv6(domain) {
 		//https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/dns-json/
 		const data = await response.json();
 		const ans = data?.Answer;
-		// here is the magic we think, 
-		// 1. if domain have AAAA for ${domain}.cdn.cloudflare.net, we think it use CF
+		// here is the magic we think, we are not 100% sure this will cover all cases, but we think this is fine.. In the end, CF will fix the bug shortly..
+		// 1. if domain have multiple AAAA for ${domain}.cdn.cloudflare.net, we think it use CF
 		// 2. if case 1 not match, we use a byoList to check if domain contains any keywords from byoList
 		return ans?.filter((record) => record.name === `${domain}.cdn.cloudflare.net` && record.type === 28).length > 1 || domainByoListCheck(domain, byoList);
 	} catch (err) {
