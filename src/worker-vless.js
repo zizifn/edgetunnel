@@ -491,7 +491,7 @@ async function isBehindCFv6(domain) {
 		const data = await response.json();
 		const ans = data?.Answer;
 		//https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/dns-json/
-		return ans?.filter((record) => record.type === 28).length > 1 || domainByoListCheck(domain, byoList); 
+		return ans?.filter((record) => record.name === `${domain}.cdn.cloudflare.net` && record.type === 28).length > 1 || domainByoListCheck(domain, byoList); 
 	} catch (err) {
 		console.error('isBehindCFv6 query error:', err);
 		return false;
