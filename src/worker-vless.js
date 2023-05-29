@@ -359,20 +359,6 @@ function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, log) {
 				async write(chunk, controller) {
 					// remoteChunkCount++;
 					if (webSocket.readyState === WS_READY_STATE_OPEN) {
-
-						// if (remoteChunkCount < 20) {
-						// 	webSocket.send(chunk);
-						// } else {
-						// 	// webSocket.send(chunk);
-						// 	// await delay(1); 
-						// 	chunks.push(chunk);
-						// 	if(chunks.length > 500){ // 4kb * 500 = 2M/s
-						// 		webSocket.send(new Uint8Array(chunks));
-						// 		chunks = [];
-						// 		await delay(500); // 4kb * 1000 = 4m/s
-						// 	}	
-						// } 
-
             // seems no need rate limit this, CF seems fix this..
 						// if (remoteChunkCount > 20000) {
 						// 	// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
@@ -387,7 +373,7 @@ function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, log) {
 				},
 				close() {
           log(`remoteConnection!.readable is close`);
-					safeCloseWebSocket(webSocket);
+          // safeCloseWebSocket(webSocket); // no need server close websocket frist for some case will casue HTTP ERR_CONTENT_LENGTH_MISMATCH issue, client will send close event anyway.
 				},
 				abort(reason) {
 					console.error(`remoteConnection!.readable abort`, reason);
@@ -7134,7 +7120,8 @@ const cidrList = [
     "199.27.131.0/24",
     "199.27.132.0/24",
     "199.27.134.0/24",
-    "199.27.135.0/24"
+    "199.27.135.0/24",
+    "216.24.57.0/24" // AS397273 render
   ];
 
   /** @type { {ipNumber: number, ipMask: number}[]} */
