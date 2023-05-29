@@ -1,7 +1,7 @@
 import { connect } from 'cloudflare:sockets';
 
 // How to generate your own UUID:
-// [Windows] Press "Win + R" and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
+// [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
 const userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
 // 1. 如果这个你不填写，并且你客户端的 IP 不是 China IP，那么就自动取你的客户端IP。有一定概率会失败。
@@ -13,8 +13,6 @@ let proxyIP = ''
 const byoList = [
 	'render.com', 'chat.openai.com', 'docker.com'
 ];
-
-
 
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
