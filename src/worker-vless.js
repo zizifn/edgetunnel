@@ -563,28 +563,6 @@ function isIPv4InCFCIDR(ip) {
 	return cidrNumberList.some(({ipNumber, ipMask}) => (currentIPNum & ipMask) === (ipNumber & ipMask));
 }
 
-/**
- * 
- * @param {string} ip 
- */
-
-function convertIp2Num(ip){
-  if(!ip){
-    return 0;
-  }
-	const ipParts = ip.split('.');
-	if(ipParts.length !== 4){
-		return 0;
-	}
-	let ipNumber = 0;
-	for (const ipPart of ipParts) {
-		ipNumber  = (ipNumber << 8) + parseInt(ipPart, 10); // 8.9.231.0 --> 134866688// 134866688 --> 1000000010011110011100000000
-	}
-
-	return ipNumber >>> 0; // unsgined int
-}
-
-
 // #region cidrList
 const cidrList = [
   "1.0.0.0/24",
@@ -7142,4 +7120,25 @@ for (const cidr of cidrList) {
 			ipMask // -256
 		}
 	)
+}
+
+/**
+ * 
+ * @param {string} ip 
+ */
+
+function convertIp2Num(ip){
+  if(!ip){
+    return 0;
+  }
+	const ipParts = ip.split('.');
+	if(ipParts.length !== 4){
+		return 0;
+	}
+	let ipNumber = 0;
+	for (const ipPart of ipParts) {
+		ipNumber  = (ipNumber << 8) + parseInt(ipPart, 10); // 8.9.231.0 --> 134866688// 134866688 --> 1000000010011110011100000000
+	}
+
+	return ipNumber >>> 0; // unsgined int
 }
