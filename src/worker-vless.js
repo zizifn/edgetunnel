@@ -10,9 +10,12 @@ let proxyIP = '';
 
 // The list of domains covered by Cloudflare's Bringing-Your-Own plan. Manual maintenance required.
 // https://developers.cloudflare.com/byoip/
-const byoList = [
+const byoListCommon = [
 	'render.com', 'chat.openai.com', 'docker.com', 'speedtest.net'
 ];
+const  byoListUnCommon= ['shop.bbc.com']; 
+
+const byoList = byoListCommon.concat(byoListUnCommon);
 
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
