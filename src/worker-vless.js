@@ -134,14 +134,14 @@ async function vlessOverWSHandler(request) {
 				port: portRemote,
 			});
 			remoteSocket = tcpSocket;
-			log(`connected`);
+			log(`connected to ${redirectIp || addressRemote}`);
 			const writer = tcpSocket.writable.getWriter();
 			await writer.write(rawClientData); // first write, nomal is tls client hello
 			writer.releaseLock();
 
 			// when remoteSocket is ready, pass to websocket
 			// remote--> ws
-			remoteSocketToWS(tcpSocket, webSocket, log, vlessResponseHeader)
+			remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, log)
 			// let remoteConnectionReadyResolve = null;
 			// remoteConnectionReadyResolve(tcpSocket);
 		},
@@ -353,9 +353,10 @@ function processVlessHeader(
  * 
  * @param {import("@cloudflare/workers-types").Socket} remoteSocket 
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket 
+ * @param {Uint8Array} vlessResponseHeader 
  * @param {*} log 
  */
-function remoteSocketToWS(remoteSocket, webSocket, log, vlessResponseHeader) {
+function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, log) {
 	// remote--> ws
 	let remoteChunkCount = 0;
 	let chunks = [];
@@ -375,21 +376,7 @@ function remoteSocketToWS(remoteSocket, webSocket, log, vlessResponseHeader) {
 				async write(chunk, controller) {
 					// remoteChunkCount++;
 					if (webSocket.readyState === WS_READY_STATE_OPEN) {
-
-						// if (remoteChunkCount < 20) {
-						// 	webSocket.send(chunk);
-						// } else {
-						// 	// webSocket.send(chunk);
-						// 	// await delay(1); 
-						// 	chunks.push(chunk);
-						// 	if(chunks.length > 500){ // 4kb * 500 = 2M/s
-						// 		webSocket.send(new Uint8Array(chunks));
-						// 		chunks = [];
-						// 		await delay(500); // 4kb * 1000 = 4m/s
-						// 	}	
-						// } 
-
-            // seems no need rate limit this, CF seems fix this..
+                        // seems no need rate limit this, CF seems fix this..
 						// if (remoteChunkCount > 20000) {
 						// 	// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
 						// 	await delay(1);
@@ -445,8 +432,8 @@ function base64ToArrayBuffer(base64Str) {
  * @returns 
  */
 function getClientIp(request) {
-  const isCN = request.headers.get('cf-ipcountry')?.toUpperCase() !== 'CN';
-  const clientIP = isCN ? request.headers.get('cf-connecting-ip') || '' : '';
+  const isNotCN = request.headers.get('cf-ipcountry')?.toUpperCase() !== 'CN';
+  const clientIP = isNotCN ? request.headers.get('cf-connecting-ip') || '' : '';
   return clientIP;
 }
 
