@@ -20,5 +20,5 @@ jobs:
         uses: jaywcjlove/github-action-modify-file-content@main
         with:
           path: src/worker-vless.js
-          body: "version base on commit ${{ github.sha }}, time is {{date:YYYY-MM-DD HH:mm:ssZ}}"
+          body: "version base on commit ${{ github.sha }}, time is {{date:YYYY-MM-DD HH:mm:ss}} UTC"
           message: "Update version worker-vless.js"
