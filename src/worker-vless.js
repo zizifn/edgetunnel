@@ -1,4 +1,5 @@
 // <!--GAMFC-->version base on commit 10ccfd24d7181f1df9fa92aaf191598a0363464a, time is 2023-06-03 12:25:47 UTC<!--GAMFC-END-->.
+// @ts-ignore
 import { connect } from 'cloudflare:sockets';
 
 // How to generate your own UUID:
@@ -52,6 +53,7 @@ export default {
 async function vlessOverWSHandler(request) {
 
 	/** @type {import("@cloudflare/workers-types").WebSocket[]} */
+	// @ts-ignore
 	const webSocketPair = new WebSocketPair();
 	const [client, webSocket] = Object.values(webSocketPair);
 
@@ -140,6 +142,7 @@ async function vlessOverWSHandler(request) {
 
 	return new Response(null, {
 		status: 101,
+		// @ts-ignore
 		webSocket: client,
 	});
 }
