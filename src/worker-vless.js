@@ -6,8 +6,6 @@ import { connect } from 'cloudflare:sockets';
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
 const userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
-// 1. 如果这个你不填写，并且你客户端的 IP 不是 China IP，那么就自动取你的客户端IP。有一定概率会失败。
-// 2. 如果你指定，忽略一切条件，用你指定的IP。
 let proxyIP = '';
 
 
@@ -66,9 +64,6 @@ async function vlessOverWSHandler(request) {
 	};
 	const earlyDataHeader = request.headers.get('sec-websocket-protocol') || '';
 
-	// only try to get client ip as redirect ip when client is not in China
-	const clientIP = getClientIp(request);
-
 	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyDataHeader, log);
 
 	/** @type {{ value: import("@cloudflare/workers-types").Socket | null}}*/
@@ -81,7 +76,7 @@ async function vlessOverWSHandler(request) {
 	readableWebSocketStream.pipeTo(new WritableStream({
 		async write(chunk, controller) {
 			if (isDns) {
-				return await handleDNSQuery(chunk, webSocket, log);
+				return await handleDNSQuery(chunk, webSocket, null, log);
 			}
 			if (remoteSocketWapper.value) {
 				const writer = remoteSocketWapper.value.writable.getWriter()
@@ -118,17 +113,14 @@ async function vlessOverWSHandler(request) {
 					return;
 				}
 			}
-
+			// ["version", "附加信息长度 N"]
 			const vlessResponseHeader = new Uint8Array([vlessVersion[0], 0]);
 			const rawClientData = chunk.slice(rawDataIndex);
 
-			// early send vless response header
-			webSocket.send(vlessResponseHeader);
-
 			if (isDns) {
-				return handleDNSQuery(rawClientData, webSocket, log);
+				return handleDNSQuery(rawClientData, webSocket, vlessResponseHeader, log);
 			}
-			handleTCPOutBound(remoteSocketWapper, addressRemote, clientIP, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
+			handleTCPOutBound(remoteSocketWapper, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
 		},
 		close() {
 			log(`readableWebSocketStream is close`);
@@ -152,7 +144,6 @@ async function vlessOverWSHandler(request) {
  *
  * @param {any} remoteSocket 
  * @param {string} addressRemote The remote address to connect to.
- * @param {string} clientIP The IP address of the client.
  * @param {number} portRemote The remote port to connect to.
  * @param {Uint8Array} rawClientData The raw client data to write.
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket The WebSocket to pass the remote socket to.
@@ -160,7 +151,7 @@ async function vlessOverWSHandler(request) {
  * @param {function} log The logging function.
  * @returns {Promise<void>} The remote socket.
  */
-async function handleTCPOutBound(remoteSocket, addressRemote, clientIP, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
+async function handleTCPOutBound(remoteSocket, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
 	async function connectAndWrite(address, port) {
 		/** @type {import("@cloudflare/workers-types").Socket} */
 		const tcpSocket = connect({
@@ -177,22 +168,21 @@ async function handleTCPOutBound(remoteSocket, addressRemote, clientIP, portRemo
 
 	// if the cf connect tcp socket have no incoming data, we retry to redirect ip
 	async function retry() {
-		let redirectIp = proxyIP || clientIP;
-		const tcpSocket = await connectAndWrite(redirectIp || addressRemote, portRemote)
+		const tcpSocket = await connectAndWrite(proxyIP || addressRemote, portRemote)
 		// no matter retry success or not, close websocket
-		tcpSocket.closed.catch(error =>{
+		tcpSocket.closed.catch(error => {
 			console.log('retry tcpSocket closed error', error);
 		}).finally(() => {
 			safeCloseWebSocket(webSocket);
 		})
-		remoteSocketToWS(tcpSocket, webSocket, null, log);
+		remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, null, log);
 	}
 
 	const tcpSocket = await connectAndWrite(addressRemote, portRemote);
-		
+
 	// when remoteSocket is ready, pass to websocket
 	// remote--> ws
-	remoteSocketToWS(tcpSocket, webSocket, retry, log);
+	remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, retry, log);
 }
 
 /**
@@ -387,13 +377,16 @@ function processVlessHeader(
  * 
  * @param {import("@cloudflare/workers-types").Socket} remoteSocket 
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket 
+ * @param {ArrayBuffer} vlessResponseHeader 
  * @param {(() => Promise<void>) | null} retry
  * @param {*} log 
  */
-async function remoteSocketToWS(remoteSocket, webSocket, retry, log) {
+async function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, retry, log) {
 	// remote--> ws
 	let remoteChunkCount = 0;
 	let chunks = [];
+	/** @type {ArrayBuffer | null} */
+	let vlessHeader = vlessResponseHeader;
 	let hasIncomingData = false; // check if remoteSocket has incoming data
 	await remoteSocket.readable
 		.pipeTo(
@@ -413,12 +406,17 @@ async function remoteSocketToWS(remoteSocket, webSocket, retry, log) {
 							'webSocket.readyState is not open, maybe close'
 						);
 					}
-					// seems no need rate limit this, CF seems fix this??..
-					// if (remoteChunkCount > 20000) {
-					// 	// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
-					// 	await delay(1);
-					// }
-					webSocket.send(chunk);
+					if (vlessHeader) {
+						webSocket.send(await new Blob([vlessHeader, chunk]).arrayBuffer());
+						vlessHeader = null;
+					} else {
+						// seems no need rate limit this, CF seems fix this??..
+						// if (remoteChunkCount > 20000) {
+						// 	// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
+						// 	await delay(1);
+						// }
+						webSocket.send(chunk);
+					}
 				},
 				close() {
 					log(`remoteConnection!.readable is close with hasIncomingData is ${hasIncomingData}`);
@@ -467,18 +465,6 @@ function base64ToArrayBuffer(base64Str) {
 }
 
 /**
- * 
- * @param {import("@cloudflare/workers-types").Request} request 
- * @returns 
- */
-function getClientIp(request) {
-	const isNotCN = request.headers.get('cf-ipcountry')?.toUpperCase() !== 'CN';
-	const clientIP = isNotCN ? request.headers.get('cf-connecting-ip') || '' : '';
-	return clientIP;
-}
-
-
-/**
  * This is not real UUID validation
  * @param {string} uuid 
  */
@@ -486,18 +472,6 @@ function isValidUUID(uuid) {
 	const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 	return uuidRegex.test(uuid);
 }
-
-/**
- * 
- * @param {number} ms 
- * @returns 
- */
-function delay(ms) {
-	return new Promise((resolve, rej) => {
-		setTimeout(resolve, ms);
-	});
-}
-
 
 const WS_READY_STATE_OPEN = 1;
 const WS_READY_STATE_CLOSING = 2;
@@ -534,14 +508,17 @@ function stringify(arr, offset = 0) {
  * 
  * @param {ArrayBuffer} udpChunk 
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket 
+ * @param {ArrayBuffer} vlessResponseHeader 
  * @param {(string)=> void} log 
  */
-async function handleDNSQuery(udpChunk, webSocket, log) {
+async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
 	// no matter which DNS server client send, we alwasy use hard code one.
 	// beacsue someof DNS server is not support DNS over TCP
 	try {
 		const dnsServer = '8.8.4.4'; // change to 1.1.1.1 after cf fix connect own ip bug
 		const dnsPort = 53;
+		/** @type {ArrayBuffer | null} */
+		let vlessHeader = vlessResponseHeader;
 		/** @type {import("@cloudflare/workers-types").Socket} */
 		const tcpSocket = connect({
 			hostname: dnsServer,
@@ -553,10 +530,14 @@ async function handleDNSQuery(udpChunk, webSocket, log) {
 		await writer.write(udpChunk);
 		writer.releaseLock();
 		await tcpSocket.readable.pipeTo(new WritableStream({
-			write: (chunk) => {
+			async write(chunk) {
 				if (webSocket.readyState === WS_READY_STATE_OPEN) {
-
-					webSocket.send(chunk);
+					if (vlessHeader) {
+						webSocket.send(await new Blob([vlessHeader, chunk]).arrayBuffer());
+						vlessHeader = null;
+					} else {
+						webSocket.send(chunk);
+					}
 				}
 			},
 			close() {
