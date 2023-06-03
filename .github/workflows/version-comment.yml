@@ -1,4 +1,4 @@
-name: docs
+name: Add Version Comment
 
 on:
   # trigger deployment on every push to main branch
@@ -11,10 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  docs:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  version-comment:
     runs-on: ubuntu-latest
 
     steps:
