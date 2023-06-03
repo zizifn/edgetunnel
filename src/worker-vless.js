@@ -6,7 +6,7 @@ const userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
 // 1. 如果这个你不填写，并且你客户端的 IP 不是 China IP，那么就自动取你的客户端IP。有一定概率会失败。
 // 2. 如果你指定，忽略一切条件，用你指定的IP。
-let proxyIP = '192.203.230.111';
+let proxyIP = '';
 
 
 if (!isValidUUID(userID)) {
