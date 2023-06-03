@@ -1,4 +1,4 @@
-// version is <!--GAMFC-->2023-06-03 12:11:01<!--GAMFC-END-->.
+// version <!--GAMFC-->2023-06-03 12:11:01<!--GAMFC-END-->.
 import { connect } from 'cloudflare:sockets';
 
 // How to generate your own UUID:
