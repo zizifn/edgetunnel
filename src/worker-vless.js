@@ -1,4 +1,4 @@
-// version <!--GAMFC-->base on commit 6b0ce843702fb7d304752d47786e8f214fbfd9e0, time is 2023-06-03 12:16:50<!--GAMFC-END-->.
+// <!--GAMFC-->base on commit 6b0ce843702fb7d304752d47786e8f214fbfd9e0, time is 2023-06-03 12:16:50<!--GAMFC-END-->.
 import { connect } from 'cloudflare:sockets';
 
 // How to generate your own UUID:
