@@ -1,3 +1,4 @@
+// version is <!--GAMFC-->2023-02-23 05:34:49<!--GAMFC-END-->.
 import { connect } from 'cloudflare:sockets';
 
 // How to generate your own UUID:
@@ -171,11 +172,11 @@ async function handleTCPOutBound(remoteSocket, addressRemote, clientIP, portRemo
 		return tcpSocket;
 	}
 
-	// if the cf connect have no incoming data, we retry to redirect ip
+	// if the cf connect tcp socket have no incoming data, we retry to redirect ip
 	async function retry() {
 		let redirectIp = proxyIP || clientIP;
 		const tcpSocket = await connectAndWrite(redirectIp || addressRemote, portRemote)
-		// if retry success or not, close websocket
+		// no matter retry success or not, close websocket
 		tcpSocket.closed.catch(error =>{
 			console.log('retry tcpSocket closed error', error);
 		}).finally(() => {
@@ -214,7 +215,7 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
 			// The WebSocket protocol says that a separate close message must be sent in each direction to fully close the socket.
 			webSocketServer.addEventListener('close', () => {
 				// client send close, need close server
-				// is stream is cancel, skip controller.close
+				// if stream is cancel, skip controller.close
 				safeCloseWebSocket(webSocketServer);
 				if (readableStreamCancel) {
 					return;
@@ -433,7 +434,9 @@ async function remoteSocketToWS(remoteSocket, webSocket, retry, log) {
 			safeCloseWebSocket(webSocket);
 		});
 
-	// seems is socket have error, socket readable will be close without any data coming
+	// seems is cf connect socket have error,
+	// 1. Socket.closed will have error
+	// 2. Socket.readable will be close without any data coming
 	if (hasIncomingData === false && retry) {
 		log(`retry`)
 		retry();
@@ -534,7 +537,7 @@ async function handleDNSQuery(udpChunk, webSocket, log) {
 	// no matter which DNS server client send, we alwasy use hard code one.
 	// beacsue someof DNS server is not support DNS over TCP
 	try {
-		const dnsServer = '8.8.4.4';
+		const dnsServer = '8.8.4.4'; // change to 1.1.1.1 after cf fix connect own ip bug
 		const dnsPort = 53;
 		/** @type {import("@cloudflare/workers-types").Socket} */
 		const tcpSocket = connect({

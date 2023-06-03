@@ -1,0 +1,27 @@
+name: docs
+
+on:
+  # trigger deployment on every push to main branch
+  push:
+    branches: [main]
+  # trigger deployment manually
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Modify version worker-vless.js
+        uses: jaywcjlove/github-action-modify-file-content@main
+        with:
+          path: src/worker-vless.js
+          body: "{{date:YYYY-MM-DD HH:mm:ss}}"
+          message: "Update version worker-vless.js"
