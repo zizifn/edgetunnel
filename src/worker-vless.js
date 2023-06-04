@@ -28,8 +28,30 @@ export default {
 				switch (url.pathname) {
 					case '/':
 						return new Response(JSON.stringify(request.cf), { status: 200 });
-					case `/${userID}`:
-							return new Response(`${userID}`, { status: 200 });
+					case `/${userID}`: {
+						const vlessConfig = getV2rayNConfig(userID, request.headers.get('Host'));
+						return new Response(`${vlessConfig}`, {
+							status: 200,
+							headers: {
+								"Content-Type": "text/plain;charset=utf-8",
+							}
+						});
+					}
+					case `/${userID}/v2`:
+						const v2raySub = getV2raySub(userID, request.headers.get('Host'));
+						return new Response(`${v2raySub}`, {
+							status: 200,
+							headers: {
+								"Content-Type": "text/plain;charset=utf-8",
+							}
+						});
+					case `/${userID}/clash`:
+						return new Response(`todo`, {
+							status: 200,
+							headers: {
+								"Content-Type": "text/plain;charset=utf-8",
+							}
+						});
 					default:
 						return new Response('Not found', { status: 404 });
 				}
@@ -555,3 +577,27 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
 		);
 	}
 }
+
+
+/**
+ * 
+ * @param {string} userID 
+ * @param {string | null} hostName
+ * @returns {string}
+ */
+function getV2raySub(userID, hostName) {
+	const vlessMain = getV2rayNConfig(userID, hostName);
+	return btoa(`${vlessMain}`);
+}
+
+/**
+ * 
+ * @param {string} userID 
+ * @param {string | null} hostName
+ * @returns {string}
+ */
+function getV2rayNConfig(userID, hostName) {
+	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`
+	return vlessMain;
+}
+
