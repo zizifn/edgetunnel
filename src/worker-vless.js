@@ -29,7 +29,7 @@ export default {
 					case '/':
 						return new Response(JSON.stringify(request.cf), { status: 200 });
 					case `/${userID}`: {
-						const vlessConfig = getV2rayNConfig(userID, request.headers.get('Host'));
+						const vlessConfig = getV2rayConfig(userID, request.headers.get('Host'));
 						return new Response(`${vlessConfig}`, {
 							status: 200,
 							headers: {
@@ -586,7 +586,7 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
  * @returns {string}
  */
 function getV2raySub(userID, hostName) {
-	const vlessMain = getV2rayNConfig(userID, hostName);
+	const vlessMain = getV2rayConfig(userID, hostName);
 	return btoa(`${vlessMain}`);
 }
 
@@ -596,7 +596,7 @@ function getV2raySub(userID, hostName) {
  * @param {string | null} hostName
  * @returns {string}
  */
-function getV2rayNConfig(userID, hostName) {
+function getV2rayConfig(userID, hostName) {
 	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`
 	return vlessMain;
 }
