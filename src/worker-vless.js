@@ -4,7 +4,7 @@ import { connect } from 'cloudflare:sockets';
 
 // How to generate your own UUID:
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
-const userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
+let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
 let proxyIP = '';
 
@@ -16,12 +16,14 @@ if (!isValidUUID(userID)) {
 export default {
 	/**
 	 * @param {import("@cloudflare/workers-types").Request} request
-	 * @param {{uuid: string}} env
+	 * @param {{UUID: string, PROXYIP: string}} env
 	 * @param {import("@cloudflare/workers-types").ExecutionContext} ctx
 	 * @returns {Promise<Response>}
 	 */
 	async fetch(request, env, ctx) {
 		try {
+			userID = env.UUID || userID;
+			proxyIP = env.PROXYIP || proxyIP;
 			const upgradeHeader = request.headers.get('Upgrade');
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
 				const url = new URL(request.url);
@@ -29,7 +31,7 @@ export default {
 					case '/':
 						return new Response(JSON.stringify(request.cf), { status: 200 });
 					case `/${userID}`: {
-						const vlessConfig = getV2rayConfig(userID, request.headers.get('Host'));
+						const vlessConfig = getVLESSConfig(userID, request.headers.get('Host'));
 						return new Response(`${vlessConfig}`, {
 							status: 200,
 							headers: {
@@ -37,21 +39,6 @@ export default {
 							}
 						});
 					}
-					case `/${userID}/v2`:
-						const v2raySub = getV2raySub(userID, request.headers.get('Host'));
-						return new Response(`${v2raySub}`, {
-							status: 200,
-							headers: {
-								"Content-Type": "text/plain;charset=utf-8",
-							}
-						});
-					case `/${userID}/clash`:
-						return new Response(`todo`, {
-							status: 200,
-							headers: {
-								"Content-Type": "text/plain;charset=utf-8",
-							}
-						});
 					default:
 						return new Response('Not found', { status: 404 });
 				}
@@ -578,26 +565,40 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
 	}
 }
 
-
 /**
  * 
  * @param {string} userID 
  * @param {string | null} hostName
  * @returns {string}
  */
-function getV2raySub(userID, hostName) {
-	const vlessMain = getV2rayConfig(userID, hostName);
-	return btoa(`${vlessMain}`);
-}
-
-/**
- * 
- * @param {string} userID 
- * @param {string | null} hostName
- * @returns {string}
- */
-function getV2rayConfig(userID, hostName) {
+function getVLESSConfig(userID, hostName) {
 	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`
-	return vlessMain;
+	return `
+################################################################
+v2ray
+---------------------------------------------------------------
+${vlessMain}
+---------------------------------------------------------------
+################################################################
+clash-meta
+---------------------------------------------------------------
+- type: vless
+  name: ${hostName}
+  server: ${hostName}
+  port: 443
+  uuid: ${userID}
+  network: ws
+  tls: true
+  udp: false
+  sni: ${hostName}
+  client-fingerprint: chrome
+  ws-opts:
+    path: "/?ed=2048"
+    headers:
+      host: ${hostName}
+---------------------------------------------------------------
+################################################################
+`;
 }
+
 
