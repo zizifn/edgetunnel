@@ -28,6 +28,8 @@ export default {
 				switch (url.pathname) {
 					case '/':
 						return new Response(JSON.stringify(request.cf), { status: 200 });
+					case `/${userID}`:
+							return new Response(`${userID}`, { status: 200 });
 					default:
 						return new Response('Not found', { status: 404 });
 				}
@@ -251,7 +253,7 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
 
 }
 
-// https://github.com/v2ray/v2ray-core/issues/2636
+// https://xtls.github.io/development/protocols/vless.html
 // https://github.com/zizifn/excalidraw-backup/blob/main/v2ray-protocol.excalidraw
 
 /**
