@@ -8,6 +8,10 @@ let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
 let proxyIP = '';
 
+// The user name and password do not contain special characters
+// Setting the address will ignore proxyIP
+// Example:  user:pass@host:port  or  host:port
+let socks5Address = '';
 
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
@@ -24,6 +28,7 @@ export default {
 		try {
 			userID = env.UUID || userID;
 			proxyIP = env.PROXYIP || proxyIP;
+			socks5Address = env.SOCKS5 || socks5Address;
 			const upgradeHeader = request.headers.get('Upgrade');
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
 				const url = new URL(request.url);
@@ -99,6 +104,7 @@ async function vlessOverWSHandler(request) {
 			const {
 				hasError,
 				message,
+				addressType,
 				portRemote = 443,
 				addressRemote = '',
 				rawDataIndex,
@@ -131,7 +137,7 @@ async function vlessOverWSHandler(request) {
 			if (isDns) {
 				return handleDNSQuery(rawClientData, webSocket, vlessResponseHeader, log);
 			}
-			handleTCPOutBound(remoteSocketWapper, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
+			handleTCPOutBound(remoteSocketWapper, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
 		},
 		close() {
 			log(`readableWebSocketStream is close`);
@@ -153,7 +159,8 @@ async function vlessOverWSHandler(request) {
 /**
  * Handles outbound TCP connections.
  *
- * @param {any} remoteSocket 
+ * @param {any} remoteSocket
+ * @param {number} addressType The remote address type to connect to.
  * @param {string} addressRemote The remote address to connect to.
  * @param {number} portRemote The remote port to connect to.
  * @param {Uint8Array} rawClientData The raw client data to write.
@@ -162,24 +169,29 @@ async function vlessOverWSHandler(request) {
  * @param {function} log The logging function.
  * @returns {Promise<void>} The remote socket.
  */
-async function handleTCPOutBound(remoteSocket, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
-	async function connectAndWrite(address, port) {
+async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
+	async function connectAndWrite(address, port, socks = false) {
 		/** @type {import("@cloudflare/workers-types").Socket} */
-		const tcpSocket = connect({
-			hostname: address,
-			port: port,
-		});
+		const tcpSocket = socks ? await socks5Connect(addressType, addressRemote, portRemote)
+			: connect({
+				hostname: address,
+				port: port,
+			});
 		remoteSocket.value = tcpSocket;
 		log(`connected to ${address}:${port}`);
 		const writer = tcpSocket.writable.getWriter();
-		await writer.write(rawClientData); // first write, nomal is tls client hello
+		await writer.write(rawClientData); // first write, normal is tls client hello
 		writer.releaseLock();
 		return tcpSocket;
 	}
 
 	// if the cf connect tcp socket have no incoming data, we retry to redirect ip
 	async function retry() {
-		const tcpSocket = await connectAndWrite(proxyIP || addressRemote, portRemote)
+		if (!!socks5Address) {
+			tcpSocket = await connectAndWrite(addressRemote, portRemote, true)
+		} else {
+			tcpSocket = await connectAndWrite(addressRemote, portRemote);
+		}
 		// no matter retry success or not, close websocket
 		tcpSocket.closed.catch(error => {
 			console.log('retry tcpSocket closed error', error);
@@ -189,7 +201,7 @@ async function handleTCPOutBound(remoteSocket, addressRemote, portRemote, rawCli
 		remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, null, log);
 	}
 
-	const tcpSocket = await connectAndWrite(addressRemote, portRemote);
+	let tcpSocket = await connectAndWrite(addressRemote, portRemote);
 
 	// when remoteSocket is ready, pass to websocket
 	// remote--> ws
@@ -563,6 +575,148 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
 			`handleDNSQuery have exception, error: ${error.message}`
 		);
 	}
+}
+
+/**
+ * 
+ * @param {number} addressType
+ * @param {string} addressRemote
+ * @param {number} portRemote
+ */
+export async function socks5Connect(addressType, addressRemote, portRemote) {
+	const [port, hostname, password, username] = parseSocks5Address(socks5Address).reverse();
+	// Connect to the SOCKS server
+	const socket = connect({
+		hostname,
+		port,
+	});
+
+	// Request head format (Worker -> Socks Server):
+	// +----+----------+----------+
+	// |VER | NMETHODS | METHODS  |
+	// +----+----------+----------+
+	// | 1  |    1     | 1 to 255 |
+	// +----+----------+----------+
+
+	// https://en.wikipedia.org/wiki/SOCKS#SOCKS5
+	// For METHODS:
+	// 0x00 NO AUTHENTICATION REQUIRED
+	// 0x02 USERNAME/PASSWORD https://datatracker.ietf.org/doc/html/rfc1929
+	const socksGreeting = new Uint8Array([5, 2, 0, 2]);
+	// const socksGreeting = new Uint8Array([5, 1, 0]);
+
+	const writer = socket.writable.getWriter();
+
+	await writer.write(socksGreeting);
+	console.log('Sent socks greeting');
+
+	const reader = socket.readable.getReader();
+	// const decoder = new TextDecoder();
+	let res = (await reader.read()).value;
+	// Response format (Socks Server -> Worker):
+	// +----+--------+
+	// |VER | METHOD |
+	// +----+--------+
+	// | 1  |   1    |
+	// +----+--------+
+	if (res[0] !== 0x05) {
+		console.log(`socks server version error: ${res[0]} expected: 5`)
+		return;
+	}
+	if (res[1] === 0xff) {
+		console.log("no acceptable methods")
+		return;
+	}
+
+	// if return 0x0502
+	if (res[1] === 0x02) {
+		console.log("socks server needs auth")
+		if (!username || !password) {
+			console.log("please provide username/password")
+			return;
+		}
+		// +----+------+----------+------+----------+
+		// |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
+		// +----+------+----------+------+----------+
+		// | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
+		// +----+------+----------+------+----------+
+		const authRequest = new Uint8Array([
+			1,
+			username.length,
+			...(new TextEncoder()).encode(username),
+			password.length,
+			...(new TextEncoder()).encode(password)
+		]);
+		await writer.write(authRequest);
+		res = (await reader.read()).value;
+		// expected 0x0100
+		if (res[0] !== 0x01 || res[1] !== 0x00) {
+			console.log("fail to auth:", res.join(","))
+			return;
+		}
+	}
+
+	// Request data format (Worker -> Socks Server):
+	// +----+-----+-------+------+----------+----------+
+	// |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
+	// +----+-----+-------+------+----------+----------+
+	// | 1  |  1  | X'00' |  1   | Variable |    2     |
+	// +----+-----+-------+------+----------+----------+
+	// ATYP: address type of following address
+	// 0x01: IPv4 address
+	// 0x03: Domain name
+	// 0x04: IPv6 address
+	// DST.ADDR: desired destination address
+	// DST.PORT: desired destination port in network octet order
+
+	// addressType
+	// 1--> ipv4  addressLength =4
+	// 2--> domain name]
+	// 3--> ipv6  addressLength =16
+	let DSTADDR;
+	if (addressType === 1) {
+		DSTADDR = new Uint8Array([1, ...addressRemote.split('.').map(Number)]);
+	} else if (addressType === 2) {
+		DSTADDR = new Uint8Array(
+			[3, addressRemote.length, ...(new TextEncoder()).encode(addressRemote)]
+		);
+	} else if (addressType === 3) {
+		DSTADDR = new Uint8Array(
+			[4, ...ipv6.split(':').flatMap(x => [parseInt(x.slice(0, 2), 16), parseInt(x.slice(2), 16)])]
+		)
+	}
+	const socksRequest = new Uint8Array([5, 1, 0, ...DSTADDR, portRemote >> 8, portRemote & 0xff]);
+	await writer.write(socksRequest);
+	console.log('Sent socks request');
+
+	res = (await reader.read()).value;
+	// Response format (Socks Server -> Worker):
+	//  +----+-----+-------+------+----------+----------+
+	// |VER | REP |  RSV  | ATYP | BND.ADDR | BND.PORT |
+	// +----+-----+-------+------+----------+----------+
+	// | 1  |  1  | X'00' |  1   | Variable |    2     |
+	// +----+-----+-------+------+----------+----------+
+	if (res[1] === 0x00) {
+		console.log("socks connection opened:", res.join(","))
+	} else {
+		console.log("fail to open socks:", res.join(","))
+		return;
+	}
+	writer.releaseLock();
+	reader.releaseLock();
+	return socket;
+}
+
+
+/**
+ * 
+ * @param {string} address
+ */
+export function parseSocks5Address(address) {
+	if (address && address.includes(':')) {
+		return address.split('@').flatMap(x => x.split(':'))
+	}
+	return [];
 }
 
 /**
