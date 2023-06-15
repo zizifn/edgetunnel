@@ -671,7 +671,7 @@ export async function socks5Connect(addressType, addressRemote, portRemote) {
 
 	// addressType
 	// 1--> ipv4  addressLength =4
-	// 2--> domain name]
+	// 2--> domain name
 	// 3--> ipv6  addressLength =16
 	let DSTADDR;
 	if (addressType === 1) {
@@ -682,7 +682,7 @@ export async function socks5Connect(addressType, addressRemote, portRemote) {
 		);
 	} else if (addressType === 3) {
 		DSTADDR = new Uint8Array(
-			[4, ...ipv6.split(':').flatMap(x => [parseInt(x.slice(0, 2), 16), parseInt(x.slice(2), 16)])]
+			[4, ...addressRemote.split(':').flatMap(x => [parseInt(x.slice(0, 2), 16), parseInt(x.slice(2), 16)])]
 		)
 	}
 	const socksRequest = new Uint8Array([5, 1, 0, ...DSTADDR, portRemote >> 8, portRemote & 0xff]);
