@@ -583,7 +583,7 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
  * @param {string} addressRemote
  * @param {number} portRemote
  */
-export async function socks5Connect(addressType, addressRemote, portRemote) {
+async function socks5Connect(addressType, addressRemote, portRemote) {
 	const [port, hostname, password, username] = parseSocks5Address(socks5Address).reverse();
 	// Connect to the SOCKS server
 	const socket = connect({
@@ -710,7 +710,7 @@ export async function socks5Connect(addressType, addressRemote, portRemote) {
  * 
  * @param {string} address
  */
-export function parseSocks5Address(address) {
+function parseSocks5Address(address) {
 	if (address && address.includes(':')) {
 		return address.split('@').flatMap(x => x.split(':'))
 	}
