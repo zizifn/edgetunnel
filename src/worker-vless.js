@@ -603,7 +603,6 @@ export async function socks5Connect(addressType, addressRemote, portRemote) {
 	// 0x00 NO AUTHENTICATION REQUIRED
 	// 0x02 USERNAME/PASSWORD https://datatracker.ietf.org/doc/html/rfc1929
 	const socksGreeting = new Uint8Array([5, 2, 0, 2]);
-	// const socksGreeting = new Uint8Array([5, 1, 0]);
 
 	const writer = socket.writable.getWriter();
 
@@ -611,7 +610,6 @@ export async function socks5Connect(addressType, addressRemote, portRemote) {
 	console.log('Sent socks greeting');
 
 	const reader = socket.readable.getReader();
-	// const decoder = new TextDecoder();
 	let res = (await reader.read()).value;
 	// Response format (Socks Server -> Worker):
 	// +----+--------+
