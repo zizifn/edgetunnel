@@ -172,7 +172,7 @@ async function vlessOverWSHandler(request) {
 async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
 	async function connectAndWrite(address, port, socks = false) {
 		/** @type {import("@cloudflare/workers-types").Socket} */
-		const tcpSocket = socks ? await socks5Connect(addressType, addressRemote, portRemote)
+		const tcpSocket = socks ? await socks5Connect(addressType, addressRemote, portRemote, log)
 			: connect({
 				hostname: address,
 				port: port,
@@ -582,8 +582,9 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
  * @param {number} addressType
  * @param {string} addressRemote
  * @param {number} portRemote
+ * @param {function} log The logging function.
  */
-async function socks5Connect(addressType, addressRemote, portRemote) {
+async function socks5Connect(addressType, addressRemote, portRemote, log) {
 	const [port, hostname, password, username] = parseSocks5Address(socks5Address).reverse();
 	// Connect to the SOCKS server
 	const socket = connect({
@@ -607,7 +608,7 @@ async function socks5Connect(addressType, addressRemote, portRemote) {
 	const writer = socket.writable.getWriter();
 
 	await writer.write(socksGreeting);
-	console.log('Sent socks greeting');
+	log('sent socks greeting');
 
 	const reader = socket.readable.getReader();
 	const encoder = new TextEncoder();
@@ -619,19 +620,19 @@ async function socks5Connect(addressType, addressRemote, portRemote) {
 	// | 1  |   1    |
 	// +----+--------+
 	if (res[0] !== 0x05) {
-		console.log(`socks server version error: ${res[0]} expected: 5`)
+		log(`socks server version error: ${res[0]} expected: 5`)
 		return;
 	}
 	if (res[1] === 0xff) {
-		console.log("no acceptable methods")
+		log("no acceptable methods")
 		return;
 	}
 
 	// if return 0x0502
 	if (res[1] === 0x02) {
-		console.log("socks server needs auth")
+		log("socks server needs auth")
 		if (!username || !password) {
-			console.log("please provide username/password")
+			log("please provide username/password")
 			return;
 		}
 		// +----+------+----------+------+----------+
@@ -650,7 +651,7 @@ async function socks5Connect(addressType, addressRemote, portRemote) {
 		res = (await reader.read()).value;
 		// expected 0x0100
 		if (res[0] !== 0x01 || res[1] !== 0x00) {
-			console.log("fail to auth:", res.join(","))
+			log("fail to auth socks server")
 			return;
 		}
 	}
@@ -686,7 +687,7 @@ async function socks5Connect(addressType, addressRemote, portRemote) {
 	}
 	const socksRequest = new Uint8Array([5, 1, 0, ...DSTADDR, portRemote >> 8, portRemote & 0xff]);
 	await writer.write(socksRequest);
-	console.log('Sent socks request');
+	log('sent socks request');
 
 	res = (await reader.read()).value;
 	// Response format (Socks Server -> Worker):
@@ -696,9 +697,9 @@ async function socks5Connect(addressType, addressRemote, portRemote) {
 	// | 1  |  1  | X'00' |  1   | Variable |    2     |
 	// +----+-----+-------+------+----------+----------+
 	if (res[1] === 0x00) {
-		console.log("socks connection opened:", res.join(","))
+		log("socks connection opened")
 	} else {
-		console.log("fail to open socks:", res.join(","))
+		log("fail to open socks connection")
 		return;
 	}
 	writer.releaseLock();
