@@ -673,17 +673,26 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
 	// 1--> ipv4  addressLength =4
 	// 2--> domain name
 	// 3--> ipv6  addressLength =16
-	let DSTADDR;
-	if (addressType === 1) {
-		DSTADDR = new Uint8Array([1, ...addressRemote.split('.').map(Number)]);
-	} else if (addressType === 2) {
-		DSTADDR = new Uint8Array(
-			[3, addressRemote.length, ...encoder.encode(addressRemote)]
-		);
-	} else if (addressType === 3) {
-		DSTADDR = new Uint8Array(
-			[4, ...addressRemote.split(':').flatMap(x => [parseInt(x.slice(0, 2), 16), parseInt(x.slice(2), 16)])]
-		)
+	let DSTADDR;	// DSTADDR = ATYP + DST.ADDR
+	switch (addressType) {
+		case 1:
+			DSTADDR = new Uint8Array(
+				[1, ...addressRemote.split('.').map(Number)]
+			);
+			break;
+		case 2:
+			DSTADDR = new Uint8Array(
+				[3, addressRemote.length, ...encoder.encode(addressRemote)]
+			);
+			break;
+		case 3:
+			DSTADDR = new Uint8Array(
+				[4, ...addressRemote.split(':').flatMap(x => [parseInt(x.slice(0, 2), 16), parseInt(x.slice(2), 16)])]
+			);
+			break;
+		default:
+			log(`invild  addressType is ${addressType}`);
+			return;
 	}
 	const socksRequest = new Uint8Array([5, 1, 0, ...DSTADDR, portRemote >> 8, portRemote & 0xff]);
 	await writer.write(socksRequest);
