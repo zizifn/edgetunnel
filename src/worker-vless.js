@@ -13,9 +13,13 @@ let proxyIP = '';
 // Example:  user:pass@host:port  or  host:port
 let socks5Address = '';
 
+
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
 }
+
+let parsedSocks5Address = {}; 
+let enableSocks = false;
 
 export default {
 	/**
@@ -29,6 +33,14 @@ export default {
 			userID = env.UUID || userID;
 			proxyIP = env.PROXYIP || proxyIP;
 			socks5Address = env.SOCKS5 || socks5Address;
+			try {
+				parsedSocks5Address = socks5AddressParser(socks5Address);
+				enableSocks = true;
+			} catch (err) {
+  			/** @type {Error} */ let e = err;
+				console.log(e.toString());
+				enableSocks = false;
+			}
 			const upgradeHeader = request.headers.get('Upgrade');
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
 				const url = new URL(request.url);
@@ -172,7 +184,7 @@ async function vlessOverWSHandler(request) {
 async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
 	async function connectAndWrite(address, port, socks = false) {
 		/** @type {import("@cloudflare/workers-types").Socket} */
-		const tcpSocket = socks ? await socks5Connect(addressType, addressRemote, portRemote, log)
+		const tcpSocket = socks ? await socks5Connect(addressType, address, port, log)
 			: connect({
 				hostname: address,
 				port: port,
@@ -187,8 +199,8 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 
 	// if the cf connect tcp socket have no incoming data, we retry to redirect ip
 	async function retry() {
-		if (socks5Address) {
-			tcpSocket = await connectAndWrite(addressRemote, portRemote, true);
+		if (enableSocks) {
+			tcpSocket = await connectAndWrite(addressRemote, portRemote, enableSocks);
 		} else {
 			tcpSocket = await connectAndWrite(proxyIP || addressRemote, portRemote);
 		}
@@ -585,7 +597,7 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
  * @param {function} log The logging function.
  */
 async function socks5Connect(addressType, addressRemote, portRemote, log) {
-	const [port, hostname, password, username] = parseSocks5Address(socks5Address).reverse();
+	const { username, password, hostname, port } = parsedSocks5Address;
 	// Connect to the SOCKS server
 	const socket = connect({
 		hostname,
@@ -721,11 +733,32 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
  * 
  * @param {string} address
  */
-function parseSocks5Address(address) {
-	if (address && address.includes(':')) {
-		return address.split('@').flatMap(x => x.split(':'))
+function socks5AddressParser(address) {
+	let [latter, former] = address.split("@").reverse();
+	let username, password, hostname, port;
+	if (former) {
+		const formers = former.split(":");
+		if (formers.length !== 2) {
+			throw new Error('Invalid SOCKS address format');
+		}
+		[username, password] = formers;
 	}
-	return [];
+	const latters = latter.split(":");
+	port = Number(latters.pop());
+	if (isNaN(port)) {
+		throw new Error('Invalid SOCKS address format');
+	}
+	hostname = latters.join(":");
+	const regex = /^\[.*\]$/;
+	if (hostname.includes(":") && !regex.test(hostname)) {
+		throw new Error('Invalid SOCKS address format');
+	}
+	return {
+		username,
+		password,
+		hostname,
+		port,
+	}
 }
 
 /**
