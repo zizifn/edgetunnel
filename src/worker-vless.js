@@ -610,6 +610,7 @@ async function socks5Connect(addressType, addressRemote, portRemote) {
 	console.log('Sent socks greeting');
 
 	const reader = socket.readable.getReader();
+	const encoder = new TextEncoder();
 	let res = (await reader.read()).value;
 	// Response format (Socks Server -> Worker):
 	// +----+--------+
@@ -641,9 +642,9 @@ async function socks5Connect(addressType, addressRemote, portRemote) {
 		const authRequest = new Uint8Array([
 			1,
 			username.length,
-			...(new TextEncoder()).encode(username),
+			...encoder.encode(username),
 			password.length,
-			...(new TextEncoder()).encode(password)
+			...encoder.encode(password)
 		]);
 		await writer.write(authRequest);
 		res = (await reader.read()).value;
@@ -676,7 +677,7 @@ async function socks5Connect(addressType, addressRemote, portRemote) {
 		DSTADDR = new Uint8Array([1, ...addressRemote.split('.').map(Number)]);
 	} else if (addressType === 2) {
 		DSTADDR = new Uint8Array(
-			[3, addressRemote.length, ...(new TextEncoder()).encode(addressRemote)]
+			[3, addressRemote.length, ...encoder.encode(addressRemote)]
 		);
 	} else if (addressType === 3) {
 		DSTADDR = new Uint8Array(
