@@ -13,7 +13,6 @@ let proxyIP = '';
 // Example:  user:pass@host:port  or  host:port
 let socks5Address = '';
 
-
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
 }
@@ -33,13 +32,15 @@ export default {
 			userID = env.UUID || userID;
 			proxyIP = env.PROXYIP || proxyIP;
 			socks5Address = env.SOCKS5 || socks5Address;
-			try {
-				parsedSocks5Address = socks5AddressParser(socks5Address);
-				enableSocks = true;
-			} catch (err) {
+			if (socks5Address) {
+				try {
+					parsedSocks5Address = socks5AddressParser(socks5Address);
+					enableSocks = true;
+				} catch (err) {
   			/** @type {Error} */ let e = err;
-				console.log(e.toString());
-				enableSocks = false;
+					console.log(e.toString());
+					enableSocks = false;
+				}
 			}
 			const upgradeHeader = request.headers.get('Upgrade');
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
@@ -200,7 +201,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	// if the cf connect tcp socket have no incoming data, we retry to redirect ip
 	async function retry() {
 		if (enableSocks) {
-			tcpSocket = await connectAndWrite(addressRemote, portRemote, enableSocks);
+			tcpSocket = await connectAndWrite(addressRemote, portRemote, true);
 		} else {
 			tcpSocket = await connectAndWrite(proxyIP || addressRemote, portRemote);
 		}
