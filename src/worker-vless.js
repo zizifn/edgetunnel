@@ -187,8 +187,8 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 
 	// if the cf connect tcp socket have no incoming data, we retry to redirect ip
 	async function retry() {
-		if (!!socks5Address) {
-			tcpSocket = await connectAndWrite(addressRemote, portRemote, true)
+		if (socks5Address) {
+			tcpSocket = await connectAndWrite(addressRemote, portRemote, true);
 		} else {
 			tcpSocket = await connectAndWrite(proxyIP || addressRemote, portRemote);
 		}
@@ -620,19 +620,19 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
 	// | 1  |   1    |
 	// +----+--------+
 	if (res[0] !== 0x05) {
-		log(`socks server version error: ${res[0]} expected: 5`)
+		log(`socks server version error: ${res[0]} expected: 5`);
 		return;
 	}
 	if (res[1] === 0xff) {
-		log("no acceptable methods")
+		log("no acceptable methods");
 		return;
 	}
 
 	// if return 0x0502
 	if (res[1] === 0x02) {
-		log("socks server needs auth")
+		log("socks server needs auth");
 		if (!username || !password) {
-			log("please provide username/password")
+			log("please provide username/password");
 			return;
 		}
 		// +----+------+----------+------+----------+
@@ -651,7 +651,7 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
 		res = (await reader.read()).value;
 		// expected 0x0100
 		if (res[0] !== 0x01 || res[1] !== 0x00) {
-			log("fail to auth socks server")
+			log("fail to auth socks server");
 			return;
 		}
 	}
@@ -697,9 +697,9 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
 	// | 1  |  1  | X'00' |  1   | Variable |    2     |
 	// +----+-----+-------+------+----------+----------+
 	if (res[1] === 0x00) {
-		log("socks connection opened")
+		log("socks connection opened");
 	} else {
-		log("fail to open socks connection")
+		log("fail to open socks connection");
 		return;
 	}
 	writer.releaseLock();
