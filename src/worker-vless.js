@@ -190,7 +190,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		if (!!socks5Address) {
 			tcpSocket = await connectAndWrite(addressRemote, portRemote, true)
 		} else {
-			tcpSocket = await connectAndWrite(addressRemote, portRemote);
+			tcpSocket = await connectAndWrite(proxyIP || addressRemote, portRemote);
 		}
 		// no matter retry success or not, close websocket
 		tcpSocket.closed.catch(error => {
