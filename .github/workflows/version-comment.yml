@@ -22,3 +22,9 @@ jobs:
           path: src/worker-vless.js
           body: "version base on commit ${{ github.sha }}, time is {{date:YYYY-MM-DD HH:mm:ss}} UTC"
           message: "Update version worker-vless.js"
+      - name: Modify version worker-with-socks5-experimental.js
+        uses: jaywcjlove/github-action-modify-file-content@main
+        with:
+          path: src/worker-with-socks5-experimental.js
+          body: "version base on commit ${{ github.sha }}, time is {{date:YYYY-MM-DD HH:mm:ss}} UTC"
+          message: "Update version worker-with-socks5-experimental.js"
