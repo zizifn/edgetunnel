@@ -87,7 +87,7 @@ async function vlessOverWSHandler(request) {
 	// ws --> remote
 	readableWebSocketStream.pipeTo(new WritableStream({
 		async write(chunk, controller) {
-			if (isDns) {
+			if (isDns && udpStreamWrite) {
 				return udpStreamWrite(chunk);
 			}
 			if (remoteSocketWapper.value) {
