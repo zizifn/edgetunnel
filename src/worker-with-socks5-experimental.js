@@ -86,7 +86,13 @@ export default {
 	},
 };
 
+/** 
+ * A wrapper for the TCP API.
+ * @type {(host: string, port: number) => object}
+ * @returns {object} a socket, should be Cloudflare Worker compatible
+ */
 let createTCPConnection;
+/** @param {(host: string, port: number) => object} handler */
 export function setTCPConnectionHandler(handler) {
 	createTCPConnection = handler;
 };
@@ -106,10 +112,9 @@ try {
  *                                  may contain some base64 encoded data.
  */
 export function vlessOverWSHandler(webSocket, earlyDataHeader) {
-	let address = '';
-	let portWithRandomLog = '';
+	let logPrefix = '';
 	const log = (/** @type {string} */ info, /** @type {string | undefined} */ event) => {
-		console.log(`[${address}:${portWithRandomLog}] ${info}`, event || '');
+		console.log(`[${logPrefix}] ${info}`, event || '');
 	};
 
 	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyDataHeader, log);
@@ -143,9 +148,8 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 				vlessVersion = new Uint8Array([0, 0]),
 				isUDP,
 			} = processVlessHeader(chunk, userID);
-			address = addressRemote;
-			portWithRandomLog = `${portRemote}--${Math.random()} ${isUDP ? 'udp ' : 'tcp '
-				} `;
+			const randTag = Math.round(Math.random()*1000000).toString(16).padStart(5, '0');
+			logPrefix = `${addressRemote}:${portRemote} ${randTag} ${isUDP ? 'UDP' : 'TCP'}`;
 			if (hasError) {
 				// controller.error(message);
 				throw new Error(message); // cf seems has bug, controller.error will not end stream
@@ -172,10 +176,10 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 			handleTCPOutBound(remoteSocketWapper, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
 		},
 		close() {
-			log(`readableWebSocketStream is close`);
+			log(`readableWebSocketStream has been closed`);
 		},
 		abort(reason) {
-			log(`readableWebSocketStream is abort`, JSON.stringify(reason));
+			log(`readableWebSocketStream aborts`, JSON.stringify(reason));
 		},
 	})).catch((err) => {
 		log('readableWebSocketStream pipeTo error', err);
@@ -200,7 +204,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		const tcpSocket = socks ? await socks5Connect(addressType, address, port, log)
 			: await createTCPConnection(address, port, log);
 		remoteSocket.value = tcpSocket;
-		log(`Connected to ${address}:${port}`);
+		log(`[${socks ? 'Socks' : 'Direct'}] Connected to ${address}:${port}`);
 		const writer = tcpSocket.writable.getWriter();
 		await writer.write(rawClientData); // First write, normally is tls client hello
 		writer.releaseLock();
@@ -474,11 +478,11 @@ async function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, re
 					}
 				},
 				close() {
-					log(`remoteConnection!.readable is close with hasIncomingData is ${hasIncomingData}`);
+					log(`remoteSocket.readable is close, hasIncomingData = ${hasIncomingData}`);
 					// safeCloseWebSocket(webSocket); // no need server close websocket frist for some case will casue HTTP ERR_CONTENT_LENGTH_MISMATCH issue, client will send close event anyway.
 				},
 				abort(reason) {
-					console.error(`remoteConnection!.readable abort`, reason);
+					console.error(`remoteSocket.readable aborts`, reason);
 				},
 			})
 		)
