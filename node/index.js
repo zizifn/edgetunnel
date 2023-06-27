@@ -6,7 +6,7 @@ import http from 'http';
 import net from 'net';
 import WebSocket from 'ws';
 
-import {vlessOverWSHandler, setTCPConnectionHandler, getVLESSConfig} from '../src/worker-vless.js';
+import {vlessOverWSHandler, setTCPConnectionHandler, getVLESSConfig} from '../src/worker-with-socks5-experimental.js';
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
