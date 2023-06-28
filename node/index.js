@@ -6,7 +6,7 @@ import http from 'http';
 import net from 'net';
 import WebSocket from 'ws';
 
-import {vlessOverWSHandler, setTCPConnectionHandler, getVLESSConfig} from '../src/worker-with-socks5-experimental.js';
+import {globalConfig, vlessOverWSHandler, platformAPI, getVLESSConfig} from '../src/worker-with-socks5-experimental.js';
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
@@ -49,7 +49,7 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
  * @param {function} log A destination-dependent logging function
  * @returns {object} The wrapped TCP connection, to be compatible with Cloudflare Workers
  */
-setTCPConnectionHandler(async (address, port, log) => {
+platformAPI.connect = async (address, port, log) => {
 	const socket = net.createConnection(port, address);
 
 	let readableStreamCancel = false;
@@ -68,10 +68,11 @@ setTCPConnectionHandler(async (address, port, log) => {
 					return;
 				}
 				controller.close();
+				console.log(`TCP to ${address}:${port} has closed`);
 			});
 		
 			socket.on('error', (err) => {
-				log('TCP outbound has an error: ' + err.message);
+				console.log('TCP outbound has an error: ' + err.message);
 			});
 		},
 	
@@ -100,26 +101,19 @@ setTCPConnectionHandler(async (address, port, log) => {
 		writable: {
 			getWriter: () => {
 				return {
-				write: (data) => {
-					socket.write(data);
-				},
-				releaseLock: () => {
-					// log('Dummy writer.releaseLock()');
-				}
-				};
-			}
-		},
-
-		// Handles socket close
-		closed: {
-			catch: (exceptionHandler) => {
-				socket.on('close', exceptionHandler);
-				return {
-					finally: (finallyHandler) => {
-						finallyHandler();
+					write: (data) => {
+						socket.write(data);
+					},
+					releaseLock: () => {
+						// log('Dummy writer.releaseLock()');
 					}
 				};
 			}
-		}
+		},
 	};
-});
+};
+
+platformAPI.newWebSocket = (url) => new WebSocket(url);
+
+import {customConfig} from './config.js';
+globalConfig.outbounds = customConfig.outbounds;

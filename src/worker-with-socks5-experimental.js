@@ -2,22 +2,161 @@
 
 // How to generate your own UUID:
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
-let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
+export let globalConfig = {
+	userID: 'd342d11e-d424-4583-b36e-524ab1f0afa4',
 
-let proxyIP = '';
-let proxyPortMap = {};
+	// The order controls where to send the traffic after the previous one fails
+	outbounds: [
+		{
+			protocol: "freedom"	// Compulsory, outbound locally.
+		}
+	]
+};
 
-// The user name and password do not contain special characters
-// Setting the address will ignore proxyIP
-// Example:  user:pass@host:port  or  host:port
-let socks5Address = '';
+export let platformAPI = {
+	/** 
+ 	* A wrapper for the TCP API, should return a Cloudflare Worker compatible socket.
+	* See: https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/
+ 	* @type {async (host: string, port: number, log: function) => 
+	*    {
+	*      readable: ReadableStream, 
+	*      writable: {getWriter: () => {write: (data) => void, releaseLock: () => void}}
+	*    }
+	*  }
+ 	*/
+	connect: null,
 
-if (!isValidUUID(userID)) {
-	throw new Error('uuid is not valid');
+	/** 
+ 	* A wrapper for the TCP API.
+ 	* @type {(url: string) => WebSocket} returns a WebSocket, should be compatile with the standard WebSocket API.
+ 	*/
+	newWebSocket: null,
 }
 
-let parsedSocks5Address = {}; 
-let enableSocks = false;
+/**
+ * Foreach globalConfig.outbounds, start with {index: 0, serverIndex: 0}
+ * @param {{index: number, serverIndex: number}} curPos
+ * @returns {protocol: string, address: string, port: number, user: string, pass: string,
+ *  portMap: {Number: number}}}
+ */
+function getOutbound(curPos) {
+	if (curPos.index >= globalConfig.outbounds.length) {
+		// End of the outbounds array
+		return null;
+	}
+
+	const outbound = globalConfig.outbounds.at(curPos.index);
+	let serverCount = 0;
+	/** @type {[{}]} */
+	let servers;
+	/** @type {{address: string, port: number}} */
+	let curServer;
+	let retVal = { protocol: outbound.protocol };
+	switch (outbound.protocol) {
+		case 'freedom':
+			break;
+
+		case 'socks':
+			servers = outbound.settings.vnext;
+			serverCount = servers.length;
+			curServer = servers.at(curPos.serverIndex);
+			retVal.address = curServer.address;
+			retVal.port = curServer.port;
+
+			if (curServer.users && curServer.users.length > 0) {
+				const firstUser = curServer.users.at(0);
+				retVal.user = firstUser.user;
+				retVal.pass = firstUser.pass;
+			}
+			break;
+
+		case 'vless':
+			servers = outbound.settings.vnext;
+			serverCount = servers.length;
+			curServer = servers.at(curPos.serverIndex);
+			retVal.address = curServer.address;
+			retVal.port = curServer.port;
+
+			retVal.pass = curServer.users.at(0).id;
+			break;
+
+		default:
+			throw new Error(`Unknown outbound protocol: ${outbound.protocol}`);
+	}
+
+	curPos.serverIndex++;
+	if (curPos.serverIndex >= serverCount) {
+		// End of the vnext array
+		curPos.serverIndex = 0;
+		curPos.index++;
+	}
+
+	return retVal;
+}
+
+/** 
+ * @param {{
+ *  UUID: string, 
+ *  PROXYIP: string, 
+ *  SOCKS5: string
+ * }} env
+ */
+export function setConfigFromEnv(env) {
+	globalConfig.userID = env.UUID || globalConfig.userID;
+
+	if (env.PROXYIP) {
+		let forward = {
+			protocol: "forward",
+			address: env.PROXYIP
+		};
+
+		if (env.PROXYPORTMAP) {
+			forward.portMap = JSON.parse(env.PROXYPORTMAP);
+		} else {
+			forward.portMap = {};
+		}
+
+		globalConfig['outbounds'].push(forward);
+	}
+
+	// The user name and password should not contain special characters
+	// Example: user:pass@host:port or host:port
+	if (env.SOCKS5) {
+		try {
+			const {
+				username,
+				password,
+				hostname,
+				port,
+			} = socks5AddressParser(env.SOCKS5);
+
+			let socks = {
+				"address": hostname,
+				"port": port
+			}
+
+			if (username) {
+				socks.users = [	// We only support one user per socks server
+					{
+						"user": username,
+						"pass": password
+					}
+				]
+			}
+
+			globalConfig['outbounds'].push({
+				protocol: "socks",
+				settings: {
+					"vnext": [ socks ]
+				}
+			});
+		} catch (err) {
+	  		/** @type {Error} */
+			let e = err;
+			console.log(e.toString());
+		}
+	}
+}
 
 export default {
 	/**
@@ -28,30 +167,14 @@ export default {
 	 */
 	async fetch(request, env, ctx) {
 		try {
-			userID = env.UUID || userID;
-			proxyIP = env.PROXYIP || proxyIP;
-			if (env.PROXYPORTMAP) {
-				proxyPortMap = JSON.parse(env.PROXYPORTMAP);
-			}
-			socks5Address = env.SOCKS5 || socks5Address;
-			if (socks5Address) {
-				try {
-					parsedSocks5Address = socks5AddressParser(socks5Address);
-					enableSocks = true;
-				} catch (err) {
-  			/** @type {Error} */ let e = err;
-					console.log(e.toString());
-					enableSocks = false;
-				}
-			}
-
+			setConfigFromEnv(env);
 			const upgradeHeader = request.headers.get('Upgrade');
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
 				const url = new URL(request.url);
 				switch (url.pathname) {
 					case '/':
 						return new Response(JSON.stringify(request.cf), { status: 200 });
-					case `/${userID}`: {
+					case `/${globalConfig.userID}`: {
 						const vlessConfig = getVLESSConfig(request.headers.get('Host'));
 						return new Response(`${vlessConfig}`, {
 							status: 200,
@@ -86,22 +209,13 @@ export default {
 	},
 };
 
-/** 
- * A wrapper for the TCP API.
- * @type {(host: string, port: number) => object}
- * @returns {object} a socket, should be Cloudflare Worker compatible
- */
-let createTCPConnection;
-/** @param {(host: string, port: number) => object} handler */
-export function setTCPConnectionHandler(handler) {
-	createTCPConnection = handler;
-};
-
 try {
 	const module = await import('cloudflare:sockets');
-	setTCPConnectionHandler(async (address, port, log) => {
+	platformAPI.connect = async (address, port, log) => {
 		return module.connect({hostname: address, port: port});
-	});
+	};
+
+	platformAPI.newWebSocket = (url) => new WebSocket(url);
 } catch (error) {
 	console.log('Not on Cloudflare Workers!');
 }
@@ -147,7 +261,7 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 				rawDataIndex,
 				vlessVersion = new Uint8Array([0, 0]),
 				isUDP,
-			} = processVlessHeader(chunk, userID);
+			} = processVlessHeader(chunk, globalConfig.userID);
 			const randTag = Math.round(Math.random()*1000000).toString(16).padStart(5, '0');
 			logPrefix = `${addressRemote}:${portRemote} ${randTag} ${isUDP ? 'UDP' : 'TCP'}`;
 			if (hasError) {
@@ -200,48 +314,67 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
  * @returns {Promise<void>} The remote socket.
  */
 async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
-	async function connectAndWrite(address, port, socks = false) {
-		const tcpSocket = socks ? await socks5Connect(addressType, address, port, log)
-			: await createTCPConnection(address, port, log);
+	let curOutBoundPtr = {index: 0, serverIndex: 0};
+	
+	async function direct() {
+		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, log);
 		remoteSocket.value = tcpSocket;
-		log(`[${socks ? 'Socks' : 'Direct'}] Connected to ${address}:${port}`);
+		log(`Connected to ${addressRemote}:${portRemote}`);
 		const writer = tcpSocket.writable.getWriter();
 		await writer.write(rawClientData); // First write, normally is tls client hello
 		writer.releaseLock();
-		return tcpSocket;
+		return tcpSocket.readable;
+	}
+
+	async function socks5(address, port, user, pass) {
+		const tcpSocket = await platformAPI.connect(address, port, log);
+		log(`Connected to ${addressRemote}:${portRemote} via socks5 ${address}:${port}`);
+		try {
+			await socks5Connect(tcpSocket, user, pass, addressType, addressRemote, portRemote, log);
+		} catch(err) {
+			log(`Socks5 outbound failed with: ${err.message}`);
+			return null;
+		}
+		remoteSocket.value = tcpSocket;
+		const writer = tcpSocket.writable.getWriter();
+		await writer.write(rawClientData); // First write, normally is tls client hello
+		writer.releaseLock();
+		return tcpSocket.readable;
+	}
+	
+	/** @returns {Promise<ReadableStream>} */
+	async function connectAndWrite() {
+		const outbound = getOutbound(curOutBoundPtr);
+
+		switch (outbound.protocol) {
+			case 'freedom':
+				return await direct();
+			case 'socks':
+				return await socks5(outbound.address, outbound.port, outbound.user, outbound.pass);
+		}
 	}
 
 	// if the cf connect tcp socket have no incoming data, we retry to redirect ip
-	async function retry() {
-		let tcpSocket;
-		if (enableSocks) {
-			tcpSocket = await connectAndWrite(addressRemote, portRemote, true);
-		} else {
-			let addrDest = addressRemote;
-			let portDest = portRemote;
-			if (proxyIP) {
-				addrDest = proxyIP;
-				if (typeof proxyPortMap === "object" && proxyPortMap[portRemote] !== undefined) {
-					portDest = proxyPortMap[portRemote];
-				}
-				log('Forward to ', addrDest + ':' + portDest);
-			}
-			tcpSocket = await connectAndWrite(addrDest, portDest);
+	async function tryOutbound() {
+		let outboundReadableStream = await connectAndWrite();
+
+		while (outboundReadableStream == null && curOutBoundPtr.index < globalConfig.outbounds.length) {
+			outboundReadableStream = await connectAndWrite();
 		}
-		// no matter retry success or not, close websocket
-		tcpSocket.closed.catch(error => {
-			log('retry tcpSocket closed error', error);
-		}).finally(() => {
+
+		if (outboundReadableStream == null) {
+			log('Reached end of the outbound chain, abort!');
 			safeCloseWebSocket(webSocket);
-		})
-		remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, null, log);
+		} else {
+			remoteSocketToWS(outboundReadableStream, webSocket, vlessResponseHeader, tryOutbound, log);
+		}
 	}
-
-	const tcpSocket = await connectAndWrite(addressRemote, portRemote);
-
+	
+	//const vlessWs = platformAPI.newWebSocket('wss://114514.rikkagcp1.workers.dev');
+	//const vlessWsReadable = makeReadableWebSocketStream(vlessWs, null, log);
 	// when remoteSocket is ready, pass to websocket
 	// remote--> ws
-	remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, retry, log);
+	await tryOutbound();
 }
 
 /**
@@ -316,7 +449,7 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
 /**
  * 
  * @param { ArrayBuffer} vlessBuffer 
- * @param {string} userID 
+ * @param {string} userID the expected userID
  * @returns 
  */
 function processVlessHeader(
@@ -434,21 +567,20 @@ function processVlessHeader(
 
 /**
  * 
- * @param {import("@cloudflare/workers-types").Socket} remoteSocket 
+ * @param {ReadableStream} remoteSocketReader 
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket 
  * @param {ArrayBuffer} vlessResponseHeader 
  * @param {(() => Promise<void>) | null} retry
  * @param {*} log 
  */
-async function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, retry, log) {
+async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHeader, retry, log) {
 	// remote--> ws
 	let remoteChunkCount = 0;
 	let chunks = [];
 	/** @type {ArrayBuffer | null} */
 	let vlessHeader = vlessResponseHeader;
 	let hasIncomingData = false; // check if remoteSocket has incoming data
-	await remoteSocket.readable
-		.pipeTo(
+	await remoteSocketReader.pipeTo(
 			new WritableStream({
 				start() {
 				},
@@ -580,7 +712,7 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
 		/** @type {ArrayBuffer | null} */
 		let vlessHeader = vlessResponseHeader;
 		/** @type {import("@cloudflare/workers-types").Socket} */
-		const tcpSocket = await createTCPConnection(dnsServer, dnsPort);
+		const tcpSocket = await platformAPI.connect(dnsServer, dnsPort);
 
 		log(`connected to ${dnsServer}:${dnsPort}`);
 		const writer = tcpSocket.writable.getWriter();
@@ -612,16 +744,16 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
 }
 
 /**
- * 
+ * @param {{readable: ReadableStream, writable: {getWriter: () => {write: (data) => void, releaseLock: () => void}}}} socket
+ * @param {string} username
+ * @param {string} password
  * @param {number} addressType
  * @param {string} addressRemote
  * @param {number} portRemote
  * @param {function} log The logging function.
  */
-async function socks5Connect(addressType, addressRemote, portRemote, log) {
-	const { username, password, hostname, port } = parsedSocks5Address;
-	// Connect to the SOCKS server
-	const socket = await createTCPConnection(hostname, port);
+async function socks5Connect(socket, username, password, addressType, addressRemote, portRemote, log) {
+	const writer = socket.writable.getWriter();
 
 	// Request head format (Worker -> Socks Server):
 	// +----+----------+----------+
@@ -634,16 +766,15 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
 	// For METHODS:
 	// 0x00 NO AUTHENTICATION REQUIRED
 	// 0x02 USERNAME/PASSWORD https://datatracker.ietf.org/doc/html/rfc1929
-	const socksGreeting = new Uint8Array([5, 2, 0, 2]);
-
-	const writer = socket.writable.getWriter();
-
-	await writer.write(socksGreeting);
-	log('sent socks greeting');
+	await writer.write(new Uint8Array([5, 2, 0, 2]));
 
 	const reader = socket.readable.getReader();
 	const encoder = new TextEncoder();
 	let res = (await reader.read()).value;
+	if (!res) {
+		throw new Error(`No response from the server`);
+	}
+
 	// Response format (Socks Server -> Worker):
 	// +----+--------+
 	// |VER | METHOD |
@@ -651,20 +782,17 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
 	// | 1  |   1    |
 	// +----+--------+
 	if (res[0] !== 0x05) {
-		log(`socks server version error: ${res[0]} expected: 5`);
-		return;
+		throw new Error(`Wrong server version: ${res[0]} expected: 5`);
 	}
 	if (res[1] === 0xff) {
-		log("no acceptable methods");
-		return;
+		throw new Error("No accepted authentication methods");
 	}
 
 	// if return 0x0502
 	if (res[1] === 0x02) {
-		log("socks server needs auth");
+		log("Socks5: Server asks for authentication");
 		if (!username || !password) {
-			log("please provide username/password");
-			return;
+			throw new Error("Please provide username/password");
 		}
 		// +----+------+----------+------+----------+
 		// |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
@@ -682,8 +810,7 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
 		res = (await reader.read()).value;
 		// expected 0x0100
 		if (res[0] !== 0x01 || res[1] !== 0x00) {
-			log("fail to auth socks server");
-			return;
+			throw new Error("Authentication failed");
 		}
 	}
 
@@ -727,7 +854,7 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
 	}
 	const socksRequest = new Uint8Array([5, 1, 0, ...DSTADDR, portRemote >> 8, portRemote & 0xff]);
 	await writer.write(socksRequest);
-	log('sent socks request');
+	log('Socks5: Sent request');
 
 	res = (await reader.read()).value;
 	// Response format (Socks Server -> Worker):
@@ -737,14 +864,12 @@ async function socks5Connect(addressType, addressRemote, portRemote, log) {
 	// | 1  |  1  | X'00' |  1   | Variable |    2     |
 	// +----+-----+-------+------+----------+----------+
 	if (res[1] === 0x00) {
-		log("socks connection opened");
+		log("Socks5: Connection opened");
 	} else {
-		log("fail to open socks connection");
-		return;
+		throw new Error("Connection failed");
 	}
 	writer.releaseLock();
 	reader.releaseLock();
-	return socket;
 }
 
 
@@ -786,7 +911,7 @@ function socks5AddressParser(address) {
  * @returns {string}
  */
 export function getVLESSConfig(hostName) {
-	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`
+	const vlessMain = `vless://${globalConfig.userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`
 	return `
 ################################################################
 v2ray
@@ -800,7 +925,7 @@ clash-meta
   name: ${hostName}
   server: ${hostName}
   port: 443
-  uuid: ${userID}
+  uuid: ${globalConfig.userID}
   network: ws
   tls: true
   udp: false
