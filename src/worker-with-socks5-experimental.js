@@ -396,37 +396,65 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		if (streamSettings.wsSettings && streamSettings.wsSettings.path) {
 			wsURL = wsURL + '/' + streamSettings.wsSettings.path;
 		}
+		log(`Connecting to ${addressRemote}:${portRemote} via vless ${wsURL}`);
 
 		const wsToVlessServer = platformAPI.newWebSocket(wsURL);
 		const openPromise = new Promise((resolve, reject) => {
 			wsToVlessServer.onopen = () => resolve();
+			wsToVlessServer.onclose = (code, reason) => 
+				reject(new Error(`Closed with code ${code}, reason: ${reason}`));
 			wsToVlessServer.onerror = (error) => reject(error);
+			setTimeout(() => {
+				wsToVlessServer.close();
+				reject({message: `Open connection timeout`});
+			}, 1000);
 		});
 
 		// Wait for the connection to open
-		await openPromise;
+		try {
+			await openPromise;
+		} catch (err) {
+			log(`Cannot open Websocket connection: ${err.message}`);
+			return null;
+		}
 
 		/** @type {Promise<Uint8Array>} */
 		const recvPromise = new Promise((resolve, reject) => {
 			wsToVlessServer.onmessage = (event) => resolve(event.data);
+			wsToVlessServer.onclose = (code, reason) => 
+				reject(new Error(`Closed with code ${code}, reason: ${reason}`));
 			wsToVlessServer.onerror = (error) => reject(error);
+			setTimeout(() => {
+				wsToVlessServer.close();
+				reject({message: `Receive response timeout`});
+			}, 1000);
 		});
 
 		const vlessFirstPacket = makeVlessHeader(addressType, addressRemote, portRemote, uuid, rawClientData);
 
 		// Send the first packet (header + rawClientData), then strip the response header
 		wsToVlessServer.send(vlessFirstPacket);
-		const firstResponse = await recvPromise;
-		const responseVersion = firstResponse[0];
+		let firstResponse; 
+		try {
+			firstResponse = await recvPromise;
+		} catch (err) {
+			log(`Cannot open Websocket connection: ${err.message}`);
+			return null;
+		}
+		const responseVersion = firstResponse[0];	// We should expect 0 here for now
 		const addtionalBytes = firstResponse[1];
 		const earlyData = firstResponse.slice(2 + addtionalBytes);
-
-		log(`Connected to ${addressRemote}:${portRemote} via vless-ws ${address}:${port}`);
 
 		remoteSocket.writableStream = new WritableStream({
 			async write(chunk, controller) {
 				wsToVlessServer.send(chunk);
-			}
+			},
+			close() {
+				log(`Vless Websocket closed`);
+			},
+			abort(reason) {
+				console.error(`Vless Websocket aborted`, reason);
+			},
 		});
 
 		return makeReadableWebSocketStream(wsToVlessServer, earlyData, log);
@@ -533,7 +561,6 @@ function makeReadableWebSocketStream(webSocketServer, earlyData, log) {
 	});
 
 	return stream;
-
 }
 
 // https://xtls.github.io/development/protocols/vless.html
