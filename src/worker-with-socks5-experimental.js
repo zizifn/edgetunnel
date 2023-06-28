@@ -102,9 +102,13 @@ function getOutbound(curPos) {
 }
 
 /** 
+ * Setup the config (uuid & outbounds) from environmental variables.
+ * This is the simplest case and should be preferred where possible.
  * @param {{
  *  UUID: string, 
  *  PROXYIP: string, 
+ *  PORTMAP: string,
+ *  VLESS: string,
  *  SOCKS5: string
  * }} env
  */
@@ -117,13 +121,69 @@ export function setConfigFromEnv(env) {
 			address: env.PROXYIP
 		};
 
-		if (env.PROXYPORTMAP) {
-			forward.portMap = JSON.parse(env.PROXYPORTMAP);
+		if (env.PORTMAP) {
+			forward.portMap = JSON.parse(env.PORTMAP);
 		} else {
 			forward.portMap = {};
 		}
 
 		globalConfig['outbounds'].push(forward);
+	}
+
+	// Example: vless://uuid@domain.name:port?type=ws&security=tls
+	if (env.VLESS) {
+		try {
+			const {
+				uuid,
+				remoteHost,
+				remotePort,
+				queryParams,
+				descriptiveText
+			} = parseVlessString(env.VLESS);
+
+			let vless = {
+				"address": remoteHost,
+				"port": remotePort,
+				"users": [
+					{
+						"id": uuid
+					}
+				]
+			};
+
+			let streamSettings = {
+				"network": queryParams['type'],
+				"security": queryParams['security'],
+			}
+
+			if (queryParams['type'] == 'ws') {
+				streamSettings.wsSettings = {
+					"headers": {
+                        "Host": remoteHost
+                    },
+                    "path": decodeURIComponent(queryParams['path'])
+                };
+			}
+
+			if (queryParams['security'] == 'tls') {
+				streamSettings.tlsSettings = {
+                    "serverName": remoteHost,
+                    "allowInsecure": false
+                };
+			}
+
+			globalConfig['outbounds'].push({
+				protocol: "vless",
+				settings: {
+					"vnext": [ vless ]
+				},
+				streamSettings: streamSettings
+			});
+		} catch (err) {
+			/** @type {Error} */
+			let e = err;
+			console.log(e.toString());
+		}
 	}
 
 	// The user name and password should not contain special characters
@@ -332,15 +392,23 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
 	let curOutBoundPtr = {index: 0, serverIndex: 0};
 	
-	async function direct() {
-		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, false);
-		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
+	/**
+	 *  @param {object} tcpSocket 
+	 *  @returns {ReadableStream}
+	 */
+	async function viaTCP(tcpSocket) {
 		remoteSocket.writableStream = tcpSocket.writable;
-		log(`Connecting to ${addressRemote}:${portRemote}`);
 		const writer = tcpSocket.writable.getWriter();
 		await writer.write(rawClientData); // First write, normally is tls client hello
 		writer.releaseLock();
 		return tcpSocket.readable;
+	}
+
+	async function direct() {
+		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, false);
+		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
+		log(`Connecting to ${addressRemote}:${portRemote}`);
+		return viaTCP(tcpSocket);
 	}
 
 	async function forward(proxyServer, portMap) {
@@ -351,14 +419,11 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 
 		const tcpSocket = await platformAPI.connect(proxyServer, portDest, false);
 		tcpSocket.closed.catch(error => log('[forward] tcpSocket closed with error: ', error.message));
-		remoteSocket.writableStream = tcpSocket.writable;
 		log(`Forwarding ${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
-		const writer = tcpSocket.writable.getWriter();
-		await writer.write(rawClientData); // First write, normally is tls client hello
-		writer.releaseLock();
-		return tcpSocket.readable;
+		return viaTCP(tcpSocket);
 	}
 
+	// TODO: known problem, if we send an unreachable request to a valid socks5 server, it will wait indefinitely
 	async function socks5(address, port, user, pass) {
 		const tcpSocket = await platformAPI.connect(address, port, false);
 		tcpSocket.closed.catch(error => log('[socks] tcpSocket closed with error: ', error.message));
@@ -369,11 +434,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			log(`Socks5 outbound failed with: ${err.message}`);
 			return null;
 		}
-		remoteSocket.writableStream = tcpSocket.writable;
-		const writer = tcpSocket.writable.getWriter();
-		await writer.write(rawClientData); // First write, normally is tls client hello
-		writer.releaseLock();
-		return tcpSocket.readable;
+		return viaTCP(tcpSocket);
 	}
 
 	/**
@@ -394,7 +455,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		let wsURL = streamSettings.security === 'tls' ? 'wss://' : 'ws://';
 		wsURL = wsURL + address + ':' + port;
 		if (streamSettings.wsSettings && streamSettings.wsSettings.path) {
-			wsURL = wsURL + '/' + streamSettings.wsSettings.path;
+			wsURL = wsURL + streamSettings.wsSettings.path;
 		}
 		log(`Connecting to ${addressRemote}:${portRemote} via vless ${wsURL}`);
 
@@ -404,10 +465,10 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			wsToVlessServer.onclose = (code, reason) => 
 				reject(new Error(`Closed with code ${code}, reason: ${reason}`));
 			wsToVlessServer.onerror = (error) => reject(error);
-			setTimeout(() => {
-				wsToVlessServer.close();
-				reject({message: `Open connection timeout`});
-			}, 1000);
+			// setTimeout(() => {
+			// 	wsToVlessServer.close();
+			// 	reject({message: `Open connection timeout`});
+			// }, 1000);
 		});
 
 		// Wait for the connection to open
@@ -424,10 +485,10 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			wsToVlessServer.onclose = (code, reason) => 
 				reject(new Error(`Closed with code ${code}, reason: ${reason}`));
 			wsToVlessServer.onerror = (error) => reject(error);
-			setTimeout(() => {
-				wsToVlessServer.close();
-				reject({message: `Receive response timeout`});
-			}, 1000);
+			// setTimeout(() => {
+			// 	wsToVlessServer.close();
+			// 	reject({message: `Receive response timeout`});
+			// }, 1000);
 		});
 
 		const vlessFirstPacket = makeVlessHeader(addressType, addressRemote, portRemote, uuid, rawClientData);
@@ -1130,6 +1191,37 @@ function checkVlessConfig(address, streamSettings) {
 		throw new Error(`The SNI is different from the server address, this is unsupported due to Cloudflare API restrictions`);
 	}
 }
+
+function parseVlessString(url) {
+	const regex = /^(.+):\/\/(.+?)@(.+?):(\d+)(\?[^#]*)?(#.*)?$/;
+	const match = url.match(regex);
+  
+	if (!match) {
+	  throw new Error('Invalid URL format');
+	}
+  
+	const [, protocol, uuid, remoteHost, remotePort, query, descriptiveText] = match;
+  
+	const json = {
+		protocol,
+	 	uuid,
+		remoteHost,
+		remotePort: parseInt(remotePort),
+		descriptiveText: descriptiveText ? descriptiveText.substring(1) : '',
+		queryParams: {}
+	};
+  
+	if (query) {
+	  const queryFields = query.substring(1).split('&');
+	  queryFields.forEach(field => {
+		const [key, value] = field.split('=');
+		json.queryParams[key] = value;
+	  });
+	}
+  
+	return json;
+}
+
 
 /**
  * 
