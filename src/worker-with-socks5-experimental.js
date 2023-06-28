@@ -84,6 +84,7 @@ function getOutbound(curPos) {
 			retVal.port = curServer.port;
 
 			retVal.pass = curServer.users.at(0).id;
+			retVal.streamSettings = outbound.streamSettings;
 			break;
 
 		default:
@@ -217,8 +218,8 @@ export default {
 
 try {
 	const module = await import('cloudflare:sockets');
-	platformAPI.connect = async (address, port, log) => {
-		return module.connect({hostname: address, port: port});
+	platformAPI.connect = async (address, port, useTLS) => {
+		return module.connect({hostname: address, port: port}, {secureTransport: useTLS ? 'on' : 'off'});
 	};
 
 	platformAPI.newWebSocket = (url) => new WebSocket(url);
@@ -323,7 +324,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	let curOutBoundPtr = {index: 0, serverIndex: 0};
 	
 	async function direct() {
-		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, log);
+		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, false);
 		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
 		remoteSocket.value = tcpSocket;
 		log(`Connecting to ${addressRemote}:${portRemote}`);
@@ -339,7 +340,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			portDest = portMap[portRemote];
 		}
 
-		const tcpSocket = await platformAPI.connect(proxyServer, portDest, log);
+		const tcpSocket = await platformAPI.connect(proxyServer, portDest, false);
 		tcpSocket.closed.catch(error => log('[forward] tcpSocket closed with error: ', error.message));
 		remoteSocket.value = tcpSocket;
 		log(`Forwarding ${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
@@ -350,7 +351,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	}
 
 	async function socks5(address, port, user, pass) {
-		const tcpSocket = await platformAPI.connect(address, port, log);
+		const tcpSocket = await platformAPI.connect(address, port, false);
 		tcpSocket.closed.catch(error => log('[socks] tcpSocket closed with error: ', error.message));
 		log(`Connecting to ${addressRemote}:${portRemote} via socks5 ${address}:${port}`);
 		try {
@@ -364,6 +365,42 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		await writer.write(rawClientData); // First write, normally is tls client hello
 		writer.releaseLock();
 		return tcpSocket.readable;
+	}
+
+	/**
+	 * 
+	 * @param {string} address 
+	 * @param {number} port 
+	 * @param {string} uuid 
+	 * @param {{network: string, security: string}} streamSettings 
+	 */
+	async function vless(address, port, uuid, streamSettings) {
+		try {
+			checkVlessConfig(address, streamSettings);
+		} catch(err) {
+			log(`Vless outbound failed with: ${err.message}`);
+			return null;
+		}
+
+		let wsURL = streamSettings.security === 'tls' ? 'wss://' : 'ws://';
+		wsURL = wsURL + address + ':' + port;
+		if (streamSettings.wsSettings && streamSettings.wsSettings.path) {
+			wsURL = wsURL + '/' + streamSettings.wsSettings.path;
+		}
+
+		const webSocket = platformAPI.newWebSocket(wsURL);
+		const openPromise = new Promise((resolve, reject) => {
+			webSocket.onopen = () => resolve();
+			webSocket.onerror = (error) => reject(error);
+		});
+
+		// Wait for the connection to open
+		await openPromise;
+
+		const vlessFirstPacket = makeVlessHeader(addressType, addressRemote, portRemote, uuid, rawClientData);
+		const readableStream = makeReadableWebSocketStream(webSocket, null, log);
+		log(`Connected to ${addressRemote}:${portRemote} via vless-ws ${address}:${port}`);
+		return makeReadableWebSocketStream(webSocket, null, log);
 	}
 	
 	/** @returns {Promise<ReadableStream>} */
@@ -381,6 +418,8 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 				return await forward(outbound.address, outbound.portMap);
 			case 'socks':
 				return await socks5(outbound.address, outbound.port, outbound.user, outbound.pass);
+			case 'vless':
+				return await vless(outbound.address, outbound.port, outbound.pass, outbound.streamSettings);
 		}
 
 		return null;
@@ -740,7 +779,7 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
 		/** @type {ArrayBuffer | null} */
 		let vlessHeader = vlessResponseHeader;
 		/** @type {import("@cloudflare/workers-types").Socket} */
-		const tcpSocket = await platformAPI.connect(dnsServer, dnsPort);
+		const tcpSocket = await platformAPI.connect(dnsServer, dnsPort, false);
 
 		log(`connected to ${dnsServer}:${dnsPort}`);
 		const writer = tcpSocket.writable.getWriter();
@@ -930,6 +969,112 @@ function socks5AddressParser(address) {
 		password,
 		hostname,
 		port,
+	}
+}
+
+/**
+ * @param {number} destType 
+ * @param {string} destAddr 
+ * @param {number} destPort 
+ * @param {string} uuid 
+ * @param {ArrayBuffer | Uint8Array} rawClientData 
+ * @returns {Uint8Array}
+ */
+async function makeVlessHeader(destType, destAddr, destPort, uuid, rawClientData) {
+	/** @type {number} */
+	let addressFieldLength;
+	/** @type {Uint8Array | undefined} */
+	let addressEncoded;
+	switch (destType) {
+		case 1:
+			addressFieldLength = 4;
+			break;
+		case 2:
+			addressEncoded = new TextEncoder().encode(destAddr);
+			addressFieldLength = addressEncoded.length + 1;
+			break;
+		case 3:
+			addressFieldLength = 16;
+			break;
+		default:
+			throw new Error(`Unknown address type: ${destType}`);
+	}
+
+	const uuidString = uuid.replace(/-/g, '');
+	const uuidOffset = 1;
+	const vlessHeader = new Uint8Array(22 + addressFieldLength + rawClientData.length);
+	
+	// Protocol Version = 0
+	vlessHeader[0] = 0x00;
+  
+	for (let i = 0; i < uuidString.length; i += 2) {
+		vlessHeader[uuidOffset + i / 2] = parseInt(uuidString.substr(i, 2), 16);
+	}
+
+	// Additional Information Length M = 0
+	vlessHeader[17] = 0x00;
+
+	// Instruction
+	// 0x01 TCP
+	// 0x02 UDP
+	// 0x03 MUX
+	vlessHeader[18] = 0x01;	// Assume TCP
+
+	// Port, 2-byte big-endian
+	vlessHeader[19] = destPort >> 8;
+	vlessHeader[20] = destPort & 0xFF ;
+
+	// Address Type
+	// 1--> ipv4  addressLength =4
+	// 2--> domain name addressLength=addressBuffer[1]
+	// 3--> ipv6  addressLength =16
+	vlessHeader[21] = destType;
+
+	// Address
+	switch (destType) {
+		case 1:
+			const octetsIPv4 = destAddr.split('.');
+			for (let i = 0; i < 4; i++) {
+				vlessHeader[22 + i] = parseInt(octetsIPv4[i]);
+			}
+			break;
+		case 2:
+			vlessHeader[22] = addressEncoded.length;
+			vlessHeader.set(addressEncoded, 23);
+			break;
+		case 3:
+			const groupsIPv6 = ipv6.split(':');
+			for (let i = 0; i < 8; i++) {
+			  const hexGroup = parseInt(groupsIPv6[i], 16);
+			  vlessHeader[i * 2 + 22] = hexGroup >> 8;
+			  vlessHeader[i * 2 + 23] = hexGroup & 0xFF;
+			}
+			break;
+		default:
+			throw new Error(`Unknown address type: ${destType}`);
+	}
+
+	// Payload
+	vlessHeader.set(addressEncoded, 23 + addressFieldLength);
+
+	return vlessHeader;
+}
+
+function checkVlessConfig(address, streamSettings) {
+	if (streamSettings.network !== 'ws') {
+		throw new Error(`Unsupported outbound stream method: ${streamSettings.network}, has to be ws (Websocket)`);
+	}
+
+	if (streamSettings.security !== 'tls' && streamSettings.security !== 'none') {
+		throw new Error(`Usupported security layer: ${streamSettings.network}, has to be none or tls.`);
+	}
+
+	if (streamSettings.wsSettings && streamSettings.wsSettings.headers && streamSettings.wsSettings.headers.Host !== address) {
+		throw new Error(`The Host field in the http header is different from the server address, this is unsupported due to Cloudflare API restrictions`);
+	}
+
+	if (streamSettings.tlsSettings && streamSettings.tlsSettings.serverName !== address) {
+		throw new Error(`The SNI is different from the server address, this is unsupported due to Cloudflare API restrictions`);
 	}
 }
 

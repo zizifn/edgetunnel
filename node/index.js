@@ -46,10 +46,10 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
  * 
  * @param {string} address The remote address to connect to.
  * @param {number} port The remote port to connect to.
- * @param {function} log A destination-dependent logging function
+ * @param {boolean} useTLS
  * @returns {object} The wrapped TCP connection, to be compatible with Cloudflare Workers
  */
-platformAPI.connect = async (address, port, log) => {
+platformAPI.connect = async (address, port, useTLS) => {
 	const socket = net.createConnection(port, address);
 
 	let readableStreamCancel = false;
@@ -82,7 +82,6 @@ platformAPI.connect = async (address, port, log) => {
 			if (readableStreamCancel) {
 				return;
 			}
-			log(`ReadableStream was canceled, due to ${reason}`)
 			readableStreamCancel = true;
 			socket.destroy();
 		}
@@ -114,7 +113,7 @@ platformAPI.connect = async (address, port, log) => {
 						socket.write(data);
 					},
 					releaseLock: () => {
-						// log('Dummy writer.releaseLock()');
+						// console.log('Dummy writer.releaseLock()');
 					}
 				};
 			}
