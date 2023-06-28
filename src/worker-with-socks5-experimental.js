@@ -368,7 +368,11 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	
 	/** @returns {Promise<ReadableStream>} */
 	async function connectAndWrite() {
+		console.log('connectAndWrite');
 		const outbound = getOutbound(curOutBoundPtr);
+		if (outbound == null) {
+			return null;
+		}
 
 		switch (outbound.protocol) {
 			case 'freedom':
@@ -378,6 +382,8 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			case 'socks':
 				return await socks5(outbound.address, outbound.port, outbound.user, outbound.pass);
 		}
+
+		return null;
 	}
 
 	// if the cf connect tcp socket have no incoming data, we retry to redirect ip
