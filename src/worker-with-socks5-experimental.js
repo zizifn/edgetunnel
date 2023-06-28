@@ -201,10 +201,10 @@ export default {
 
 				webSocket.accept();
 				const earlyDataHeader = request.headers.get('sec-websocket-protocol') || '';
-				vlessOverWSHandler(webSocket, earlyDataHeader);
+				const statusCode = vlessOverWSHandler(webSocket, earlyDataHeader);
 
 				return new Response(null, {
-					status: 101,
+					status: statusCode,
 					// @ts-ignore
 					webSocket: client,
 				});
@@ -231,6 +231,7 @@ try {
  * @param {WebSocket} webSocket The established websocket connection to the client, must be an accepted
  * @param {string} earlyDataHeader for ws 0rtt, an optional field "sec-websocket-protocol" in the request header
  *                                  may contain some base64 encoded data.
+ * @returns {number} status code
  */
 export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 	let logPrefix = '';
@@ -238,11 +239,17 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 		console.log(`[${logPrefix}] ${info}`, event || '');
 	};
 
-	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyDataHeader, log);
+	// for ws 0rtt
+	const { earlyData, error } = base64ToArrayBuffer(earlyDataHeader);
+	if (error !== null) {
+		return 500;
+	}
 
-	/** @type {{ value: import("@cloudflare/workers-types").Socket | null}}*/
+	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyData, log);
+
+	/** @type {{ writableStream: WritableStream | null}}*/
 	let remoteSocketWapper = {
-		value: null,
+		writableStream: null,
 	};
 	let isDns = false;
 
@@ -252,8 +259,8 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 			if (isDns) {
 				return await handleDNSQuery(chunk, webSocket, null, log);
 			}
-			if (remoteSocketWapper.value) {
-				const writer = remoteSocketWapper.value.writable.getWriter()
+			if (remoteSocketWapper.writableStream) {
+				const writer = remoteSocketWapper.writableStream.getWriter();
 				await writer.write(chunk);
 				writer.releaseLock();
 				return;
@@ -305,12 +312,14 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 	})).catch((err) => {
 		log('readableWebSocketStream pipeTo error', err);
 	});
+
+	return 101;
 }
 
 /**
  * Handles outbound TCP connections.
  *
- * @param {any} remoteSocket
+ * @param {{ writableStream: WritableStream | null}} remoteSocket
  * @param {number} addressType The remote address type to connect to.
  * @param {string} addressRemote The remote address to connect to.
  * @param {number} portRemote The remote port to connect to.
@@ -326,7 +335,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	async function direct() {
 		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, false);
 		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
-		remoteSocket.value = tcpSocket;
+		remoteSocket.writableStream = tcpSocket.writable;
 		log(`Connecting to ${addressRemote}:${portRemote}`);
 		const writer = tcpSocket.writable.getWriter();
 		await writer.write(rawClientData); // First write, normally is tls client hello
@@ -342,7 +351,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 
 		const tcpSocket = await platformAPI.connect(proxyServer, portDest, false);
 		tcpSocket.closed.catch(error => log('[forward] tcpSocket closed with error: ', error.message));
-		remoteSocket.value = tcpSocket;
+		remoteSocket.writableStream = tcpSocket.writable;
 		log(`Forwarding ${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
 		const writer = tcpSocket.writable.getWriter();
 		await writer.write(rawClientData); // First write, normally is tls client hello
@@ -360,7 +369,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			log(`Socks5 outbound failed with: ${err.message}`);
 			return null;
 		}
-		remoteSocket.value = tcpSocket;
+		remoteSocket.writableStream = tcpSocket.writable;
 		const writer = tcpSocket.writable.getWriter();
 		await writer.write(rawClientData); // First write, normally is tls client hello
 		writer.releaseLock();
@@ -388,19 +397,39 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			wsURL = wsURL + '/' + streamSettings.wsSettings.path;
 		}
 
-		const webSocket = platformAPI.newWebSocket(wsURL);
+		const wsToVlessServer = platformAPI.newWebSocket(wsURL);
 		const openPromise = new Promise((resolve, reject) => {
-			webSocket.onopen = () => resolve();
-			webSocket.onerror = (error) => reject(error);
+			wsToVlessServer.onopen = () => resolve();
+			wsToVlessServer.onerror = (error) => reject(error);
 		});
 
 		// Wait for the connection to open
 		await openPromise;
 
+		/** @type {Promise<Uint8Array>} */
+		const recvPromise = new Promise((resolve, reject) => {
+			wsToVlessServer.onmessage = (event) => resolve(event.data);
+			wsToVlessServer.onerror = (error) => reject(error);
+		});
+
 		const vlessFirstPacket = makeVlessHeader(addressType, addressRemote, portRemote, uuid, rawClientData);
-		const readableStream = makeReadableWebSocketStream(webSocket, null, log);
+
+		// Send the first packet (header + rawClientData), then strip the response header
+		wsToVlessServer.send(vlessFirstPacket);
+		const firstResponse = await recvPromise;
+		const responseVersion = firstResponse[0];
+		const addtionalBytes = firstResponse[1];
+		const earlyData = firstResponse.slice(2 + addtionalBytes);
+
 		log(`Connected to ${addressRemote}:${portRemote} via vless-ws ${address}:${port}`);
-		return makeReadableWebSocketStream(webSocket, null, log);
+
+		remoteSocket.writableStream = new WritableStream({
+			async write(chunk, controller) {
+				wsToVlessServer.send(chunk);
+			}
+		});
+
+		return makeReadableWebSocketStream(wsToVlessServer, earlyData, log);
 	}
 	
 	/** @returns {Promise<ReadableStream>} */
@@ -447,13 +476,17 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 /**
  * 
  * @param {import("@cloudflare/workers-types").WebSocket} webSocketServer
- * @param {string} earlyDataHeader for ws 0rtt
- * @param {(info: string)=> void} log for ws 0rtt
+ * @param {Uint8Array} earlyData
+ * @param {(info: string)=> void} log
  */
-function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
+function makeReadableWebSocketStream(webSocketServer, earlyData, log) {
 	let readableStreamCancel = false;
 	const stream = new ReadableStream({
 		start(controller) {
+			if (earlyData) {
+				controller.enqueue(earlyData);
+			}
+
 			webSocketServer.addEventListener('message', (event) => {
 				if (readableStreamCancel) {
 					return;
@@ -480,13 +513,6 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
 				controller.error(err);
 			}
 			);
-			// for ws 0rtt
-			const { earlyData, error } = base64ToArrayBuffer(earlyDataHeader);
-			if (error) {
-				controller.error(error);
-			} else if (earlyData) {
-				controller.enqueue(earlyData);
-			}
 		},
 
 		pull(controller) {
@@ -980,7 +1006,7 @@ function socks5AddressParser(address) {
  * @param {ArrayBuffer | Uint8Array} rawClientData 
  * @returns {Uint8Array}
  */
-async function makeVlessHeader(destType, destAddr, destPort, uuid, rawClientData) {
+function makeVlessHeader(destType, destAddr, destPort, uuid, rawClientData) {
 	/** @type {number} */
 	let addressFieldLength;
 	/** @type {Uint8Array | undefined} */
@@ -1055,7 +1081,7 @@ async function makeVlessHeader(destType, destAddr, destPort, uuid, rawClientData
 	}
 
 	// Payload
-	vlessHeader.set(addressEncoded, 23 + addressFieldLength);
+	vlessHeader.set(rawClientData, 22 + addressFieldLength);
 
 	return vlessHeader;
 }
