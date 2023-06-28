@@ -68,11 +68,6 @@ platformAPI.connect = async (address, port, log) => {
 					return;
 				}
 				controller.close();
-				console.log(`TCP to ${address}:${port} has closed`);
-			});
-		
-			socket.on('error', (err) => {
-				console.log('TCP outbound has an error: ' + err.message);
 			});
 		},
 	
@@ -93,6 +88,20 @@ platformAPI.connect = async (address, port, log) => {
 		}
 	});
 
+	const onSocketCloses = new Promise((resolve, reject) => {
+		socket.on('close', (err) => {
+			if (err) {
+				reject(socket.errored);
+			} else {
+				resolve();
+			}
+		});
+
+		socket.on('error', (err) => {
+			reject(err);
+		});
+	});
+
 	return {
 		// A ReadableStream Object
 		readable: readableStream,
@@ -110,6 +119,9 @@ platformAPI.connect = async (address, port, log) => {
 				};
 			}
 		},
+
+		// Handles socket close
+		closed: onSocketCloses
 	};
 };
 

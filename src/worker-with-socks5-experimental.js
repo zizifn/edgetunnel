@@ -21,6 +21,7 @@ export let platformAPI = {
 	*    {
 	*      readable: ReadableStream, 
 	*      writable: {getWriter: () => {write: (data) => void, releaseLock: () => void}}
+	*      closed: {Promise<void>}
 	*    }
 	*  }
  	*/
@@ -323,8 +324,9 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	
 	async function direct() {
 		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, log);
+		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
 		remoteSocket.value = tcpSocket;
-		log(`Connected to ${addressRemote}:${portRemote}`);
+		log(`Connecting to ${addressRemote}:${portRemote}`);
 		const writer = tcpSocket.writable.getWriter();
 		await writer.write(rawClientData); // First write, normally is tls client hello
 		writer.releaseLock();
@@ -338,8 +340,9 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		}
 
 		const tcpSocket = await platformAPI.connect(proxyServer, portDest, log);
+		tcpSocket.closed.catch(error => log('[forward] tcpSocket closed with error: ', error.message));
 		remoteSocket.value = tcpSocket;
-		log(`Forward ${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
+		log(`Forwarding ${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
 		const writer = tcpSocket.writable.getWriter();
 		await writer.write(rawClientData); // First write, normally is tls client hello
 		writer.releaseLock();
@@ -348,7 +351,8 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 
 	async function socks5(address, port, user, pass) {
 		const tcpSocket = await platformAPI.connect(address, port, log);
-		log(`Connected to ${addressRemote}:${portRemote} via socks5 ${address}:${port}`);
+		tcpSocket.closed.catch(error => log('[socks] tcpSocket closed with error: ', error.message));
+		log(`Connecting to ${addressRemote}:${portRemote} via socks5 ${address}:${port}`);
 		try {
 			await socks5Connect(tcpSocket, user, pass, addressType, addressRemote, portRemote, log);
 		} catch(err) {
@@ -391,11 +395,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			remoteSocketToWS(outboundReadableStream, webSocket, vlessResponseHeader, tryOutbound, log);
 		}
 	}
-	
-	//const vlessWs = platformAPI.newWebSocket('wss://114514.rikkagcp1.workers.dev');
-	//const vlessWsReadable = makeReadableWebSocketStream(vlessWs, null, log);
-	// when remoteSocket is ready, pass to websocket
-	// remote--> ws
+
 	await tryOutbound();
 }
 
@@ -642,7 +642,7 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHead
 		)
 		.catch((error) => {
 			console.error(
-				`remoteSocketToWS has exception `,
+				`remoteSocketToWS has exception, readyState = ${webSocket.readyState} :`,
 				error.stack || error
 			);
 			safeCloseWebSocket(webSocket);
