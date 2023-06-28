@@ -56,6 +56,11 @@ function getOutbound(curPos) {
 		case 'freedom':
 			break;
 
+		case 'forward':
+			retVal.address = outbound.address;
+			retVal.portMap = outbound.portMap;
+			break;
+
 		case 'socks':
 			servers = outbound.settings.vnext;
 			serverCount = servers.length;
@@ -326,6 +331,21 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		return tcpSocket.readable;
 	}
 
+	async function forward(proxyServer, portMap) {
+		let portDest = portRemote;
+		if (typeof portMap === "object" && portMap[portRemote] !== undefined) {
+			portDest = portMap[portRemote];
+		}
+
+		const tcpSocket = await platformAPI.connect(proxyServer, portDest, log);
+		remoteSocket.value = tcpSocket;
+		log(`Forward ${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
+		const writer = tcpSocket.writable.getWriter();
+		await writer.write(rawClientData); // First write, normally is tls client hello
+		writer.releaseLock();
+		return tcpSocket.readable;
+	}
+
 	async function socks5(address, port, user, pass) {
 		const tcpSocket = await platformAPI.connect(address, port, log);
 		log(`Connected to ${addressRemote}:${portRemote} via socks5 ${address}:${port}`);
@@ -349,6 +369,8 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		switch (outbound.protocol) {
 			case 'freedom':
 				return await direct();
+			case 'forward':
+				return await forward(outbound.address, outbound.portMap);
 			case 'socks':
 				return await socks5(outbound.address, outbound.port, outbound.user, outbound.pass);
 		}
