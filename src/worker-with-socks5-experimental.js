@@ -40,7 +40,7 @@ export let platformAPI = {
 /**
  * Foreach globalConfig.outbounds, start with {index: 0, serverIndex: 0}
  * @param {{index: number, serverIndex: number}} curPos
- * @returns {protocol: string, address: string, port: number, user: string, pass: string,
+ * @returns {{protocol: string, address: string, port: number, user: string, pass: string,
  *  portMap: {Number: number}}}
  */
 function getOutbound(curPos) {
@@ -117,6 +117,12 @@ function getOutbound(curPos) {
  */
 export function setConfigFromEnv(env) {
 	globalConfig.userID = env.UUID || globalConfig.userID;
+
+	globalConfig.outbounds = [
+		{
+			protocol: "freedom"	// Compulsory, outbound locally.
+		}
+	];
 
 	if (env.PROXYIP) {
 		let forward = {
@@ -523,18 +529,20 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		};
 
 		const readableStream = makeReadableWebSocketStream(wsToVlessServer, null, headerStripper, log);
-		const vlessFirstPacket = makeVlessHeader(addressType, addressRemote, portRemote, uuid, rawClientData);
+		const vlessReqHeader = makeVlessReqHeader(addressType, addressRemote, portRemote, uuid, rawClientData);
 		// Send the first packet (header + rawClientData), then strip the response header with headerStripper
-		writeFirstChunk(writableStream, vlessFirstPacket);
+		writeFirstChunk(writableStream, await new Blob([vlessReqHeader, rawClientData]).arrayBuffer());
 		return readableStream;
 	}
 	
 	/** @returns {Promise<ReadableStream>} */
 	async function connectAndWrite() {
-		console.log('connectAndWrite');
 		const outbound = getOutbound(curOutBoundPtr);
 		if (outbound == null) {
+			log('Reached end of the outbound chain');
 			return null;
+		} else {
+			log(`Trying outbound ${curOutBoundPtr.index}:${curOutBoundPtr.serverIndex}`);
 		}
 
 		switch (outbound.protocol) {
@@ -560,7 +568,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		}
 
 		if (outboundReadableStream == null) {
-			log('Reached end of the outbound chain, abort!');
+			log('No more available outbound chain, abort!');
 			safeCloseWebSocket(webSocket);
 		} else {
 			remoteSocketToWS(outboundReadableStream, webSocket, vlessResponseHeader, tryOutbound, log);
@@ -600,7 +608,9 @@ function makeReadableWebSocketStream(webSocketServer, earlyData, headStripper, l
 
 					if (headStripper != null) {
 						try {
-							message = headStripper(message);
+							// We have to make sure that we are on a Uint8Array.
+							const firstChunk = new Uint8Array(message);
+							message = headStripper(firstChunk);
 						} catch (err) {
 							readableStreamCancel = true;
 							controller.error(err);
@@ -626,7 +636,7 @@ function makeReadableWebSocketStream(webSocketServer, earlyData, headStripper, l
 			}
 			);
 			webSocketServer.addEventListener('error', (err) => {
-				log('webSocketServer has error');
+				log('webSocketServer has error: ' + err.message);
 				controller.error(err);
 			}
 			);
@@ -839,7 +849,7 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHead
 	// 1. Socket.closed will have error
 	// 2. Socket.readable will be close without any data coming
 	if (hasIncomingData === false && retry) {
-		log(`retry`)
+		log(`No incoming data from the remote host, retry`);
 		retry();
 	}
 }
@@ -1115,14 +1125,14 @@ function socks5AddressParser(address) {
 }
 
 /**
+ * Generate a vless request header.
  * @param {number} destType 
  * @param {string} destAddr 
  * @param {number} destPort 
  * @param {string} uuid 
- * @param {ArrayBuffer | Uint8Array} rawClientData 
  * @returns {Uint8Array}
  */
-function makeVlessHeader(destType, destAddr, destPort, uuid, rawClientData) {
+function makeVlessReqHeader(destType, destAddr, destPort, uuid) {
 	/** @type {number} */
 	let addressFieldLength;
 	/** @type {Uint8Array | undefined} */
@@ -1144,7 +1154,7 @@ function makeVlessHeader(destType, destAddr, destPort, uuid, rawClientData) {
 
 	const uuidString = uuid.replace(/-/g, '');
 	const uuidOffset = 1;
-	const vlessHeader = new Uint8Array(22 + addressFieldLength + rawClientData.length);
+	const vlessHeader = new Uint8Array(22 + addressFieldLength);
 	
 	// Protocol Version = 0
 	vlessHeader[0] = 0x00;
@@ -1195,9 +1205,6 @@ function makeVlessHeader(destType, destAddr, destPort, uuid, rawClientData) {
 		default:
 			throw new Error(`Unknown address type: ${destType}`);
 	}
-
-	// Payload
-	vlessHeader.set(rawClientData, 22 + addressFieldLength);
 
 	return vlessHeader;
 }
