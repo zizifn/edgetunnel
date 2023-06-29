@@ -17,12 +17,12 @@ export let platformAPI = {
 	/** 
  	* A wrapper for the TCP API, should return a Cloudflare Worker compatible socket.
 	* See: https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/
- 	* @type {async (host: string, port: number, log: function) => 
+ 	* @type {(host: string, port: number, log: function) => Promise<
 	*    {
 	*      readable: ReadableStream, 
-	*      writable: {getWriter: () => {write: (data) => void, releaseLock: () => void}}
+	*      writable: {getWriter: () => {write: (data) => void, releaseLock: () => void}},
 	*      closed: {Promise<void>}
-	*    }
+	*    }>
 	*  }
  	*/
 	connect: null,
@@ -305,7 +305,7 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 		return 500;
 	}
 
-	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyData, log);
+	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyData, null, log);
 
 	/** @type {{ writableStream: WritableStream | null}}*/
 	let remoteSocketWapper = {
@@ -393,22 +393,22 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	let curOutBoundPtr = {index: 0, serverIndex: 0};
 	
 	/**
-	 *  @param {object} tcpSocket 
-	 *  @returns {ReadableStream}
+	 *  @param {WritableStream} writableStream 
+	 *  @param {Uint8Array} firstChunk
 	 */
-	async function viaTCP(tcpSocket) {
-		remoteSocket.writableStream = tcpSocket.writable;
-		const writer = tcpSocket.writable.getWriter();
-		await writer.write(rawClientData); // First write, normally is tls client hello
+	async function writeFirstChunk(writableStream, firstChunk) {
+		remoteSocket.writableStream = writableStream;
+		const writer = writableStream.getWriter();
+		await writer.write(firstChunk); // First write, normally is tls client hello
 		writer.releaseLock();
-		return tcpSocket.readable;
 	}
 
 	async function direct() {
 		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, false);
 		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
 		log(`Connecting to ${addressRemote}:${portRemote}`);
-		return viaTCP(tcpSocket);
+		writeFirstChunk(tcpSocket.writable, rawClientData);
+		return tcpSocket.readable;
 	}
 
 	async function forward(proxyServer, portMap) {
@@ -420,7 +420,8 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		const tcpSocket = await platformAPI.connect(proxyServer, portDest, false);
 		tcpSocket.closed.catch(error => log('[forward] tcpSocket closed with error: ', error.message));
 		log(`Forwarding ${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
-		return viaTCP(tcpSocket);
+		writeFirstChunk(tcpSocket.writable, rawClientData);
+		return tcpSocket.readable;
 	}
 
 	// TODO: known problem, if we send an unreachable request to a valid socks5 server, it will wait indefinitely
@@ -434,7 +435,8 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			log(`Socks5 outbound failed with: ${err.message}`);
 			return null;
 		}
-		return viaTCP(tcpSocket);
+		writeFirstChunk(tcpSocket.writable, rawClientData);
+		return tcpSocket.readable;
 	}
 
 	/**
@@ -465,10 +467,9 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			wsToVlessServer.onclose = (code, reason) => 
 				reject(new Error(`Closed with code ${code}, reason: ${reason}`));
 			wsToVlessServer.onerror = (error) => reject(error);
-			// setTimeout(() => {
-			// 	wsToVlessServer.close();
-			// 	reject({message: `Open connection timeout`});
-			// }, 1000);
+			setTimeout(() => {
+				reject({message: `Open connection timeout`});
+			}, 1000);
 		});
 
 		// Wait for the connection to open
@@ -476,37 +477,11 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			await openPromise;
 		} catch (err) {
 			log(`Cannot open Websocket connection: ${err.message}`);
+			wsToVlessServer.close();
 			return null;
 		}
 
-		/** @type {Promise<Uint8Array>} */
-		const recvPromise = new Promise((resolve, reject) => {
-			wsToVlessServer.onmessage = (event) => resolve(event.data);
-			wsToVlessServer.onclose = (code, reason) => 
-				reject(new Error(`Closed with code ${code}, reason: ${reason}`));
-			wsToVlessServer.onerror = (error) => reject(error);
-			// setTimeout(() => {
-			// 	wsToVlessServer.close();
-			// 	reject({message: `Receive response timeout`});
-			// }, 1000);
-		});
-
-		const vlessFirstPacket = makeVlessHeader(addressType, addressRemote, portRemote, uuid, rawClientData);
-
-		// Send the first packet (header + rawClientData), then strip the response header
-		wsToVlessServer.send(vlessFirstPacket);
-		let firstResponse; 
-		try {
-			firstResponse = await recvPromise;
-		} catch (err) {
-			log(`Cannot open Websocket connection: ${err.message}`);
-			return null;
-		}
-		const responseVersion = firstResponse[0];	// We should expect 0 here for now
-		const addtionalBytes = firstResponse[1];
-		const earlyData = firstResponse.slice(2 + addtionalBytes);
-
-		remoteSocket.writableStream = new WritableStream({
+		const writableStream = new WritableStream({
 			async write(chunk, controller) {
 				wsToVlessServer.send(chunk);
 			},
@@ -518,7 +493,31 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			},
 		});
 
-		return makeReadableWebSocketStream(wsToVlessServer, earlyData, log);
+		/** @type {(firstChunk : Uint8Array) => Uint8Array} */
+		const headerStripper = (firstChunk) => {
+			if (firstChunk.length < 2) {
+				throw new Error('Too short vless response');
+			}
+
+			const responseVersion = firstChunk[0];
+			const addtionalBytes = firstChunk[1];
+
+			if (responseVersion > 0) {
+				log('Warning: unexpected vless version: ${responseVersion}, only supports 0.');
+			}
+
+			if (addtionalBytes > 0) {
+				log('Warning: ignored ${addtionalBytes} byte(s) of additional information in the response.');
+			}
+
+			return firstChunk.slice(2 + addtionalBytes);
+		};
+
+		const readableStream = makeReadableWebSocketStream(wsToVlessServer, null, headerStripper, log);
+		const vlessFirstPacket = makeVlessHeader(addressType, addressRemote, portRemote, uuid, rawClientData);
+		// Send the first packet (header + rawClientData), then strip the response header with headerStripper
+		writeFirstChunk(writableStream, vlessFirstPacket);
+		return readableStream;
 	}
 	
 	/** @returns {Promise<ReadableStream>} */
@@ -543,7 +542,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		return null;
 	}
 
-	// if the cf connect tcp socket have no incoming data, we retry to redirect ip
+	// Try each outbound method until we find a working one.
 	async function tryOutbound() {
 		let outboundReadableStream = await connectAndWrite();
 
@@ -563,13 +562,18 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 }
 
 /**
+ * Make a source out of a WebSocket connection.
+ * A ReadableStream should be created before performing any kind of write operation.
  * 
  * @param {import("@cloudflare/workers-types").WebSocket} webSocketServer
- * @param {Uint8Array} earlyData
+ * @param {Uint8Array} earlyData Data received before the ReadableStream was created
+ * @param {(firstChunk : Uint8Array) => Uint8Array} headStripper In some protocol like Vless, 
+ *  a header is prepended to the first data chunk, it is necessary to strip that header.
  * @param {(info: string)=> void} log
  */
-function makeReadableWebSocketStream(webSocketServer, earlyData, log) {
+function makeReadableWebSocketStream(webSocketServer, earlyData, headStripper, log) {
 	let readableStreamCancel = false;
+	let headStripped = false;
 	const stream = new ReadableStream({
 		start(controller) {
 			if (earlyData) {
@@ -580,7 +584,22 @@ function makeReadableWebSocketStream(webSocketServer, earlyData, log) {
 				if (readableStreamCancel) {
 					return;
 				}
-				const message = event.data;
+
+				let message = event.data;
+				if (!headStripped) {
+					headStripped = true;
+
+					if (headStripper != null) {
+						try {
+							message = headStripper(message);
+						} catch (err) {
+							readableStreamCancel = true;
+							controller.error(err);
+							return;
+						}
+					}
+				}
+
 				controller.enqueue(message);
 			});
 
@@ -794,9 +813,9 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHead
 					log(`remoteSocket.readable is close, hasIncomingData = ${hasIncomingData}`);
 					// safeCloseWebSocket(webSocket); // no need server close websocket frist for some case will casue HTTP ERR_CONTENT_LENGTH_MISMATCH issue, client will send close event anyway.
 				},
-				abort(reason) {
-					console.error(`remoteSocket.readable aborts`, reason);
-				},
+				// abort(reason) {
+				// 	console.error(`remoteSocket.readable aborts`, reason);
+				// },
 			})
 		)
 		.catch((error) => {
