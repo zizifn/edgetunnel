@@ -6,7 +6,7 @@ import http from 'http';
 import net from 'net';
 import WebSocket from 'ws';
 
-import {globalConfig, vlessOverWSHandler, platformAPI, getVLESSConfig} from '../src/worker-with-socks5-experimental.js';
+import {globalConfig, platformAPI, setConfigFromEnv, vlessOverWSHandler, getVLESSConfig} from '../src/worker-with-socks5-experimental.js';
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
@@ -51,6 +51,7 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
  */
 platformAPI.connect = async (address, port, useTLS) => {
 	const socket = net.createConnection(port, address);
+	// TODO: Implement TLS support?
 
 	let readableStreamCancel = false;
 	const readableStream = new ReadableStream({
@@ -126,5 +127,22 @@ platformAPI.connect = async (address, port, useTLS) => {
 
 platformAPI.newWebSocket = (url) => new WebSocket(url);
 
-import {customConfig} from './config.js';
-globalConfig.outbounds = customConfig.outbounds;
+async function loadModule() {
+	try {
+		const customConfig = await import('./config.js');
+
+		if (customConfig.useCustomOutbound) {
+			globalConfig.outbounds = customConfig.outbounds;
+		} else {
+			setConfigFromEnv(customConfig.env);
+			if (customConfig.forceProxy) {
+				globalConfig.outbounds = globalConfig.outbounds.filter(obj => obj.protocol !== "freedom");
+			}
+		}
+		console.log(JSON.stringify(globalConfig.outbounds));
+	} catch (err) {
+	  console.error('Failed to load the module', err);
+	}
+}
+  
+loadModule();

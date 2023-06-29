@@ -2,6 +2,7 @@
 
 // How to generate your own UUID:
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
+// [Linux] Run uuidgen in terminal
 export let globalConfig = {
 	userID: 'd342d11e-d424-4583-b36e-524ab1f0afa4',
 
@@ -13,9 +14,11 @@ export let globalConfig = {
 	]
 };
 
+// If you use this file as an ES module, you should set all fields below.
 export let platformAPI = {
 	/** 
  	* A wrapper for the TCP API, should return a Cloudflare Worker compatible socket.
+	* The result is wrapped in a Promise, as in some platforms, the socket creation is async.
 	* See: https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/
  	* @type {(host: string, port: number, log: function) => Promise<
 	*    {
@@ -106,10 +109,10 @@ function getOutbound(curPos) {
  * This is the simplest case and should be preferred where possible.
  * @param {{
  *  UUID: string, 
- *  PROXYIP: string, 
- *  PORTMAP: string,
- *  VLESS: string,
- *  SOCKS5: string
+ *  PROXYIP: string,	// E.g. 114.51.4.0
+ *  PORTMAP: string,	// E.g. {443:8443}
+ *  VLESS: string,		// E.g. vless://uuid@domain.name:port?type=ws&security=tls
+ *  SOCKS5: string		// E.g. user:pass@host:port or host:port
  * }} env
  */
 export function setConfigFromEnv(env) {
@@ -225,6 +228,7 @@ export function setConfigFromEnv(env) {
 	}
 }
 
+// Cloudflare Workers entry
 export default {
 	/**
 	 * @param {import("@cloudflare/workers-types").Request} request
@@ -288,6 +292,8 @@ try {
 }
 
 /**
+ * If you use this file as an ES module, you call this function whenever your Websocket server accepts a new connection.
+ * 
  * @param {WebSocket} webSocket The established websocket connection to the client, must be an accepted
  * @param {string} earlyDataHeader for ws 0rtt, an optional field "sec-websocket-protocol" in the request header
  *                                  may contain some base64 encoded data.
@@ -319,7 +325,10 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 			if (isDns) {
 				return await handleDNSQuery(chunk, webSocket, null, log);
 			}
+
 			if (remoteSocketWapper.writableStream) {
+				// After we parse the header and send the first chunk to the remote destination
+				// We assume that after the handshake, the stream only contains the original traffic.
 				const writer = remoteSocketWapper.writableStream.getWriter();
 				await writer.write(chunk);
 				writer.releaseLock();
@@ -766,10 +775,10 @@ function processVlessHeader(
 
 
 /**
- * 
- * @param {ReadableStream} remoteSocketReader 
- * @param {import("@cloudflare/workers-types").WebSocket} webSocket 
- * @param {ArrayBuffer} vlessResponseHeader 
+ * Stream data from the remote destination (any) to the client side (Websocket)
+ * @param {ReadableStream} remoteSocketReader from the remote destination
+ * @param {import("@cloudflare/workers-types").WebSocket} webSocket to the client side
+ * @param {ArrayBuffer} vlessResponseHeader header that should be send to the client side
  * @param {(() => Promise<void>) | null} retry
  * @param {*} log 
  */

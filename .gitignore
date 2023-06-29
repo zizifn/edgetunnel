@@ -5,3 +5,4 @@ node_modules
 *.log
 dist
 src/package.json
+node/config.js
