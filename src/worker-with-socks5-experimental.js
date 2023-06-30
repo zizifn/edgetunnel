@@ -6,6 +6,9 @@
 export let globalConfig = {
 	userID: 'd342d11e-d424-4583-b36e-524ab1f0afa4',
 
+	// Time to wait before an outbound Websocket connection is established, in ms.
+	openWSOutboundTimeout: 10000,
+
 	// The order controls where to send the traffic after the previous one fails
 	outbounds: [
 		{
@@ -243,6 +246,10 @@ export default {
 	 * @returns {Promise<Response>}
 	 */
 	async fetch(request, env, ctx) {
+		if (env.LOGPOST) {
+			redirectConsoleLog(env.LOGPOST, crypto.randomUUID());
+		}
+
 		try {
 			setConfigFromEnv(env);
 			const upgradeHeader = request.headers.get('Upgrade');
@@ -285,6 +292,38 @@ export default {
 		}
 	},
 };
+
+/**
+ * @param {string} logServer URL of the log server
+ * @param {string} instanceId a UUID representing each instance
+ */
+export function redirectConsoleLog(logServer, instanceId) {
+	let logID = 0;
+	const oldConsoleLog = console.log;
+	console.log = async (data) => {
+		oldConsoleLog(data);
+		if (data == null) {
+			return;
+		}
+	
+		let msg;
+		if (data instanceof Object) {
+			msg = JSON.stringify(data);
+		} else {
+			msg = String(data);
+		}
+	
+		try {
+			await fetch(logServer, {
+				method: 'POST',
+				headers: { 'Content-Type': "text/plain;charset=UTF-8" },
+				body: instanceId + ` ${logID++} ` + msg
+			});
+		} catch (err) {
+			oldConsoleLog(err.message);
+		}
+	};
+}
 
 try {
 	const module = await import('cloudflare:sockets');
@@ -484,7 +523,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			wsToVlessServer.onerror = (error) => reject(error);
 			setTimeout(() => {
 				reject({message: `Open connection timeout`});
-			}, 1000);
+			}, globalConfig.openWSOutboundTimeout);
 		});
 
 		// Wait for the connection to open
