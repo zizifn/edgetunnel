@@ -34,7 +34,7 @@ export let platformAPI = {
 	connect: null,
 
 	/** 
- 	* A wrapper for the TCP API.
+ 	* A wrapper for the Websocket API.
  	* @type {(url: string) => WebSocket} returns a WebSocket, should be compatile with the standard WebSocket API.
  	*/
 	newWebSocket: null,
@@ -105,6 +105,14 @@ function getOutbound(curPos) {
 	}
 
 	return retVal;
+}
+
+function canOutboundUDPVia(protocolName) {
+	switch(protocolName) {
+		case 'vless':
+			return true;
+	}
+	return false;
 }
 
 /** 
@@ -398,24 +406,17 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 				// webSocket.close(1000, message);
 				return;
 			}
-			// if UDP but port not DNS port, close it
-			if (isUDP) {
-				if (portRemote === 53) {
-					isDns = true;
-				} else {
-					// controller.error('UDP proxy only enable for DNS which is port 53');
-					throw new Error('UDP proxy only enable for DNS which is port 53'); // cf seems has bug, controller.error will not end stream
-					return;
-				}
-			}
+
 			// ["version", "附加信息长度 N"]
 			const vlessResponseHeader = new Uint8Array([vlessVersion[0], 0]);
 			const rawClientData = chunk.slice(rawDataIndex);
 
-			if (isDns) {
-				return handleDNSQuery(rawClientData, webSocket, vlessResponseHeader, log);
+			if (isUDP && portRemote === 53) {
+				// Short circuit UDP DNS query to a TCP DNS query
+				handleDNSQuery(rawClientData, webSocket, vlessResponseHeader, log);
+			} else {
+				handleOutBound(remoteSocketWapper, isUDP, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
 			}
-			handleTCPOutBound(remoteSocketWapper, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
 		},
 		close() {
 			log(`readableWebSocketStream has been closed`);
@@ -431,9 +432,10 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 }
 
 /**
- * Handles outbound TCP connections.
+ * Handles outbound connections.
  *
  * @param {{ writableStream: WritableStream | null}} remoteSocket
+ * @param {boolean} isUDP
  * @param {number} addressType The remote address type to connect to.
  * @param {string} addressRemote The remote address to connect to.
  * @param {number} portRemote The remote port to connect to.
@@ -443,7 +445,7 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
  * @param {function} log The logging function.
  * @returns {Promise<void>} The remote socket.
  */
-async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
+async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
 	let curOutBoundPtr = {index: 0, serverIndex: 0};
 	
 	/**
@@ -460,7 +462,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	async function direct() {
 		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, false);
 		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
-		log(`Connecting to ${addressRemote}:${portRemote}`);
+		log(`Connecting to tcp://${addressRemote}:${portRemote}`);
 		writeFirstChunk(tcpSocket.writable, rawClientData);
 		return tcpSocket.readable;
 	}
@@ -473,16 +475,17 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 
 		const tcpSocket = await platformAPI.connect(proxyServer, portDest, false);
 		tcpSocket.closed.catch(error => log('[forward] tcpSocket closed with error: ', error.message));
-		log(`Forwarding ${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
+		log(`Forwarding tcp://${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
 		writeFirstChunk(tcpSocket.writable, rawClientData);
 		return tcpSocket.readable;
 	}
 
 	// TODO: known problem, if we send an unreachable request to a valid socks5 server, it will wait indefinitely
+	// TODO: Add support for proxying UDP via socks5 on runtimes that support UDP outbound
 	async function socks5(address, port, user, pass) {
 		const tcpSocket = await platformAPI.connect(address, port, false);
 		tcpSocket.closed.catch(error => log('[socks] tcpSocket closed with error: ', error.message));
-		log(`Connecting to ${addressRemote}:${portRemote} via socks5 ${address}:${port}`);
+		log(`Connecting to ${isUDP ? 'UDP' : 'TCP'}://${addressRemote}:${portRemote} via socks5 ${address}:${port}`);
 		try {
 			await socks5Connect(tcpSocket, user, pass, addressType, addressRemote, portRemote, log);
 		} catch(err) {
@@ -494,6 +497,13 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	}
 
 	/**
+	 * Start streaming traffic to a remote vless server.
+	 * The first message must contain the query header plus part of the payload!
+	 * The vless server responds to it with a response header plus part of the response from the destination.
+	 * After the first message exchange, in the case of TCP, the streams in both directions carry raw TCP streams.
+	 * Fragmentation won't cause any problem after the first message exchange.
+	 * In the case of UDP, a 16-bit big-endian length field is prepended to each UDP datagram and then send through the streams.
+	 * The first message exchange still applies.
 	 * 
 	 * @param {string} address 
 	 * @param {number} port 
@@ -513,7 +523,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		if (streamSettings.wsSettings && streamSettings.wsSettings.path) {
 			wsURL = wsURL + streamSettings.wsSettings.path;
 		}
-		log(`Connecting to ${addressRemote}:${portRemote} via vless ${wsURL}`);
+		log(`Connecting to ${isUDP ? 'UDP' : 'TCP'}://${addressRemote}:${portRemote} via vless ${wsURL}`);
 
 		const wsToVlessServer = platformAPI.newWebSocket(wsURL);
 		const openPromise = new Promise((resolve, reject) => {
@@ -568,7 +578,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		};
 
 		const readableStream = makeReadableWebSocketStream(wsToVlessServer, null, headerStripper, log);
-		const vlessReqHeader = makeVlessReqHeader(addressType, addressRemote, portRemote, uuid, rawClientData);
+		const vlessReqHeader = makeVlessReqHeader(isUDP ? VlessCmd.UDP : VlessCmd.TCP, addressType, addressRemote, portRemote, uuid, rawClientData);
 		// Send the first packet (header + rawClientData), then strip the response header with headerStripper
 		writeFirstChunk(writableStream, await new Blob([vlessReqHeader, rawClientData]).arrayBuffer());
 		return readableStream;
@@ -582,6 +592,11 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			return null;
 		} else {
 			log(`Trying outbound ${curOutBoundPtr.index}:${curOutBoundPtr.serverIndex}`);
+		}
+
+		if (isUDP && !canOutboundUDPVia(outbound.protocol)) {
+			// This outbound method does not support UDP
+			return null;
 		}
 
 		switch (outbound.protocol) {
@@ -740,16 +755,13 @@ function processVlessHeader(
 		vlessBuffer.slice(18 + optLength, 18 + optLength + 1)
 	)[0];
 
-	// 0x01 TCP
-	// 0x02 UDP
-	// 0x03 MUX
-	if (command === 1) {
-	} else if (command === 2) {
+	if (command === VlessCmd.TCP) {
+	} else if (command === VlessCmd.UDP) {
 		isUDP = true;
 	} else {
 		return {
 			hasError: true,
-			message: `command ${command} is not support, command 01-tcp,02-udp,03-mux`,
+			message: `Invalid command type: ${command}, only accepts: ${JSON.stringify(VlessCmd)}`,
 		};
 	}
 	const portIndex = 18 + optLength + 1;
@@ -762,21 +774,18 @@ function processVlessHeader(
 		vlessBuffer.slice(addressIndex, addressIndex + 1)
 	);
 
-	// 1--> ipv4  addressLength =4
-	// 2--> domain name addressLength=addressBuffer[1]
-	// 3--> ipv6  addressLength =16
 	const addressType = addressBuffer[0];
 	let addressLength = 0;
 	let addressValueIndex = addressIndex + 1;
 	let addressValue = '';
 	switch (addressType) {
-		case 1:
+		case VlessAddrType.IPv4:
 			addressLength = 4;
 			addressValue = new Uint8Array(
 				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
 			).join('.');
 			break;
-		case 2:
+		case VlessAddrType.DomainName:
 			addressLength = new Uint8Array(
 				vlessBuffer.slice(addressValueIndex, addressValueIndex + 1)
 			)[0];
@@ -785,7 +794,7 @@ function processVlessHeader(
 				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
 			);
 			break;
-		case 3:
+		case VlessAddrType.IPv6:
 			addressLength = 16;
 			const dataView = new DataView(
 				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
@@ -801,7 +810,7 @@ function processVlessHeader(
 		default:
 			return {
 				hasError: true,
-				message: `Invild addressType: ${addressType}`,
+				message: `Invalid address type: ${addressType}, only accepts: ${JSON.stringify(VlessAddrType)}`,
 			};
 	}
 	if (!addressValue) {
@@ -1163,28 +1172,41 @@ function socks5AddressParser(address) {
 	}
 }
 
+const VlessCmd = {
+	TCP: 1,
+	UDP: 2,
+	MUX: 3,
+};
+
+const VlessAddrType = {
+	IPv4: 1,		// 4-bytes
+	DomainName: 2,	// The first byte indicates the length of the following domain name
+	IPv6: 3,		// 16-bytes
+};
+
 /**
  * Generate a vless request header.
- * @param {number} destType 
+ * @param {number} command see VlessCmd
+ * @param {number} destType see VlessAddrType
  * @param {string} destAddr 
  * @param {number} destPort 
  * @param {string} uuid 
  * @returns {Uint8Array}
  */
-function makeVlessReqHeader(destType, destAddr, destPort, uuid) {
+function makeVlessReqHeader(command, destType, destAddr, destPort, uuid) {
 	/** @type {number} */
 	let addressFieldLength;
 	/** @type {Uint8Array | undefined} */
 	let addressEncoded;
 	switch (destType) {
-		case 1:
+		case VlessAddrType.IPv4:
 			addressFieldLength = 4;
 			break;
-		case 2:
+		case VlessAddrType.DomainName:
 			addressEncoded = new TextEncoder().encode(destAddr);
 			addressFieldLength = addressEncoded.length + 1;
 			break;
-		case 3:
+		case VlessAddrType.IPv6:
 			addressFieldLength = 16;
 			break;
 		default:
@@ -1206,10 +1228,7 @@ function makeVlessReqHeader(destType, destAddr, destPort, uuid) {
 	vlessHeader[17] = 0x00;
 
 	// Instruction
-	// 0x01 TCP
-	// 0x02 UDP
-	// 0x03 MUX
-	vlessHeader[18] = 0x01;	// Assume TCP
+	vlessHeader[18] = command;
 
 	// Port, 2-byte big-endian
 	vlessHeader[19] = destPort >> 8;
@@ -1223,17 +1242,17 @@ function makeVlessReqHeader(destType, destAddr, destPort, uuid) {
 
 	// Address
 	switch (destType) {
-		case 1:
+		case VlessAddrType.IPv4:
 			const octetsIPv4 = destAddr.split('.');
 			for (let i = 0; i < 4; i++) {
 				vlessHeader[22 + i] = parseInt(octetsIPv4[i]);
 			}
 			break;
-		case 2:
+		case VlessAddrType.DomainName:
 			vlessHeader[22] = addressEncoded.length;
 			vlessHeader.set(addressEncoded, 23);
 			break;
-		case 3:
+		case VlessAddrType.IPv6:
 			const groupsIPv6 = ipv6.split(':');
 			for (let i = 0; i < 8; i++) {
 			  const hexGroup = parseInt(groupsIPv6[i], 16);
