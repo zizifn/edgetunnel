@@ -5,6 +5,7 @@
 import http from 'http';
 import net from 'net';
 import WebSocket from 'ws';
+import {createSocket as createUDPSocket} from 'dgram';
 
 import {globalConfig, platformAPI, setConfigFromEnv, vlessOverWSHandler, getVLESSConfig} from '../src/worker-with-socks5-experimental.js';
 
@@ -127,6 +128,24 @@ platformAPI.connect = async (address, port, useTLS) => {
 
 platformAPI.newWebSocket = (url) => new WebSocket(url);
 
+platformAPI.associate = async (isIPv6) => {
+	const UDPSocket = createUDPSocket('udp4');
+	return {
+		send: (datagram, offset, length, port, address, sendDoneCallback) => {
+			UDPSocket.send(datagram, offset, length, port, address, sendDoneCallback);
+		},
+		close: () => {
+			UDPSocket.close();
+		},
+		onmessage: (handler) => {
+			UDPSocket.on('message', handler);
+		},
+		onerror: (handler) => {
+			UDPSocket.on('error', handler);
+		}
+	};
+}
+
 async function loadModule() {
 	try {
 		const customConfig = await import('./config.js');
@@ -144,5 +163,5 @@ async function loadModule() {
 	  console.error('Failed to load the module', err);
 	}
 }
-  
+
 loadModule();

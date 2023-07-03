@@ -23,7 +23,7 @@ export let platformAPI = {
  	* A wrapper for the TCP API, should return a Cloudflare Worker compatible socket.
 	* The result is wrapped in a Promise, as in some platforms, the socket creation is async.
 	* See: https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/
- 	* @type {(host: string, port: number, log: function) => Promise<
+ 	* @type {(host: string, port: number, useTLS: boolean) => Promise<
 	*    {
 	*      readable: ReadableStream, 
 	*      writable: {getWriter: () => {write: (data) => void, releaseLock: () => void}},
@@ -38,6 +38,20 @@ export let platformAPI = {
  	* @type {(url: string) => WebSocket} returns a WebSocket, should be compatile with the standard WebSocket API.
  	*/
 	newWebSocket: null,
+
+	/** 
+ 	* A wrapper for the UDP API, should return a NodeJS compatible UDP socket.
+	* The result is wrapped in a Promise, as in some platforms, the socket creation is async.
+ 	* @type {(isIPv6: boolean) => Promise<
+	*    {
+	*      send: (datagram: any, offset: number, length: number, port: number, address: string, sendDoneCallback: (err: Error | null, bytes: number) => void) => void, 
+	*      close: () => void,
+	*      onmessage: (handler: (msg: Buffer, rinfo: RemoteInfo) => void) => void,
+	*      onerror: (handler: (err: Error) => void) => void,
+	*    }>
+	*  }
+ 	*/
+	associate: null,
 }
 
 /**
@@ -109,6 +123,8 @@ function getOutbound(curPos) {
 
 function canOutboundUDPVia(protocolName) {
 	switch(protocolName) {
+		case 'freedom':
+			return platformAPI.associate != null;
 		case 'vless':
 			return true;
 	}
@@ -460,6 +476,15 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 	}
 
 	async function direct() {
+		if (isUDP) {
+			const udpClient = await platformAPI.associate(false);
+			const writableStream = makeWritableUDPStream(udpClient, addressRemote, portRemote, log);
+			const readableStream = makeReadableUDPStream(udpClient, log);
+			log(`Connected to UDP://${addressRemote}:${portRemote}`);
+			writeFirstChunk(writableStream, rawClientData);
+			return readableStream;
+		}
+
 		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, false);
 		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
 		log(`Connecting to tcp://${addressRemote}:${portRemote}`);
@@ -630,6 +655,87 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 	}
 
 	await tryOutbound();
+}
+
+/**
+ * Make a source out of a UDP socket, wrap each datagram with vless UDP packing.
+ * Each receive datagram will be prepended with a 16-bit big-endian length field.
+ * 
+ * @param {*} udpClient
+ * @param {(info: string)=> void} log
+ * @returns {ReadableStream} Datagrams received will be wrapped and made available in this stream.
+ */
+function makeReadableUDPStream(udpClient, log) {
+	return new ReadableStream({
+		start(controller) {
+			udpClient.onmessage((message, info) => {
+				// log(`Received ${info.size} bytes from UDP://${info.address}:${info.port}`)
+				// Prepend length to each UDP datagram
+				new Blob([new Uint8Array([(info.size >> 8) & 0xff, info.size & 0xff]), message]).arrayBuffer().then(encodedChunk => {
+					controller.enqueue(encodedChunk);
+				});
+			});
+			udpClient.onerror((error) => {
+				log('UDP Error: ', error);
+				controller.error(error);
+			});
+		},
+		cancel(reason) {
+			log(`UDP ReadableStream closed:`, reason);
+			safeCloseUDP(udpClient);
+		},
+	});
+}
+
+/**
+ * Make a sink out of a UDP socket, the input stream assumes valid vless UDP packing.
+ * Each datagram to be sent should be prepended with a 16-bit big-endian length field.
+ * 
+ * @param {*} udpClient 
+ * @param {string} addressRemote 
+ * @param {port} portRemote 
+ * @param {(info: string)=> void} log
+ * @returns {WritableStream} write to this stream will send datagrams via UDP.
+ */
+function makeWritableUDPStream(udpClient, addressRemote, portRemote, log) {
+	return new WritableStream({
+		/** @param {ArrayBuffer} chunk */
+		async write(chunk, controller) {
+			const byteArray = new Uint8Array(chunk);
+			let i = 0;
+			while (i < byteArray.length) {
+				// Big-endian
+				const datagramLen = (byteArray[i] << 8) | byteArray[i+1];
+
+				await new Promise((resolve, reject) => {
+					udpClient.send(byteArray, i + 2, datagramLen, portRemote, addressRemote, (err, bytes) => {
+						if (err != null) {
+							console.log('UDP send error', err);
+							controller.error(`Failed to send UDP packet !! ${err}`);
+							safeCloseUDP(udpClient);
+						}
+					});
+					resolve();
+				});
+
+				i += datagramLen + 2;
+			}
+		},
+		close() {
+			log(`UDP WritableStream closed`);
+		},
+		abort(reason) {
+			console.error(`UDP WritableStream aborted`, reason);
+		},
+	});
+}
+
+function safeCloseUDP(socket) {
+	try {
+		socket.close();
+	} catch (error) {
+		console.error('safeCloseUDP error', error);
+	}
 }
 
 /**
