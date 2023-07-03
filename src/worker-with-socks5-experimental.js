@@ -477,7 +477,8 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 
 	async function direct() {
 		if (isUDP) {
-			const udpClient = await platformAPI.associate(false);
+			// TODO: Check what will happen if addressType == VlessAddrType.DomainName and that domain only resolves to a IPv6
+			const udpClient = await platformAPI.associate(addressType == VlessAddrType.IPv6);
 			const writableStream = makeWritableUDPStream(udpClient, addressRemote, portRemote, log);
 			const readableStream = makeReadableUDPStream(udpClient, log);
 			log(`Connected to UDP://${addressRemote}:${portRemote}`);

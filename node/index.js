@@ -129,7 +129,7 @@ platformAPI.connect = async (address, port, useTLS) => {
 platformAPI.newWebSocket = (url) => new WebSocket(url);
 
 platformAPI.associate = async (isIPv6) => {
-	const UDPSocket = createUDPSocket('udp4');
+	const UDPSocket = createUDPSocket(isIPv6 ? 'udp6' : 'udp4');
 	return {
 		send: (datagram, offset, length, port, address, sendDoneCallback) => {
 			UDPSocket.send(datagram, offset, length, port, address, sendDoneCallback);
