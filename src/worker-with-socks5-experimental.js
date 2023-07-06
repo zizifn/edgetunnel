@@ -9,6 +9,10 @@ export let globalConfig = {
 	// Time to wait before an outbound Websocket connection is established, in ms.
 	openWSOutboundTimeout: 10000,
 
+	// Since Cloudflare Worker does not support UDP outbound, we may try DNS over TCP.
+	// Set to an empty string to disable UDP to TCP forwarding for DNS queries.
+	dnsTCPServer: "8.8.4.4",
+
 	// The order controls where to send the traffic after the previous one fails
 	outbounds: [
 		{
@@ -386,15 +390,10 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 	let remoteSocketWapper = {
 		writableStream: null,
 	};
-	let isDns = false;
 
 	// ws --> remote
 	readableWebSocketStream.pipeTo(new WritableStream({
 		async write(chunk, controller) {
-			if (isDns) {
-				return await handleDNSQuery(chunk, webSocket, null, log);
-			}
-
 			if (remoteSocketWapper.writableStream) {
 				// After we parse the header and send the first chunk to the remote destination
 				// We assume that after the handshake, the stream only contains the original traffic.
@@ -420,19 +419,13 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 				// controller.error(message);
 				throw new Error(message); // cf seems has bug, controller.error will not end stream
 				// webSocket.close(1000, message);
-				return;
 			}
 
-			// ["version", "附加信息长度 N"]
+			// ["version", "length of additional info"]
 			const vlessResponseHeader = new Uint8Array([vlessVersion[0], 0]);
 			const rawClientData = chunk.slice(rawDataIndex);
 
-			if (isUDP && portRemote === 53) {
-				// Short circuit UDP DNS query to a TCP DNS query
-				handleDNSQuery(rawClientData, webSocket, vlessResponseHeader, log);
-			} else {
-				handleOutBound(remoteSocketWapper, isUDP, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
-			}
+			handleOutBound(remoteSocketWapper, isUDP, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
 		},
 		close() {
 			log(`readableWebSocketStream has been closed`);
@@ -476,7 +469,12 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 	}
 
 	async function direct() {
-		if (isUDP) {
+		// Check if we should forward UDP DNS requests to a designated TCP DNS server.
+		// The vless packing of UDP datagrams is identical to the one used in TCP DNS protocol,
+		// so we can directly send raw vless traffic to the TCP DNS server.
+		const forwardDNS = isUDP && (portRemote == 53) && (globalConfig.dnsTCPServer ? true : false);
+
+		if (isUDP && !forwardDNS) {
 			// TODO: Check what will happen if addressType == VlessAddrType.DomainName and that domain only resolves to a IPv6
 			const udpClient = await platformAPI.associate(addressType == VlessAddrType.IPv6);
 			const writableStream = makeWritableUDPStream(udpClient, addressRemote, portRemote, log);
@@ -486,9 +484,15 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 			return readableStream;
 		}
 
-		const tcpSocket = await platformAPI.connect(addressRemote, portRemote, false);
+		let addressTCP = addressRemote;
+		if (forwardDNS) {
+			addressTCP = globalConfig.dnsTCPServer;
+			log(`Redirect DNS request sent to UDP://${addressRemote}:${portRemote}`);
+		}
+
+		const tcpSocket = await platformAPI.connect(addressTCP, portRemote, false);
 		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
-		log(`Connecting to tcp://${addressRemote}:${portRemote}`);
+		log(`Connecting to tcp://${addressTCP}:${portRemote}`);
 		writeFirstChunk(tcpSocket.writable, rawClientData);
 		return tcpSocket.readable;
 	}
@@ -1067,54 +1071,6 @@ function stringify(arr, offset = 0) {
 		throw TypeError("Stringified UUID is invalid");
 	}
 	return uuid;
-}
-
-/**
- * 
- * @param {ArrayBuffer} udpChunk 
- * @param {import("@cloudflare/workers-types").WebSocket} webSocket 
- * @param {ArrayBuffer} vlessResponseHeader null means the header has been sent.
- * @param {(string)=> void} log 
- */
-async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
-	// We always ignore the DNS server requested by the client and use our hard code one,
-	// as some DNS server does not support DNS over TCP.
-	try {
-		// TODO: Switch to 1.1.1.1 after Cloudflare fixes its well known Workers TCP problem.
-		const dnsServer = '8.8.4.4';
-		const dnsPort = 53;
-		/** @type {ArrayBuffer | null} */
-		let vlessHeader = vlessResponseHeader;
-		/** @type {import("@cloudflare/workers-types").Socket} */
-		const tcpSocket = await platformAPI.connect(dnsServer, dnsPort, false);
-
-		log(`connected to ${dnsServer}:${dnsPort}`);
-		const writer = tcpSocket.writable.getWriter();
-		await writer.write(udpChunk);
-		writer.releaseLock();
-		await tcpSocket.readable.pipeTo(new WritableStream({
-			async write(chunk) {
-				if (webSocket.readyState === WS_READY_STATE_OPEN) {
-					if (vlessHeader) {
-						webSocket.send(await new Blob([vlessHeader, chunk]).arrayBuffer());
-						vlessHeader = null;
-					} else {
-						webSocket.send(chunk);
-					}
-				}
-			},
-			close() {
-				log(`dns server(${dnsServer}) tcp is close`);
-			},
-			abort(reason) {
-				console.error(`dns server(${dnsServer}) tcp is abort`, reason);
-			},
-		}));
-	} catch (error) {
-		console.error(
-			`handleDNSQuery have exception, error: ${error.message}`
-		);
-	}
 }
 
 /**
