@@ -199,17 +199,17 @@ export function setConfigFromEnv(env) {
 			if (queryParams['type'] == 'ws') {
 				streamSettings.wsSettings = {
 					"headers": {
-                        "Host": remoteHost
-                    },
-                    "path": decodeURIComponent(queryParams['path'])
-                };
+						"Host": remoteHost
+					},
+					"path": decodeURIComponent(queryParams['path'])
+				};
 			}
 
 			if (queryParams['security'] == 'tls') {
 				streamSettings.tlsSettings = {
-                    "serverName": remoteHost,
-                    "allowInsecure": false
-                };
+					"serverName": remoteHost,
+					"allowInsecure": false
+				};
 			}
 
 			globalConfig['outbounds'].push({
