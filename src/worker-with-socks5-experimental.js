@@ -457,6 +457,17 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
 	let curOutBoundPtr = {index: 0, serverIndex: 0};
 	
+	// Check if we should forward UDP DNS requests to a designated TCP DNS server.
+	// The vless packing of UDP datagrams is identical to the one used in TCP DNS protocol,
+	// so we can directly send raw vless traffic to the TCP DNS server.
+	// TCP DNS requests will not be touched.
+	// If fail to directly reach the TCP DNS server, UDP DNS request will be attempted on the other outbounds
+	const forwardDNS = isUDP && (portRemote == 53) && (globalConfig.dnsTCPServer ? true : false);
+
+	// True if we absolutely need UDP outbound, fail otherwise
+	// False if we may use TCP to somehow resolve that UDP query
+	const enforceUDP = isUDP && !forwardDNS;
+
 	/**
 	 *  @param {WritableStream} writableStream 
 	 *  @param {Uint8Array} firstChunk
@@ -469,12 +480,7 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 	}
 
 	async function direct() {
-		// Check if we should forward UDP DNS requests to a designated TCP DNS server.
-		// The vless packing of UDP datagrams is identical to the one used in TCP DNS protocol,
-		// so we can directly send raw vless traffic to the TCP DNS server.
-		const forwardDNS = isUDP && (portRemote == 53) && (globalConfig.dnsTCPServer ? true : false);
-
-		if (isUDP && !forwardDNS) {
+		if (enforceUDP) {
 			// TODO: Check what will happen if addressType == VlessAddrType.DomainName and that domain only resolves to a IPv6
 			const udpClient = await platformAPI.associate(addressType == VlessAddrType.IPv6);
 			const writableStream = makeWritableUDPStream(udpClient, addressRemote, portRemote, log);
@@ -624,7 +630,7 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 			log(`Trying outbound ${curOutBoundPtr.index}:${curOutBoundPtr.serverIndex}`);
 		}
 
-		if (isUDP && !canOutboundUDPVia(outbound.protocol)) {
+		if (enforceUDP && !canOutboundUDPVia(outbound.protocol)) {
 			// This outbound method does not support UDP
 			return null;
 		}
