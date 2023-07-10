@@ -703,24 +703,43 @@ function makeReadableUDPStream(udpClient, log) {
  * @returns {WritableStream} write to this stream will send datagrams via UDP.
  */
 function makeWritableUDPStream(udpClient, addressRemote, portRemote, log) {
+	/** @type {Uint8Array} */
+	let leftoverData = new Uint8Array(0);
+
 	return new WritableStream({
 		/** @param {ArrayBuffer} chunk */
-		async write(chunk, controller) {
-			const byteArray = new Uint8Array(chunk);
+		write(chunk, controller) {
+			let byteArray = new Uint8Array(chunk);
+			if (leftoverData.byteLength > 0) {
+				// If we have any leftover data from previous chunk, merge it first
+				byteArray = new Uint8Array(leftoverData.byteLength + chunk.byteLength);
+				byteArray.set(leftoverData, 0);
+				byteArray.set(new Uint8Array(chunk), leftoverData.byteLength);
+			}
+
 			let i = 0;
 			while (i < byteArray.length) {
+				if (i+1 >= byteArray.length) {
+					// The length field is not intact
+					leftoverData = byteArray.slice(i);
+					break;
+				}
+
 				// Big-endian
 				const datagramLen = (byteArray[i] << 8) | byteArray[i+1];
 
-				await new Promise((resolve, reject) => {
-					udpClient.send(byteArray, i + 2, datagramLen, portRemote, addressRemote, (err, bytes) => {
-						if (err != null) {
-							console.log('UDP send error', err);
-							controller.error(`Failed to send UDP packet !! ${err}`);
-							safeCloseUDP(udpClient);
-						}
-					});
-					resolve();
+				if (i+2+datagramLen > byteArray.length) {
+					// This UDP datagram is not intact
+					leftoverData = byteArray.slice(i);
+					break;
+				}
+
+				udpClient.send(byteArray, i + 2, datagramLen, portRemote, addressRemote, (err, bytes) => {
+					if (err != null) {
+						console.log('UDP send error', err);
+						controller.error(`Failed to send UDP packet !! ${err}`);
+						safeCloseUDP(udpClient);
+					}
 				});
 
 				i += datagramLen + 2;
@@ -907,13 +926,12 @@ function processVlessHeader(
 			break;
 		case VlessAddrType.IPv6:
 			addressLength = 16;
-			const dataView = new DataView(
-				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
-			);
+			const ipv6Bytes = (new Uint8Array(vlessBuffer)).slice(addressValueIndex, addressValueIndex + addressLength);
 			// 2001:0db8:85a3:0000:0000:8a2e:0370:7334
 			const ipv6 = [];
 			for (let i = 0; i < 8; i++) {
-				ipv6.push(dataView.getUint16(i * 2).toString(16));
+				const uint16_val = ipv6Bytes[i*2] << 8 | ipv6Bytes[i*2+1];
+				ipv6.push(uint16_val.toString(16));
 			}
 			addressValue = ipv6.join(':');
 			// seems no need add [] for ipv6
