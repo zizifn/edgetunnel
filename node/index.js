@@ -47,12 +47,10 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
  * 
  * @param {string} address The remote address to connect to.
  * @param {number} port The remote port to connect to.
- * @param {boolean} useTLS
  * @returns {object} The wrapped TCP connection, to be compatible with Cloudflare Workers
  */
-platformAPI.connect = async (address, port, useTLS) => {
+platformAPI.connect = async (address, port) => {
 	const socket = net.createConnection(port, address);
-	// TODO: Implement TLS support?
 
 	let readableStreamCancel = false;
 	const readableStream = new ReadableStream({

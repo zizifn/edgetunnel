@@ -27,7 +27,7 @@ export let platformAPI = {
  	* A wrapper for the TCP API, should return a Cloudflare Worker compatible socket.
 	* The result is wrapped in a Promise, as in some platforms, the socket creation is async.
 	* See: https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/
- 	* @type {(host: string, port: number, useTLS: boolean) => Promise<
+ 	* @type {(host: string, port: number) => Promise<
 	*    {
 	*      readable: ReadableStream, 
 	*      writable: {getWriter: () => {write: (data) => void, releaseLock: () => void}},
@@ -355,8 +355,8 @@ export function redirectConsoleLog(logServer, instanceId) {
 
 try {
 	const module = await import('cloudflare:sockets');
-	platformAPI.connect = async (address, port, useTLS) => {
-		return module.connect({hostname: address, port: port}, {secureTransport: useTLS ? 'on' : 'off'});
+	platformAPI.connect = async (address, port) => {
+		return module.connect({hostname: address, port: port});
 	};
 
 	platformAPI.newWebSocket = (url) => new WebSocket(url);
@@ -496,7 +496,7 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 			log(`Redirect DNS request sent to UDP://${addressRemote}:${portRemote}`);
 		}
 
-		const tcpSocket = await platformAPI.connect(addressTCP, portRemote, false);
+		const tcpSocket = await platformAPI.connect(addressTCP, portRemote);
 		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
 		log(`Connecting to tcp://${addressTCP}:${portRemote}`);
 		writeFirstChunk(tcpSocket.writable, rawClientData);
@@ -509,7 +509,7 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 			portDest = portMap[portRemote];
 		}
 
-		const tcpSocket = await platformAPI.connect(proxyServer, portDest, false);
+		const tcpSocket = await platformAPI.connect(proxyServer, portDest);
 		tcpSocket.closed.catch(error => log('[forward] tcpSocket closed with error: ', error.message));
 		log(`Forwarding tcp://${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
 		writeFirstChunk(tcpSocket.writable, rawClientData);
@@ -519,7 +519,7 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 	// TODO: known problem, if we send an unreachable request to a valid socks5 server, it will wait indefinitely
 	// TODO: Add support for proxying UDP via socks5 on runtimes that support UDP outbound
 	async function socks5(address, port, user, pass) {
-		const tcpSocket = await platformAPI.connect(address, port, false);
+		const tcpSocket = await platformAPI.connect(address, port);
 		tcpSocket.closed.catch(error => log('[socks] tcpSocket closed with error: ', error.message));
 		log(`Connecting to ${isUDP ? 'UDP' : 'TCP'}://${addressRemote}:${portRemote} via socks5 ${address}:${port}`);
 		try {
@@ -777,6 +777,7 @@ function safeCloseUDP(socket) {
  * @param {(firstChunk : Uint8Array) => Uint8Array} headStripper In some protocol like Vless, 
  *  a header is prepended to the first data chunk, it is necessary to strip that header.
  * @param {(info: string)=> void} log
+ * @returns {ReadableStream} a source of Uint8Array chunks
  */
 function makeReadableWebSocketStream(webSocketServer, earlyData, headStripper, log) {
 	let readableStreamCancel = false;
@@ -792,15 +793,16 @@ function makeReadableWebSocketStream(webSocketServer, earlyData, headStripper, l
 					return;
 				}
 
-				let message = event.data;
+				// Make sure that we use Uint8Array through out the process.
+				// On Nodejs, event.data can be a Buffer or an ArrayBuffer
+				// On Cloudflare Workers, event.data tend to be an ArrayBuffer
+				let message = new Uint8Array(event.data);
 				if (!headStripped) {
 					headStripped = true;
 
 					if (headStripper != null) {
 						try {
-							// We have to make sure that we are on a Uint8Array.
-							const firstChunk = new Uint8Array(message);
-							message = headStripper(firstChunk);
+							message = headStripper(message);
 						} catch (err) {
 							readableStreamCancel = true;
 							controller.error(err);
@@ -857,7 +859,7 @@ function makeReadableWebSocketStream(webSocketServer, earlyData, headStripper, l
 
 /**
  * 
- * @param { ArrayBuffer} vlessBuffer 
+ * @param { Uint8Array } vlessBuffer 
  * @param {string} userID the expected userID
  * @returns 
  */
@@ -871,10 +873,10 @@ function processVlessHeader(
 			message: 'invalid data',
 		};
 	}
-	const version = new Uint8Array(vlessBuffer.slice(0, 1));
+	const version = vlessBuffer.slice(0, 1);
 	let isValidUser = false;
 	let isUDP = false;
-	if (stringify(new Uint8Array(vlessBuffer.slice(1, 17))) === userID) {
+	if (stringify(vlessBuffer.slice(1, 17)) === userID) {
 		isValidUser = true;
 	}
 	if (!isValidUser) {
@@ -884,12 +886,10 @@ function processVlessHeader(
 		};
 	}
 
-	const optLength = new Uint8Array(vlessBuffer.slice(17, 18))[0];
 	//skip opt for now
+	const optLength = vlessBuffer.slice(17, 18)[0];
 
-	const command = new Uint8Array(
-		vlessBuffer.slice(18 + optLength, 18 + optLength + 1)
-	)[0];
+	const command = vlessBuffer.slice(18 + optLength, 18 + optLength + 1)[0];
 
 	if (command === VlessCmd.TCP) {
 	} else if (command === VlessCmd.UDP) {
@@ -901,14 +901,11 @@ function processVlessHeader(
 		};
 	}
 	const portIndex = 18 + optLength + 1;
-	const portBuffer = new Uint8Array(vlessBuffer.slice(portIndex, portIndex + 2));
 	// port is big-Endian in raw data etc 80 == 0x0050
-	const portRemote = new DataView(portBuffer.buffer).getUint16(0);
+	const portRemote = (vlessBuffer[portIndex] << 8) | vlessBuffer[portIndex + 1];
 
 	let addressIndex = portIndex + 2;
-	const addressBuffer = new Uint8Array(
-		vlessBuffer.slice(addressIndex, addressIndex + 1)
-	);
+	const addressBuffer = vlessBuffer.slice(addressIndex, addressIndex + 1);
 
 	const addressType = addressBuffer[0];
 	let addressLength = 0;
@@ -917,14 +914,10 @@ function processVlessHeader(
 	switch (addressType) {
 		case VlessAddrType.IPv4:
 			addressLength = 4;
-			addressValue = new Uint8Array(
-				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
-			).join('.');
+			addressValue = vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength).join('.');
 			break;
 		case VlessAddrType.DomainName:
-			addressLength = new Uint8Array(
-				vlessBuffer.slice(addressValueIndex, addressValueIndex + 1)
-			)[0];
+			addressLength = vlessBuffer.slice(addressValueIndex, addressValueIndex + 1)[0];
 			addressValueIndex += 1;
 			addressValue = new TextDecoder().decode(
 				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
@@ -932,7 +925,7 @@ function processVlessHeader(
 			break;
 		case VlessAddrType.IPv6:
 			addressLength = 16;
-			const ipv6Bytes = (new Uint8Array(vlessBuffer)).slice(addressValueIndex, addressValueIndex + addressLength);
+			const ipv6Bytes = vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength);
 			// 2001:0db8:85a3:0000:0000:8a2e:0370:7334
 			const ipv6 = [];
 			for (let i = 0; i < 8; i++) {
