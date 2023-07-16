@@ -1043,8 +1043,8 @@ function base64ToArrayBuffer(base64Str) {
 		// go use modified Base64 for URL rfc4648 which js atob not support
 		base64Str = base64Str.replace(/-/g, '+').replace(/_/g, '/');
 		const decode = atob(base64Str);
-		const arryBuffer = Uint8Array.from(decode, (c) => c.charCodeAt(0));
-		return { earlyData: arryBuffer.buffer, error: null };
+		const buffer = Uint8Array.from(decode, (c) => c.charCodeAt(0));
+		return { earlyData: buffer, error: null };
 	} catch (error) {
 		return { error };
 	}
