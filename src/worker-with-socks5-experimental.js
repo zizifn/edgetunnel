@@ -616,7 +616,7 @@ async function handleOutBound(remoteSocket, isUDP, addressType, addressRemote, p
 		const readableStream = makeReadableWebSocketStream(wsToVlessServer, null, headerStripper, log);
 		const vlessReqHeader = makeVlessReqHeader(isUDP ? VlessCmd.UDP : VlessCmd.TCP, addressType, addressRemote, portRemote, uuid, rawClientData);
 		// Send the first packet (header + rawClientData), then strip the response header with headerStripper
-		writeFirstChunk(writableStream, await new Blob([vlessReqHeader, rawClientData]).arrayBuffer());
+		writeFirstChunk(writableStream, joinUint8Array(vlessReqHeader, rawClientData));
 		return readableStream;
 	}
 	
@@ -682,9 +682,9 @@ function makeReadableUDPStream(udpClient, log) {
 			udpClient.onmessage((message, info) => {
 				// log(`Received ${info.size} bytes from UDP://${info.address}:${info.port}`)
 				// Prepend length to each UDP datagram
-				new Blob([new Uint8Array([(info.size >> 8) & 0xff, info.size & 0xff]), message]).arrayBuffer().then(encodedChunk => {
-					controller.enqueue(encodedChunk);
-				});
+				const header = new Uint8Array([(info.size >> 8) & 0xff, info.size & 0xff]);
+				const encodedChunk = joinUint8Array(header, message);
+				controller.enqueue(encodedChunk);
 			});
 			udpClient.onerror((error) => {
 				log('UDP Error: ', error);
@@ -964,7 +964,7 @@ function processVlessHeader(
  * Stream data from the remote destination (any) to the client side (Websocket)
  * @param {ReadableStream} remoteSocketReader from the remote destination
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket to the client side
- * @param {ArrayBuffer} vlessResponseHeader header that should be send to the client side
+ * @param {Uint8Array} vlessResponseHeader header that should be send to the client side
  * @param {(() => Promise<void>) | null} retry
  * @param {*} log 
  */
@@ -972,7 +972,7 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHead
 	// remote--> ws
 	let remoteChunkCount = 0;
 	let chunks = [];
-	/** @type {ArrayBuffer | null} */
+	/** @type {Uint8Array | null} */
 	let vlessHeader = vlessResponseHeader;
 	let hasIncomingData = false; // check if remoteSocket has incoming data
 	await remoteSocketReader.pipeTo(
@@ -993,7 +993,7 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHead
 						);
 					}
 					if (vlessHeader) {
-						webSocket.send(await new Blob([vlessHeader, chunk]).arrayBuffer());
+						webSocket.send(joinUint8Array(vlessHeader, chunk));
 						vlessHeader = null;
 					} else {
 						// seems no need rate limit this, CF seems fix this??..
@@ -1073,6 +1073,19 @@ function safeCloseWebSocket(socket) {
 	} catch (error) {
 		console.error('safeCloseWebSocket error', error);
 	}
+}
+
+/**
+ * 
+ * @param {Uint8Array} array1 
+ * @param {Uint8Array} array2
+ * @returns {Uint8Array} the merged Uint8Array
+ */
+export function joinUint8Array(array1, array2) {
+	let result = new Uint8Array(array1.byteLength + array2.byteLength);
+	result.set(array1);
+	result.set(array2, array1.byteLength);
+	return result;
 }
 
 const byteToHex = [];
