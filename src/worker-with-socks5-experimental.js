@@ -1003,47 +1003,57 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHead
 		let headerSent = false;
 		let hasIncomingData = false;
 	
-		remoteSocketReader.pipeTo(
-			new WritableStream({
-				start() {
-				},
-				/**
-				 * 
-				 * @param {Uint8Array} chunk 
-				 * @param {*} controller 
-				 */
-				async write(chunk, controller) {
-					hasIncomingData = true;
-					resolve(true);
+		// Add the response header and monitor if there is any traffic coming from the remote host.
+		remoteSocketReader.pipeThrough(new TransformStream({
+			start() {
+			},
+			transform(chunk, controller) {
+				// Resolve the promise immediately if we got any data from the remote host.
+				hasIncomingData = true;
+				resolve(true);
 
-					// remoteChunkCount++;
-					if (webSocket.readyState !== WS_READY_STATE_OPEN) {
-						controller.error(
-							'webSocket.readyState is not open, maybe close'
-						);
-					}
-					if (!headerSent) {
-						webSocket.send(joinUint8Array(vlessResponseHeader, chunk));
-						headerSent = true;
-					} else {
-						// seems no need rate limit this, CF seems fix this??..
-						// if (remoteChunkCount > 20000) {
-						// 	// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
-						// 	await delay(1);
-						// }
-						webSocket.send(chunk);
-					}
-				},
-				close() {
-					log(`remoteSocket.readable is close, hasIncomingData = ${hasIncomingData}`);
-					resolve(hasIncomingData);
-					// safeCloseWebSocket(webSocket); // no need server close websocket frist for some case will casue HTTP ERR_CONTENT_LENGTH_MISMATCH issue, client will send close event anyway.
-				},
-				// abort(reason) {
-				// 	console.error(`remoteSocket.readable aborts`, reason);
-				// },
-			})
-		)
+				if (!headerSent) {
+					controller.enqueue(joinUint8Array(vlessResponseHeader, chunk));
+					headerSent = true;
+				} else {
+					controller.enqueue(chunk);
+				}
+			},
+			flush(controller) {
+				log(`Response transformer flushed, hasIncomingData = ${hasIncomingData}`);
+
+				// The connection has been closed, resolve the promise anyway.
+				resolve(hasIncomingData);
+			}
+		}))
+		.pipeTo(new WritableStream({
+			start() {
+			},
+			async write(chunk, controller) {
+				// remoteChunkCount++;
+				if (webSocket.readyState !== WS_READY_STATE_OPEN) {
+					controller.error(
+						'webSocket.readyState is not open, maybe close'
+					);
+				}
+
+				// seems no need rate limit this, CF seems fix this??..
+				// if (remoteChunkCount > 20000) {
+				// 	// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
+				// 	await delay(1);
+				// }
+				webSocket.send(chunk);
+			},
+			close() {
+				// log(`remoteSocket.readable has been close`);
+				// The server dont need to close the websocket first, as it will cause ERR_CONTENT_LENGTH_MISMATCH
+				// The client will close the connection anyway.
+				// safeCloseWebSocket(webSocket); 
+			},
+			// abort(reason) {
+			// 	console.error(`remoteSocket.readable aborts`, reason);
+			// },
+		}))
 		.catch((error) => {
 			console.error(
 				`remoteSocketToWS has exception, readyState = ${webSocket.readyState} :`,
