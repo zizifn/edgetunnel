@@ -435,10 +435,12 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 			}
 
 			// ["version", "length of additional info"]
-			const vlessResponseHeader = new Uint8Array([vlessHeader.vlessVersion[0], 0]);
+			const vlessResponse = {
+				header: new Uint8Array([vlessHeader.vlessVersion[0], 0]),
+			}
 	
 			// Need to ensure the outbound proxy (if any) is ready before proceeding.
-			remoteTrafficSink = await handleOutBound(vlessHeader, chunk, webSocket, vlessResponseHeader, log);
+			remoteTrafficSink = await handleOutBound(vlessHeader, chunk, webSocket, vlessResponse, log);
 			// log('Outbound established!');
 		},
 		close() {
@@ -459,11 +461,11 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
  * @param {{isUDP: boolean, addressType: number, addressRemote: string, portRemote: number}} vlessRequest
  * @param {Uint8Array} rawClientData The raw client data to write.
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket The WebSocket to pass the remote socket to.
- * @param {Uint8Array} vlessResponseHeader The VLESS response header.
+ * @param {{header: Uint8Array}} vlessResponse Contains information to produce the vless reponse, such as the header.
  * @param {function} log The logging function.
  * @returns {Promise<WritableStream | null>} a non-null fulfill indicates the success connection to the destination or the remote proxy server
  */
-async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessResponseHeader, log) {
+async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessResponse, log) {
 	let curOutBoundPtr = {index: 0, serverIndex: 0};
 
 	// Check if we should forward UDP DNS requests to a designated TCP DNS server.
@@ -681,7 +683,7 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 		} 
 		
 		if (destRWPair != null) {
-			const hasIncomingData = await remoteSocketToWS(destRWPair.readableStream, webSocket, vlessResponseHeader, log);
+			const hasIncomingData = await remoteSocketToWS(destRWPair.readableStream, webSocket, vlessResponse, log);
 			if (hasIncomingData) {
 				return destRWPair.writableStream;
 			}
@@ -991,11 +993,11 @@ function processVlessHeader(
  * Stream data from the remote destination (any) to the client side (Websocket)
  * @param {ReadableStream} remoteSocketReader from the remote destination
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket to the client side
- * @param {Uint8Array} vlessResponseHeader header that should be send to the client side
+ * @param {{header: Uint8Array}} vlessResponse Contains information to produce the vless reponse, such as the header.
  * @param {*} log 
  * @returns {Promise<boolean>} has hasIncomingData
  */
-async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHeader, log) {
+async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponse, log) {
 	// This promise fulfills if:
 	// 1. There is any incoming data
 	// 2. The remoteSocketReader closes without any data
@@ -1013,7 +1015,7 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHead
 				resolve(true);
 
 				if (!headerSent) {
-					controller.enqueue(joinUint8Array(vlessResponseHeader, chunk));
+					controller.enqueue(joinUint8Array(vlessResponse.header, chunk));
 					headerSent = true;
 				} else {
 					controller.enqueue(chunk);
