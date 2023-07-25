@@ -386,11 +386,6 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 
 	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyData, null, log);
 
-	/** @type {{ writableStream: WritableStream | null}}*/
-	let toRemoteWrapper = {
-		writableStream: null,
-	};
-
 	let vlessHeader = null;
 
 	// This source stream only contains raw traffic from the client
@@ -421,34 +416,29 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 		}
 	}));
 
-	let outboundEstablished = false;
+	/** @type {WritableStream | null}*/
+	let remoteTrafficSink = null;
+
 	// ws --> remote
 	fromClientTraffic.pipeTo(new WritableStream({
 		async write(chunk, controller) {
-			// log(`outboundEstablished: ${outboundEstablished}`)
-			if (outboundEstablished) {
+			log(`remoteTrafficSink: ${remoteTrafficSink == null ? 'null' : 'ready'}`);
+			if (remoteTrafficSink) {
 				// After we parse the header and send the first chunk to the remote destination
 				// We assume that after the handshake, the stream only contains the original traffic.
 				// log('Send traffic from vless client to remote host');
-				const writer = toRemoteWrapper.writableStream.getWriter();
+				const writer = remoteTrafficSink.getWriter();
 				await writer.ready;
 				await writer.write(chunk);
 				writer.releaseLock();
 				return;
 			}
-			const {
-				addressType,
-				addressRemote,
-				portRemote,
-				vlessVersion, 
-				isUDP,
-			} = vlessHeader;
+
 			// ["version", "length of additional info"]
-			const vlessResponseHeader = new Uint8Array([vlessVersion[0], 0]);
+			const vlessResponseHeader = new Uint8Array([vlessHeader.vlessVersion[0], 0]);
 	
 			// Need to ensure the outbound proxy (if any) is ready before proceeding.
-			await handleOutBound(toRemoteWrapper, isUDP, addressType, addressRemote, portRemote, chunk, webSocket, vlessResponseHeader, log);
-			outboundEstablished = true;
+			remoteTrafficSink = await handleOutBound(vlessHeader, chunk, webSocket, vlessResponseHeader, log);
 			// log('Outbound established!');
 		},
 		close() {
@@ -466,19 +456,14 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 
 /**
  * Handles outbound connections.
- *
- * @param {{writableStream: WritableStream | null}} toRemoteWrapper 
- * @param {boolean} isUDP
- * @param {number} addressType The remote address type to connect to.
- * @param {string} addressRemote The remote address to connect to.
- * @param {number} portRemote The remote port to connect to.
+ * @param {{isUDP: boolean, addressType: number, addressRemote: string, portRemote: number}} vlessRequest
  * @param {Uint8Array} rawClientData The raw client data to write.
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket The WebSocket to pass the remote socket to.
  * @param {Uint8Array} vlessResponseHeader The VLESS response header.
  * @param {function} log The logging function.
- * @returns {Promise<void>} a fulfill indicates the success connection to the destination or the remote proxy server
+ * @returns {Promise<WritableStream | null>} a non-null fulfill indicates the success connection to the destination or the remote proxy server
  */
-async function handleOutBound(toRemoteWrapper, isUDP, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
+async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessResponseHeader, log) {
 	let curOutBoundPtr = {index: 0, serverIndex: 0};
 
 	// Check if we should forward UDP DNS requests to a designated TCP DNS server.
@@ -486,11 +471,11 @@ async function handleOutBound(toRemoteWrapper, isUDP, addressType, addressRemote
 	// so we can directly send raw vless traffic to the TCP DNS server.
 	// TCP DNS requests will not be touched.
 	// If fail to directly reach the TCP DNS server, UDP DNS request will be attempted on the other outbounds
-	const forwardDNS = isUDP && (portRemote == 53) && (globalConfig.dnsTCPServer ? true : false);
+	const forwardDNS = vlessRequest.isUDP && (vlessRequest.portRemote == 53) && (globalConfig.dnsTCPServer ? true : false);
 
 	// True if we absolutely need UDP outbound, fail otherwise
 	// False if we may use TCP to somehow resolve that UDP query
-	const enforceUDP = isUDP && !forwardDNS;
+	const enforceUDP = vlessRequest.isUDP && !forwardDNS;
 
 	/**
 	 *  @param {WritableStream} writableStream 
@@ -500,44 +485,52 @@ async function handleOutBound(toRemoteWrapper, isUDP, addressType, addressRemote
 		const writer = writableStream.getWriter();
 		await writer.write(firstChunk); // First write, normally is tls client hello
 		writer.releaseLock();
-		toRemoteWrapper.writableStream = writableStream;
 	}
 
 	async function direct() {
 		if (enforceUDP) {
 			// TODO: Check what will happen if addressType == VlessAddrType.DomainName and that domain only resolves to a IPv6
-			const udpClient = await platformAPI.associate(addressType == VlessAddrType.IPv6);
-			const writableStream = makeWritableUDPStream(udpClient, addressRemote, portRemote, log);
+			const udpClient = await platformAPI.associate(vlessRequest.addressType == VlessAddrType.IPv6);
+			const writableStream = makeWritableUDPStream(udpClient, vlessRequest.addressRemote, vlessRequest.portRemote, log);
 			const readableStream = makeReadableUDPStream(udpClient, log);
-			log(`Connected to UDP://${addressRemote}:${portRemote}`);
+			log(`Connected to UDP://${vlessRequest.addressRemote}:${vlessRequest.portRemote}`);
 			await writeFirstChunk(writableStream, rawClientData);
-			return readableStream;
+			return {
+				readableStream,
+				writableStream
+			};
 		}
 
-		let addressTCP = addressRemote;
+		let addressTCP = vlessRequest.addressRemote;
 		if (forwardDNS) {
 			addressTCP = globalConfig.dnsTCPServer;
-			log(`Redirect DNS request sent to UDP://${addressRemote}:${portRemote}`);
+			log(`Redirect DNS request sent to UDP://${vlessRequest.addressRemote}:${vlessRequest.portRemote}`);
 		}
 
-		const tcpSocket = await platformAPI.connect(addressTCP, portRemote);
+		const tcpSocket = await platformAPI.connect(addressTCP, vlessRequest.portRemote);
 		tcpSocket.closed.catch(error => log('[freedom] tcpSocket closed with error: ', error.message));
-		log(`Connecting to tcp://${addressTCP}:${portRemote}`);
+		log(`Connecting to tcp://${addressTCP}:${vlessRequest.portRemote}`);
 		await writeFirstChunk(tcpSocket.writable, rawClientData);
-		return tcpSocket.readable;
+		return {
+			readableStream: tcpSocket.readable, 
+			writableStream: tcpSocket.writable
+		};
 	}
 
 	async function forward(proxyServer, portMap) {
-		let portDest = portRemote;
-		if (typeof portMap === "object" && portMap[portRemote] !== undefined) {
-			portDest = portMap[portRemote];
+		let portDest = vlessRequest.portRemote;
+		if (typeof portMap === "object" && portMap[vlessRequest.portRemote] !== undefined) {
+			portDest = portMap[vlessRequest.portRemote];
 		}
 
 		const tcpSocket = await platformAPI.connect(proxyServer, portDest);
 		tcpSocket.closed.catch(error => log('[forward] tcpSocket closed with error: ', error.message));
-		log(`Forwarding tcp://${addressRemote}:${portRemote} to ${proxyServer}:${portDest}`);
+		log(`Forwarding tcp://${vlessRequest.addressRemote}:${vlessRequest.portRemote} to ${proxyServer}:${portDest}`);
 		await writeFirstChunk(tcpSocket.writable, rawClientData);
-		return tcpSocket.readable;
+		return {
+			readableStream: tcpSocket.readable, 
+			writableStream: tcpSocket.writable
+		};
 	}
 
 	// TODO: known problem, if we send an unreachable request to a valid socks5 server, it will wait indefinitely
@@ -545,15 +538,18 @@ async function handleOutBound(toRemoteWrapper, isUDP, addressType, addressRemote
 	async function socks5(address, port, user, pass) {
 		const tcpSocket = await platformAPI.connect(address, port);
 		tcpSocket.closed.catch(error => log('[socks] tcpSocket closed with error: ', error.message));
-		log(`Connecting to ${isUDP ? 'UDP' : 'TCP'}://${addressRemote}:${portRemote} via socks5 ${address}:${port}`);
+		log(`Connecting to ${vlessRequest.isUDP ? 'UDP' : 'TCP'}://${vlessRequest.addressRemote}:${vlessRequest.portRemote} via socks5 ${address}:${port}`);
 		try {
-			await socks5Connect(tcpSocket, user, pass, addressType, addressRemote, portRemote, log);
+			await socks5Connect(tcpSocket, user, pass, vlessRequest.addressType, vlessRequest.addressRemote, vlessRequest.portRemote, log);
 		} catch(err) {
 			log(`Socks5 outbound failed with: ${err.message}`);
 			return null;
 		}
 		await writeFirstChunk(tcpSocket.writable, rawClientData);
-		return tcpSocket.readable;
+		return {
+			readableStream: tcpSocket.readable, 
+			writableStream: tcpSocket.writable
+		};
 	}
 
 	/**
@@ -583,7 +579,7 @@ async function handleOutBound(toRemoteWrapper, isUDP, addressType, addressRemote
 		if (streamSettings.wsSettings && streamSettings.wsSettings.path) {
 			wsURL = wsURL + streamSettings.wsSettings.path;
 		}
-		log(`Connecting to ${isUDP ? 'UDP' : 'TCP'}://${addressRemote}:${portRemote} via vless ${wsURL}`);
+		log(`Connecting to ${vlessRequest.isUDP ? 'UDP' : 'TCP'}://${vlessRequest.addressRemote}:${vlessRequest.portRemote} via vless ${wsURL}`);
 
 		const wsToVlessServer = platformAPI.newWebSocket(wsURL);
 		const openPromise = new Promise((resolve, reject) => {
@@ -638,13 +634,16 @@ async function handleOutBound(toRemoteWrapper, isUDP, addressType, addressRemote
 		};
 
 		const readableStream = makeReadableWebSocketStream(wsToVlessServer, null, headerStripper, log);
-		const vlessReqHeader = makeVlessReqHeader(isUDP ? VlessCmd.UDP : VlessCmd.TCP, addressType, addressRemote, portRemote, uuid, rawClientData);
+		const vlessReqHeader = makeVlessReqHeader(vlessRequest.isUDP ? VlessCmd.UDP : VlessCmd.TCP, vlessRequest.addressType, vlessRequest.addressRemote, vlessRequest.portRemote, uuid, rawClientData);
 		// Send the first packet (header + rawClientData), then strip the response header with headerStripper
 		await writeFirstChunk(writableStream, joinUint8Array(vlessReqHeader, rawClientData));
-		return readableStream;
+		return {
+			readableStream, 
+			writableStream
+		};
 	}
 	
-	/** @returns {Promise<ReadableStream>} */
+	/** @returns {Promise<{readableStream: ReadableStream, writableStream: WritableStream} | null>} */
 	async function connectAndWrite() {
 		const outbound = getOutbound(curOutBoundPtr);
 		if (outbound == null) {
@@ -674,25 +673,27 @@ async function handleOutBound(toRemoteWrapper, isUDP, addressType, addressRemote
 	}
 
 	// Try each outbound method until we find a working one.
-	let outboundReadableStream = null;
+	/** @type {{readableStream: ReadableStream, writableStream: WritableStream} | null} */
+	let destRWPair = null;
 	while (curOutBoundPtr.index < globalConfig.outbounds.length) {
-		if (outboundReadableStream == null) {
-			outboundReadableStream = await connectAndWrite();
+		if (destRWPair == null) {
+			destRWPair = await connectAndWrite();
 		} 
 		
-		if (outboundReadableStream != null) {
-			const hasIncomingData = await remoteSocketToWS(outboundReadableStream, webSocket, vlessResponseHeader, log);
+		if (destRWPair != null) {
+			const hasIncomingData = await remoteSocketToWS(destRWPair.readableStream, webSocket, vlessResponseHeader, log);
 			if (hasIncomingData) {
-				return;
+				return destRWPair.writableStream;
 			}
 
 			// This outbound connects but does not work
-			outboundReadableStream = null;
+			destRWPair = null;
 		}
 	}
 
 	log('No more available outbound chain, abort!');
 	safeCloseWebSocket(webSocket);
+	return null;
 }
 
 /**
