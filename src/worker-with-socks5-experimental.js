@@ -422,7 +422,7 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 	// ws --> remote
 	fromClientTraffic.pipeTo(new WritableStream({
 		async write(chunk, controller) {
-			log(`remoteTrafficSink: ${remoteTrafficSink == null ? 'null' : 'ready'}`);
+			// log(`remoteTrafficSink: ${remoteTrafficSink == null ? 'null' : 'ready'}`);
 			if (remoteTrafficSink) {
 				// After we parse the header and send the first chunk to the remote destination
 				// We assume that after the handshake, the stream only contains the original traffic.
