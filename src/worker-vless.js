@@ -4,7 +4,7 @@ import { connect } from 'cloudflare:sockets';
 
 // How to generate your own UUID:
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
-let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
+let userID = '5081b17b-7bd2-4d34-b1fb-261edd467230';
 
 let proxyIP = '';
 
@@ -31,11 +31,32 @@ export default {
 					case '/':
 						return new Response(JSON.stringify(request.cf), { status: 200 });
 					case `/${userID}`: {
-						const vlessConfig = getVLESSConfig(userID, request.headers.get('Host'));
-						return new Response(`${vlessConfig}`, {
+						const [vlessMain, vlessConfig] = getVLESSConfig(userID, request.headers.get('Host'));
+						const html = `<!DOCTYPE html>
+							<body>
+							<title>connect info</title>
+
+							<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+							<h1>scan qrcode to connect.</h1>
+
+							<div id="qrcode"></div>
+
+							<br/>
+
+							<script type="text/javascript">
+								new QRCode(document.getElementById("qrcode"), "${vlessMain}");
+							</script>
+
+							<br/>
+
+							<pre>${vlessConfig}</pre>
+
+							</body>`;
+						return new Response(`${html}`, {
 							status: 200,
 							headers: {
-								"Content-Type": "text/plain;charset=utf-8",
+								"content-type": "text/html;charset=UTF-8",
 							}
 						});
 					}
@@ -600,8 +621,8 @@ async function handleUDPOutBound(webSocket, vlessResponseHeader, log) {
  * @returns {string}
  */
 function getVLESSConfig(userID, hostName) {
-	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`
-	return `
+	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`;
+	const result = `
 ################################################################
 v2ray
 ---------------------------------------------------------------
@@ -611,21 +632,21 @@ ${vlessMain}
 clash-meta
 ---------------------------------------------------------------
 - type: vless
-  name: ${hostName}
-  server: ${hostName}
-  port: 443
-  uuid: ${userID}
-  network: ws
-  tls: true
-  udp: false
-  sni: ${hostName}
-  client-fingerprint: chrome
-  ws-opts:
-    path: "/?ed=2048"
-    headers:
-      host: ${hostName}
+name: ${hostName}
+server: ${hostName}
+port: 443
+uuid: ${userID}
+network: ws
+tls: true
+udp: false
+sni: ${hostName}
+client-fingerprint: chrome
+ws-opts:
+	path: "/?ed=2048"
+	headers:
+	host: ${hostName}
 ---------------------------------------------------------------
 ################################################################
 `;
+	return [vlessMain, result];
 }
-
