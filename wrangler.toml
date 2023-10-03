@@ -1,11 +1,16 @@
-name = "cf-worker-ws-dev" # todo
+# name = "cf-worker-ws-dev" # todo
 #name = "cf-worker-connect-test" # todo
 #main = "test/worker/cf-cdn-cgi-trace2.js"
+name = "cf-worker-vmess" # todo
 
 #main = "test/worker/worker-connect-test.js"
-main = "src/worker-vless.js"
+# main = "src/worker-vless.js"
+main = "src/worker-vmess.js"
+# main = "src/test.js"
 
 compatibility_date = "2023-05-26"
+compatibility_flags = [ "nodejs_compat" ]
 
 [vars]
 # UUID = "example_dev_token"
+PROXYIP = "cdn.xn--b6gac.eu.org"

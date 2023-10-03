@@ -1,17 +1,30 @@
 // <!--GAMFC-->version base on commit 2b9927a1b12e03f8ad4731541caee2bc5c8f2e8e, time is 2023-06-22 15:09:34 UTC<!--GAMFC-END-->.
 // @ts-ignore
-import { connect } from 'cloudflare:sockets';
+// import { connect } from 'cloudflare:sockets';
+import { Buffer } from 'node:buffer'
+import AES from 'aes';
+import CRC32 from "crc-32";
+import jsSHA from "jssha";
+import { webcrypto as crypto } from "node:crypto"
 
 // How to generate your own UUID:
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
-let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
+let userID = '720bf125-9c89-4e5e-bc28-15dc910e1b66';
 
 let proxyIP = '';
-
 
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
 }
+
+export const uuidCmdKeyMap = new Map();
+const KDFSaltConstVMessAEADKDF = "VMess AEAD KDF";
+const KDFSaltConstAuthIDEncryptionKey = "AES Auth ID Encryption";
+const KDFSaltConstVMessHeaderPayloadLengthAEADKey = "VMess Header AEAD Key_Length"
+const KDFSaltConstVMessHeaderPayloadLengthAEADIV = "VMess Header AEAD Nonce_Length"
+const KDFSaltConstVMessHeaderPayloadAEADKey = "VMess Header AEAD Key"
+const KDFSaltConstVMessHeaderPayloadAEADIV = "VMess Header AEAD Nonce"
+
 
 export default {
 	/**
@@ -24,6 +37,11 @@ export default {
 		try {
 			userID = env.UUID || userID;
 			proxyIP = env.PROXYIP || proxyIP;
+			if (!uuidCmdKeyMap.get(userID)) {
+				const cmdKey = await convert2CMDKey(userID);
+				uuidCmdKeyMap.set(userID, cmdKey);
+				console.log(Buffer.from(cmdKey).toString('hex'));
+			}
 			const upgradeHeader = request.headers.get('Upgrade');
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
 				const url = new URL(request.url);
@@ -43,7 +61,7 @@ export default {
 						return new Response('Not found', { status: 404 });
 				}
 			} else {
-				return await vlessOverWSHandler(request);
+				return await vmessOverWSHandler(request);
 			}
 		} catch (err) {
 			/** @type {Error} */ let e = err;
@@ -54,12 +72,27 @@ export default {
 
 
 
+/**
+ * 
+ * @param {string} userID 
+ * @returns
+ */
+async function convert2CMDKey(userID) {
+	const cmdKeySource = Buffer.concat([Buffer.from(userID.replaceAll("-", ""), 'hex'), Buffer.from('c48619fe-8f02-49e0-b9e9-edf763e17e21')]);
+	const cmdKey = await crypto.subtle.digest(
+		{
+			name: 'MD5',
+		},
+		cmdKeySource
+	);
+	return cmdKey;
+}
 
 /**
  * 
  * @param {import("@cloudflare/workers-types").Request} request
  */
-async function vlessOverWSHandler(request) {
+async function vmessOverWSHandler(request) {
 
 	/** @type {import("@cloudflare/workers-types").WebSocket[]} */
 	// @ts-ignore
@@ -102,10 +135,11 @@ async function vlessOverWSHandler(request) {
 				message,
 				portRemote = 443,
 				addressRemote = '',
-				rawDataIndex,
+				rawVMESSEncryptedDataIndex,
+				requestBody,
 				vlessVersion = new Uint8Array([0, 0]),
 				isUDP,
-			} = processVlessHeader(chunk, userID);
+			} = await decodeVMESSRequestHeader(chunk, userID);
 			address = addressRemote;
 			portWithRandomLog = `${portRemote}--${Math.random()} ${isUDP ? 'udp ' : 'tcp '
 				} `;
@@ -125,9 +159,9 @@ async function vlessOverWSHandler(request) {
 					return;
 				}
 			}
-			// ["version", "附加信息长度 N"]
 			const vlessResponseHeader = new Uint8Array([vlessVersion[0], 0]);
-			const rawClientData = chunk.slice(rawDataIndex);
+			// const rawClientData = chunk.slice(rawDataIndex);
+
 
 			// TODO: support udp here when cf runtime has udp support
 			if (isDns) {
@@ -272,40 +306,129 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
 
 /**
  * 
- * @param { ArrayBuffer} vlessBuffer 
+ * @param { ArrayBuffer} vmessBuffer 
  * @param {string} userID 
  * @returns 
  */
-function processVlessHeader(
-	vlessBuffer,
+export async function decodeVMESSRequestHeader(
+	vmessBuffer,
 	userID
 ) {
-	if (vlessBuffer.byteLength < 24) {
+	const cmdkey = uuidCmdKeyMap.get(userID);
+	if (!cmdkey) {
+		return {
+			hasError: true,
+			message: 'invalid userID',
+		};
+	}
+	if (vmessBuffer.byteLength < 24) {
 		return {
 			hasError: true,
 			message: 'invalid data',
 		};
 	}
-	const version = new Uint8Array(vlessBuffer.slice(0, 1));
-	let isValidUser = false;
-	let isUDP = false;
-	if (stringify(new Uint8Array(vlessBuffer.slice(1, 17))) === userID) {
-		isValidUser = true;
+
+
+	const vmessNodeBuffer = Buffer.from(vmessBuffer);
+	// 1. authid(16 byte)
+	const authIDEncrypted = vmessNodeBuffer.subarray(0, 16);
+	let authIDSaltList = [Buffer.from(KDFSaltConstVMessAEADKDF), Buffer.from(KDFSaltConstAuthIDEncryptionKey)]
+	let authIDKey = await hmac_rec2(cmdkey, [...authIDSaltList])
+	authIDKey = authIDKey.subarray(0, 16);
+	const authIDAES = new AES(groupBufferBy4byte(authIDKey));
+	const authIDDecrypted = authIDAES.decrypt(groupBufferBy4byte(authIDEncrypted));
+	const authIDDecryptedHex = [];
+	for (const uint32Value of authIDDecrypted) {
+		const hexValue = uint32Value.toString(16).padStart(8, '0'); // Ensure each value is 8 characters long
+		authIDDecryptedHex.push(hexValue);
 	}
-	if (!isValidUser) {
+	const authIDDecryptedBuffer = Buffer.from(authIDDecryptedHex.join(''), "hex");
+	const time = authIDDecryptedBuffer.readBigInt64BE(0);
+	const rand = authIDDecryptedBuffer.readInt32BE(8);
+	const crc32Zero = authIDDecryptedBuffer.readUInt32BE(12);
+
+	const authIDChecksumSign = CRC32.buf(authIDDecryptedBuffer.subarray(0, 12));
+	const authIDChecksumUnSign = authIDChecksumSign >>> 0;
+	if (authIDChecksumUnSign !== crc32Zero) {
 		return {
 			hasError: true,
-			message: 'invalid user',
+			message: 'auth id checksum error',
+		};
+	}
+	const now = BigInt(Math.trunc(Date.now() / 1000));
+	if (time - now < 120) {
+		console.log("auth id time > 120s")
+		// return {
+		// 	hasError: true,
+		// 	message: 'auth id time > 120s',
+		// };
+	}
+
+	// 2. OpenVMessAEADHeader
+	// 2.1 payloadHeaderLengthAEADEncrypted(18 bytes)
+	// 2.2 nonce(8 bytes) 8f88be3d980ed2f8
+	const payloadHeaderLengthAEADEncrypted = vmessNodeBuffer.subarray(16, 34)
+	const nonceForOpenVMessAEADHeader = vmessNodeBuffer.subarray(34, 42)
+	const payloadHeaderLengthSaltList =
+		[Buffer.from(KDFSaltConstVMessAEADKDF),
+		Buffer.from(KDFSaltConstVMessHeaderPayloadLengthAEADKey),
+			authIDEncrypted, nonceForOpenVMessAEADHeader]
+	const payloadHeaderLengthAEADKey = (await hmac_rec2(cmdkey, payloadHeaderLengthSaltList)).subarray(0, 16);
+	const payloadHeaderNonceSaltList =
+		[Buffer.from(KDFSaltConstVMessAEADKDF),
+		Buffer.from(KDFSaltConstVMessHeaderPayloadLengthAEADIV),
+			authIDEncrypted, nonceForOpenVMessAEADHeader]
+	const payloadHeaderLengthAEADNonce = (await hmac_rec2(cmdkey, payloadHeaderNonceSaltList)).subarray(0, 12);
+	const aesGCMPayloadHeaderLengthAlgorithm = { name: 'AES-GCM', iv: payloadHeaderLengthAEADNonce, additionalData: authIDEncrypted };
+	const payloadHeaderLengthGCMKEY =
+		await crypto.subtle.importKey('raw', payloadHeaderLengthAEADKey, 'AES-GCM', false, ['decrypt']);
+	const decryptedAEADHeaderLengthPayload = await crypto.subtle.decrypt(aesGCMPayloadHeaderLengthAlgorithm, payloadHeaderLengthGCMKEY, payloadHeaderLengthAEADEncrypted);
+	const headerLength = Buffer.from(decryptedAEADHeaderLengthPayload).readInt16BE();
+
+	// 2.3 payloadHeaderAEADEncrypted
+	const rawVMESSEncryptedDataIndex = 42 + headerLength + 16; // use length + 16
+	const payloadHeaderAEADEncrypted = vmessNodeBuffer.subarray(42, rawVMESSEncryptedDataIndex);
+	let payloadHeaderSaltList = [Buffer.from(KDFSaltConstVMessAEADKDF), Buffer.from(KDFSaltConstVMessHeaderPayloadAEADKey), authIDEncrypted, nonceForOpenVMessAEADHeader]
+	const payloadHeaderAEADKey = (await hmac_rec2(cmdkey, payloadHeaderSaltList)).subarray(0, 16);
+	payloadHeaderSaltList = [Buffer.from(KDFSaltConstVMessAEADKDF), Buffer.from(KDFSaltConstVMessHeaderPayloadAEADIV), authIDEncrypted, nonceForOpenVMessAEADHeader]
+	const payloadHeaderAEADIV = (await hmac_rec2(cmdkey, payloadHeaderSaltList)).subarray(0, 12);
+	const aesGCMPayloadHeaderAlgorithm = { name: 'AES-GCM', iv: payloadHeaderAEADIV, additionalData: authIDEncrypted };
+	const payloadHeaderGCMKEY =
+		await crypto.subtle.importKey('raw', payloadHeaderAEADKey, 'AES-GCM', false, ['decrypt']);
+
+	const decryptedAEADHeader = await crypto.subtle.decrypt(aesGCMPayloadHeaderAlgorithm, payloadHeaderGCMKEY, payloadHeaderAEADEncrypted);
+	console.log(decryptedAEADHeader);
+	const decryptedAEADHeaderPayload = Buffer.from(decryptedAEADHeader);
+	let vmessHeadercursor = 1;
+
+	// https://xtls.github.io/development/protocols/vmess.html#%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AF%B7%E6%B1%82
+	const version = new Uint8Array(decryptedAEADHeaderPayload.subarray(0, 1));
+	const requestBodyIV = decryptedAEADHeaderPayload.subarray(1, 17);
+	const requestBodyKey = decryptedAEADHeaderPayload.subarray(17, 33);
+	const VmessResponseHeader = decryptedAEADHeaderPayload.subarray(33, 34);
+	const option = decryptedAEADHeaderPayload.subarray(34, 35)
+	const paddingLenAndSecurity = decryptedAEADHeaderPayload.subarray(35, 36);
+	const paddingLen = paddingLenAndSecurity[0] >> 4; // 0x65 >> 4 = 0x6
+	// for now ONLY support 5: "NONE",
+	// 0: "UNKNOWN",
+	// 1: "LEGACY",
+	// 2: "AUTO",
+	// 3: "AES128_GCM",
+	// 4: "CHACHA20_POLY1305",
+	// 5: "NONE",
+	// 6: "ZERO",
+	const security = paddingLenAndSecurity[0] & 0x0F; // // 0x65 & 0x0F = 0x6
+	if (security !== 5) {
+		return {
+			hasError: true,
+			message: `Only support security as NONE`,
 		};
 	}
 
-	const optLength = new Uint8Array(vlessBuffer.slice(17, 18))[0];
-	//skip opt for now
+	const resverd = decryptedAEADHeaderPayload.subarray(36, 37)[0];
 
-	const command = new Uint8Array(
-		vlessBuffer.slice(18 + optLength, 18 + optLength + 1)
-	)[0];
-
+	// VMESS header btye 37
+	const command = decryptedAEADHeaderPayload.subarray(37, 38)[0];
 	// 0x01 TCP
 	// 0x02 UDP
 	// 0x03 MUX
@@ -318,50 +441,26 @@ function processVlessHeader(
 			message: `command ${command} is not support, command 01-tcp,02-udp,03-mux`,
 		};
 	}
-	const portIndex = 18 + optLength + 1;
-	const portBuffer = vlessBuffer.slice(portIndex, portIndex + 2);
-	// port is big-Endian in raw data etc 80 == 0x005d
-	const portRemote = new DataView(portBuffer).getUint16(0);
-
-	let addressIndex = portIndex + 2;
-	const addressBuffer = new Uint8Array(
-		vlessBuffer.slice(addressIndex, addressIndex + 1)
-	);
+	const portRemote = decryptedAEADHeaderPayload.subarray(38, 40).readUInt16BE();
 
 	// 1--> ipv4  addressLength =4
 	// 2--> domain name addressLength=addressBuffer[1]
 	// 3--> ipv6  addressLength =16
-	const addressType = addressBuffer[0];
-	let addressLength = 0;
-	let addressValueIndex = addressIndex + 1;
+	const addressType = decryptedAEADHeaderPayload.subarray(40, 41)[0]
+	vmessHeadercursor = 41;
 	let addressValue = '';
 	switch (addressType) {
 		case 1:
-			addressLength = 4;
-			addressValue = new Uint8Array(
-				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
-			).join('.');
+			addressValue = decryptedAEADHeaderPayload.subarray(vmessHeadercursor, vmessHeadercursor += 4).join('.');
 			break;
 		case 2:
-			addressLength = new Uint8Array(
-				vlessBuffer.slice(addressValueIndex, addressValueIndex + 1)
-			)[0];
-			addressValueIndex += 1;
-			addressValue = new TextDecoder().decode(
-				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
-			);
+			const addressLength = decryptedAEADHeaderPayload.subarray(vmessHeadercursor, vmessHeadercursor += 1).readUInt8();
+			addressValue = decryptedAEADHeaderPayload.subarray(vmessHeadercursor, vmessHeadercursor += addressLength).toString("utf8");
 			break;
 		case 3:
-			addressLength = 16;
-			const dataView = new DataView(
-				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
-			);
+			const addressValueBuffer = decryptedAEADHeaderPayload.subarray(vmessHeadercursor, vmessHeadercursor += 16);
 			// 2001:0db8:85a3:0000:0000:8a2e:0370:7334
-			const ipv6 = [];
-			for (let i = 0; i < 8; i++) {
-				ipv6.push(dataView.getUint16(i * 2).toString(16));
-			}
-			addressValue = ipv6.join(':');
+			addressValue = addressValueBuffer.toString('hex').match(/.{1,4}/g).join(':');
 			// seems no need add [] for ipv6
 			break;
 		default:
@@ -377,17 +476,65 @@ function processVlessHeader(
 		};
 	}
 
+	// somehow v2ray need validate padding, but I'm too stupid/SB, skip this
+	const padding = decryptedAEADHeaderPayload.subarray(vmessHeadercursor, vmessHeadercursor += paddingLen);
+	// smowhow v2ray need validate network raw data buffer.BytesTo(-4), but again but I'm too stupid/SB, skip this
+	const checkSum = decryptedAEADHeaderPayload.subarray(vmessHeadercursor, vmessHeadercursor += 4)
+
 	return {
 		hasError: false,
 		addressRemote: addressValue,
 		addressType,
 		portRemote,
-		rawDataIndex: addressValueIndex + addressLength,
 		vlessVersion: version,
 		isUDP,
+		security,
+		requestBodyIV,
+		requestBody: vmessNodeBuffer.subarray(rawVMESSEncryptedDataIndex)
 	};
 }
 
+function lengthMask(nonce) {
+	const shaObj = new jsSHA("SHAKE128", "ARRAYBUFFER");
+	shaObj.update(nonce);
+	const maskHEX = shaObj.getHash("HEX", { outputLen: 128 })
+	console.log(maskHEX);
+	const maskBuffer = Buffer.from(maskHEX, "hex");
+	let index = 0;
+	function next() {
+		const mask = maskBuffer.readUint16BE(index);
+		index += 2;
+		return mask;
+	}
+
+	return next;
+}
+
+/**
+ * 
+ * @param {Buffer} requestBody 
+ * @param {Buffer} requestBodyIV 
+ */
+export async function decodeVMESSRequestBody(requestBody, requestBodyIV) {
+
+
+}
+
+
+
+
+/**
+ * 
+ * @param {Buffer} authIDKey 
+ * @returns 
+ */
+function groupBufferBy4byte(authIDKey) {
+	const result = [];
+	for (let i = 0; i < authIDKey.length; i += 4) {
+		result.push(authIDKey.readUInt32BE(i));
+	}
+	return result;
+}
 
 /**
  * 
@@ -628,4 +775,31 @@ clash-meta
 ################################################################
 `;
 }
+
+//#region help method
+async function hmac_rec2(data, keyList) {
+	const digest = 'SHA-256', blockSizeOfDigest = 64
+	var key = keyList.pop()
+	if (keyList.length > 0) {
+		let k = null;
+		// adjust key (according to HMAC specification)
+		if (key.length > blockSizeOfDigest) { k = Buffer.allocUnsafe(blockSizeOfDigest).fill('\x00'); (await hmac_rec2(key, [...keyList])).copy(k) }
+		else if (key.length < blockSizeOfDigest) { k = Buffer.allocUnsafe(blockSizeOfDigest).fill('\x00'); key.copy(k) }
+		else k = key
+		// create 'key xor ipad' and 'key xor opad' (according to HMAC specification)  
+		var ik = Buffer.allocUnsafe(blockSizeOfDigest), ok = Buffer.allocUnsafe(blockSizeOfDigest)
+		k.copy(ik); k.copy(ok)
+		for (var i = 0; i < ik.length; i++) { ik[i] = 0x36 ^ ik[i]; ok[i] = 0x5c ^ ok[i] }
+		// calculate HMac(HMac)
+		var innerHMac = await hmac_rec2(Buffer.concat([ik, data]), [...keyList])
+		var hMac = await hmac_rec2(Buffer.concat([ok, innerHMac]), [...keyList])
+	} else {
+		// calculate regular HMac(Hash)
+		var keyMaterial = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: digest }, false, ['sign']);
+		var hMac = Buffer.from(await crypto.subtle.sign('HMAC', keyMaterial, data));
+
+	}
+	return hMac
+}
+//#endregion
 
