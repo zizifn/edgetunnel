@@ -533,7 +533,9 @@ export async function decodeVMESSRequestHeader(
 	let aeadResponseHeaderPayloadEncryptionIV = await hmac_rec2(responseBodyIV, [...keyList])
 	aeadResponseHeaderPayloadEncryptionIV = aeadResponseHeaderPayloadEncryptionIV.subarray(0, 12)
 	// console.log(aeadResponseHeaderPayloadEncryptionIV);
-
+	// https://xtls.github.io/development/protocols/vmess.html#%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%BA%94%E7%AD%94
+	// 响应认证 V	选项 Opt	指令 Cmd	指令长度 M
+	// 				00			00			00 // we not support cmd in cf worker
 	const rawRespHeader = Buffer.concat([vmessResponseHeaderV, Buffer.from("000000", "hex")])
 	const lengthBuffer = new ArrayBuffer(2);
 	new DataView(lengthBuffer).setInt16(0, rawRespHeader.length, false)
@@ -560,9 +562,6 @@ export async function decodeVMESSRequestHeader(
 		portRemote,
 		version,
 		vmessResponseHeaderV,
-		// https://xtls.github.io/development/protocols/vmess.html#%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%BA%94%E7%AD%94
-		// 响应认证 V	选项 Opt	指令 Cmd	指令长度 M
-		// 				00			00			00 // we not support cmd in cf worker
 		vmessResponseHeader: Buffer.concat([Buffer.from(encryptedAEADHeaderLengthPayload), Buffer.from(encryptedAEADHeaderPayload)]),
 		isUDP,
 		security,
@@ -589,7 +588,7 @@ class ChunkSizeParser {
 		this.data = data;
 		const shaObj = new jsSHA("SHAKE128", "ARRAYBUFFER");
 		shaObj.update(nonce);
-		const maskHEX = shaObj.getHash("HEX", { outputLen: 128 })
+		const maskHEX = shaObj.getHash("HEX", { outputLen: 256 })
 		console.log(maskHEX);
 		const maskBuffer = Buffer.from(maskHEX, "hex");
 		this.maskBuffer = maskBuffer;
@@ -610,13 +609,14 @@ class ChunkSizeParser {
 function chunkSizeParser(nonce) {
 	const shaObj = new jsSHA("SHAKE128", "ARRAYBUFFER");
 	shaObj.update(nonce);
-	const maskHEX = shaObj.getHash("HEX", { outputLen: 128 })
-	console.log(maskHEX);
+	const maskHEX = shaObj.getHash("HEX", { outputLen: 10240 })
+	// console.log("xxxxx-----", maskHEX);
 	const maskBuffer = Buffer.from(maskHEX, "hex");
 	let index = 0;
 	function next() {
 		const mask = maskBuffer.readUint16BE(index);
 		index += 2;
+		// console.log("xxxxx---index--", index);
 		return mask;
 	}
 
@@ -689,7 +689,7 @@ async function remoteSocketToWS(remoteSocket, webSocket, { vmessResponseHeader, 
 						const sizeBuffer = new ArrayBuffer(2);
 						new DataView(sizeBuffer).setInt16(0, size, false);
 						const respBuffer = Buffer.concat([vmessHeader, Buffer.from(sizeBuffer), chunk]);
-						console.log(respBuffer.toString("hex"));
+						// console.log(respBuffer.toString("hex"));
 						webSocket.send(respBuffer);
 						vmessHeader = null;
 					} else {
@@ -704,7 +704,7 @@ async function remoteSocketToWS(remoteSocket, webSocket, { vmessResponseHeader, 
 						const sizeBuffer = new ArrayBuffer(2);
 						new DataView(sizeBuffer).setInt16(0, size, false);
 						const respBuffer = Buffer.concat([Buffer.from(sizeBuffer), chunk]);
-						console.log(respBuffer.toString("hex"));
+						// console.log(respBuffer.toString("hex"));
 						webSocket.send(respBuffer);
 					}
 				},

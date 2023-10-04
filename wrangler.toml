@@ -13,4 +13,4 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 # UUID = "example_dev_token"
-PROXYIP = "cdn.xn--b6gac.eu.org"
+PROXYIP = "edgetunnel.anycast.eu.org"
