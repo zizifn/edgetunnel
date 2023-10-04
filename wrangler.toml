@@ -5,11 +5,11 @@ name = "cf-worker-vmess" # todo
 
 #main = "test/worker/worker-connect-test.js"
 # main = "src/worker-vless.js"
-main = "src/worker-vmess.js"
+main = "src/worker-vmess-beta.js"
 # main = "src/test.js"
 
 compatibility_date = "2023-05-26"
-compatibility_flags = [ "nodejs_compat" ]
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 # UUID = "example_dev_token"

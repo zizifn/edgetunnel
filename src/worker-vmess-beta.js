@@ -1,11 +1,13 @@
 // <!--GAMFC-->version base on commit 2b9927a1b12e03f8ad4731541caee2bc5c8f2e8e, time is 2023-06-22 15:09:34 UTC<!--GAMFC-END-->.
 // @ts-ignore
-// import { connect } from 'cloudflare:sockets';
+
+import { connect } from 'cloudflare:sockets';
+// import { webcrypto as crypto } from "node:crypto"
 import { Buffer } from 'node:buffer'
 import AES from 'aes';
 import CRC32 from "crc-32";
 import jsSHA from "jssha";
-import { webcrypto as crypto } from "node:crypto"
+
 
 // How to generate your own UUID:
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
@@ -24,7 +26,10 @@ const KDFSaltConstVMessHeaderPayloadLengthAEADKey = "VMess Header AEAD Key_Lengt
 const KDFSaltConstVMessHeaderPayloadLengthAEADIV = "VMess Header AEAD Nonce_Length"
 const KDFSaltConstVMessHeaderPayloadAEADKey = "VMess Header AEAD Key"
 const KDFSaltConstVMessHeaderPayloadAEADIV = "VMess Header AEAD Nonce"
-
+const KDFSaltConstAEADRespHeaderLenKey = "AEAD Resp Header Len Key"
+const KDFSaltConstAEADRespHeaderLenIV = "AEAD Resp Header Len IV"
+const KDFSaltConstAEADRespHeaderPayloadKey = "AEAD Resp Header Key"
+const KDFSaltConstAEADRespHeaderPayloadIV = "AEAD Resp Header IV"
 
 export default {
 	/**
@@ -85,7 +90,7 @@ async function convert2CMDKey(userID) {
 		},
 		cmdKeySource
 	);
-	return cmdKey;
+	return Buffer.from(cmdKey);
 }
 
 /**
@@ -116,7 +121,8 @@ async function vmessOverWSHandler(request) {
 	};
 	let udpStreamWrite = null;
 	let isDns = false;
-
+	let reqMaskFun = null;
+	const maskFun = null;
 	// ws --> remote
 	readableWebSocketStream.pipeTo(new WritableStream({
 		async write(chunk, controller) {
@@ -125,11 +131,19 @@ async function vmessOverWSHandler(request) {
 			}
 			if (remoteSocketWapper.value) {
 				const writer = remoteSocketWapper.value.writable.getWriter()
-				await writer.write(chunk);
+				const chunkBuffer = Buffer.from(chunk);
+				const dataLength = chunkBuffer.subarray(0, 2).readUInt16BE(0);
+				const realSize = reqMaskFun() ^ dataLength;
+				if (chunkBuffer.length - 2 !== realSize) {
+					throw new Error('request body package size is large than chunk size, need split it');
+				}
+				const rawClientData = chunkBuffer.subarray(2, realSize + 2);
+				await writer.write(rawClientData);
 				writer.releaseLock();
 				return;
 			}
 
+			/** @type{ { requestBody: Buffer}} */
 			const {
 				hasError,
 				message,
@@ -137,10 +151,13 @@ async function vmessOverWSHandler(request) {
 				addressRemote = '',
 				rawVMESSEncryptedDataIndex,
 				requestBody,
-				vlessVersion = new Uint8Array([0, 0]),
+				requestMaskFun,
+				respMaskFun,
 				isUDP,
+				vmessResponseHeader
 			} = await decodeVMESSRequestHeader(chunk, userID);
 			address = addressRemote;
+			reqMaskFun = requestMaskFun;
 			portWithRandomLog = `${portRemote}--${Math.random()} ${isUDP ? 'udp ' : 'tcp '
 				} `;
 			if (hasError) {
@@ -159,18 +176,21 @@ async function vmessOverWSHandler(request) {
 					return;
 				}
 			}
-			const vlessResponseHeader = new Uint8Array([vlessVersion[0], 0]);
-			// const rawClientData = chunk.slice(rawDataIndex);
 
-
+			const dateLength = requestBody.subarray(0, 2).readUInt16BE(0);
+			const realSize = reqMaskFun() ^ dateLength;
+			if (requestBody.length - 2 !== realSize) {
+				throw new Error('request body package size is large than chunk size, need split it');
+			}
+			const rawClientData = requestBody.subarray(2, realSize + 2);
 			// TODO: support udp here when cf runtime has udp support
 			if (isDns) {
-				const { write } = await handleUDPOutBound(webSocket, vlessResponseHeader, log);
+				const { write } = await handleUDPOutBound(webSocket, vmessResponseHeader, log);
 				udpStreamWrite = write;
 				udpStreamWrite(rawClientData);
 				return;
 			}
-			handleTCPOutBound(remoteSocketWapper, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
+			handleTCPOutBound(remoteSocketWapper, addressRemote, portRemote, rawClientData, webSocket, { vmessResponseHeader, respMaskFun }, log);
 		},
 		close() {
 			log(`readableWebSocketStream is close`);
@@ -197,11 +217,11 @@ async function vmessOverWSHandler(request) {
  * @param {number} portRemote The remote port to connect to.
  * @param {Uint8Array} rawClientData The raw client data to write.
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket The WebSocket to pass the remote socket to.
- * @param {Uint8Array} vlessResponseHeader The VLESS response header.
+ * @param {{vmessResponseHeader: Buffer, respMaskFun: ()=> number}} vmessResponseHeader The VLESS response header.
  * @param {function} log The logging function.
  * @returns {Promise<void>} The remote socket.
  */
-async function handleTCPOutBound(remoteSocket, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
+async function handleTCPOutBound(remoteSocket, addressRemote, portRemote, rawClientData, webSocket, vmessResponseHeader, log,) {
 	async function connectAndWrite(address, port) {
 		/** @type {import("@cloudflare/workers-types").Socket} */
 		const tcpSocket = connect({
@@ -225,14 +245,14 @@ async function handleTCPOutBound(remoteSocket, addressRemote, portRemote, rawCli
 		}).finally(() => {
 			safeCloseWebSocket(webSocket);
 		})
-		remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, null, log);
+		remoteSocketToWS(tcpSocket, webSocket, vmessResponseHeader, null, log);
 	}
 
 	const tcpSocket = await connectAndWrite(addressRemote, portRemote);
 
 	// when remoteSocket is ready, pass to websocket
 	// remote--> ws
-	remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, retry, log);
+	remoteSocketToWS(tcpSocket, webSocket, vmessResponseHeader, retry, log);
 }
 
 /**
@@ -308,7 +328,7 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
  * 
  * @param { ArrayBuffer} vmessBuffer 
  * @param {string} userID 
- * @returns 
+ * @returns  
  */
 export async function decodeVMESSRequestHeader(
 	vmessBuffer,
@@ -330,6 +350,7 @@ export async function decodeVMESSRequestHeader(
 
 
 	const vmessNodeBuffer = Buffer.from(vmessBuffer);
+	console.log(vmessNodeBuffer.toString("hex"));
 	// 1. authid(16 byte)
 	const authIDEncrypted = vmessNodeBuffer.subarray(0, 16);
 	let authIDSaltList = [Buffer.from(KDFSaltConstVMessAEADKDF), Buffer.from(KDFSaltConstAuthIDEncryptionKey)]
@@ -344,6 +365,7 @@ export async function decodeVMESSRequestHeader(
 	}
 	const authIDDecryptedBuffer = Buffer.from(authIDDecryptedHex.join(''), "hex");
 	const time = authIDDecryptedBuffer.readBigInt64BE(0);
+	console.log(time);
 	const rand = authIDDecryptedBuffer.readInt32BE(8);
 	const crc32Zero = authIDDecryptedBuffer.readUInt32BE(12);
 
@@ -356,7 +378,7 @@ export async function decodeVMESSRequestHeader(
 		};
 	}
 	const now = BigInt(Math.trunc(Date.now() / 1000));
-	if (time - now < 120) {
+	if (now - time < 120) {
 		console.log("auth id time > 120s")
 		// return {
 		// 	hasError: true,
@@ -405,7 +427,7 @@ export async function decodeVMESSRequestHeader(
 	const version = new Uint8Array(decryptedAEADHeaderPayload.subarray(0, 1));
 	const requestBodyIV = decryptedAEADHeaderPayload.subarray(1, 17);
 	const requestBodyKey = decryptedAEADHeaderPayload.subarray(17, 33);
-	const VmessResponseHeader = decryptedAEADHeaderPayload.subarray(33, 34);
+	const vmessResponseHeaderV = decryptedAEADHeaderPayload.subarray(33, 34);
 	const option = decryptedAEADHeaderPayload.subarray(34, 35)
 	const paddingLenAndSecurity = decryptedAEADHeaderPayload.subarray(35, 36);
 	const paddingLen = paddingLenAndSecurity[0] >> 4; // 0x65 >> 4 = 0x6
@@ -432,6 +454,7 @@ export async function decodeVMESSRequestHeader(
 	// 0x01 TCP
 	// 0x02 UDP
 	// 0x03 MUX
+	let isUDP = false;
 	if (command === 1) {
 	} else if (command === 2) {
 		isUDP = true;
@@ -476,25 +499,115 @@ export async function decodeVMESSRequestHeader(
 		};
 	}
 
-	// somehow v2ray need validate padding, but I'm too stupid/SB, skip this
+	// smowhow v2ray need validate network raw data buffer.BytesTo(-4), but again I'm too stupid, skip this
 	const padding = decryptedAEADHeaderPayload.subarray(vmessHeadercursor, vmessHeadercursor += paddingLen);
-	// smowhow v2ray need validate network raw data buffer.BytesTo(-4), but again but I'm too stupid/SB, skip this
-	const checkSum = decryptedAEADHeaderPayload.subarray(vmessHeadercursor, vmessHeadercursor += 4)
+	const checkSum = decryptedAEADHeaderPayload.subarray(vmessHeadercursor, vmessHeadercursor += 4);
 
-	return {
+
+	// key and iv for response header length
+	const responseBodyKeyArrayBuffer = (await crypto.subtle.digest("SHA-256", requestBodyKey)).slice(0, 16);
+	const responseBodyKey = Buffer.from(responseBodyKeyArrayBuffer);
+	const responseBodyIVArrayBuffer = (await crypto.subtle.digest("SHA-256", requestBodyIV)).slice(0, 16);
+	const responseBodyIV = Buffer.from(responseBodyIVArrayBuffer);
+
+
+	let keyList = [Buffer.from(KDFSaltConstVMessAEADKDF), Buffer.from(KDFSaltConstAEADRespHeaderLenKey)]
+	/** @type{Buffer} */
+	let aeadResponseHeaderLengthEncryptionKey = await hmac_rec2(responseBodyKey, [...keyList])
+	aeadResponseHeaderLengthEncryptionKey = aeadResponseHeaderLengthEncryptionKey.subarray(0, 16)
+	// console.log(aeadResponseHeaderLengthEncryptionKey);
+	keyList = [Buffer.from(KDFSaltConstVMessAEADKDF), Buffer.from(KDFSaltConstAEADRespHeaderLenIV)]
+
+	let aeadResponseHeaderLengthEncryptionIV = await hmac_rec2(responseBodyIV, [...keyList])
+	aeadResponseHeaderLengthEncryptionIV = aeadResponseHeaderLengthEncryptionIV.subarray(0, 12)
+	// console.log(aeadResponseHeaderLengthEncryptionIV);
+
+	// key and iv for response header
+	keyList = [Buffer.from(KDFSaltConstVMessAEADKDF), Buffer.from(KDFSaltConstAEADRespHeaderPayloadKey)]
+	/** @type{Buffer} */
+	let aeadResponseHeaderPayloadEncryptionKey = await hmac_rec2(responseBodyKey, [...keyList])
+	aeadResponseHeaderPayloadEncryptionKey = aeadResponseHeaderPayloadEncryptionKey.subarray(0, 16)
+	// console.log(aeadResponseHeaderPayloadEncryptionKey);
+	keyList = [Buffer.from(KDFSaltConstVMessAEADKDF), Buffer.from(KDFSaltConstAEADRespHeaderPayloadIV)]
+
+	let aeadResponseHeaderPayloadEncryptionIV = await hmac_rec2(responseBodyIV, [...keyList])
+	aeadResponseHeaderPayloadEncryptionIV = aeadResponseHeaderPayloadEncryptionIV.subarray(0, 12)
+	// console.log(aeadResponseHeaderPayloadEncryptionIV);
+
+	const rawRespHeader = Buffer.concat([vmessResponseHeaderV, Buffer.from("000000", "hex")])
+	const lengthBuffer = new ArrayBuffer(2);
+	new DataView(lengthBuffer).setInt16(0, rawRespHeader.length, false)
+
+	const aesGCMRespPayloadHeaderLengthAlgorithm = { name: 'AES-GCM', iv: aeadResponseHeaderLengthEncryptionIV, additionalData: undefined };
+	const respPayloadHeaderLengthGCMKEY =
+		await crypto.subtle.importKey('raw', aeadResponseHeaderLengthEncryptionKey, 'AES-GCM', false, ["encrypt", "decrypt"]);
+	const encryptedAEADHeaderLengthPayload = await crypto.subtle.encrypt(aesGCMRespPayloadHeaderLengthAlgorithm, respPayloadHeaderLengthGCMKEY, lengthBuffer);
+	// console.log(decryptedAEADHeaderLengthPayload);
+
+	const aaeadResponseHeaderPayloadAlgorithmAlgorithm = { name: 'AES-GCM', iv: aeadResponseHeaderPayloadEncryptionIV, additionalData: undefined };
+	const aeadResponseHeaderPayloadAlgorithmGCMKEY =
+		await crypto.subtle.importKey('raw', aeadResponseHeaderPayloadEncryptionKey, 'AES-GCM', false, ["encrypt", "decrypt"]);
+	const encryptedAEADHeaderPayload = await crypto.subtle.encrypt(aaeadResponseHeaderPayloadAlgorithmAlgorithm, aeadResponseHeaderPayloadAlgorithmGCMKEY, rawRespHeader);
+	// console.log(encryptedAEADHeaderPayload);
+
+	const requestMaskFun = chunkSizeParser(requestBodyIV);
+	const respMaskFun = chunkSizeParser(responseBodyIV);
+
+	const result = {
 		hasError: false,
 		addressRemote: addressValue,
 		addressType,
 		portRemote,
-		vlessVersion: version,
+		version,
+		vmessResponseHeaderV,
+		// https://xtls.github.io/development/protocols/vmess.html#%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%BA%94%E7%AD%94
+		// 响应认证 V	选项 Opt	指令 Cmd	指令长度 M
+		// 				00			00			00 // we not support cmd in cf worker
+		vmessResponseHeader: Buffer.concat([Buffer.from(encryptedAEADHeaderLengthPayload), Buffer.from(encryptedAEADHeaderPayload)]),
 		isUDP,
 		security,
+		option,
+		requestBodyKey,
 		requestBodyIV,
-		requestBody: vmessNodeBuffer.subarray(rawVMESSEncryptedDataIndex)
-	};
+		rawVMESSEncryptedDataIndex,
+		requestBody: vmessNodeBuffer.subarray(rawVMESSEncryptedDataIndex),
+		aeadResponseHeaderLengthEncryptionKey,
+		aeadResponseHeaderLengthEncryptionIV,
+		aeadResponseHeaderPayloadEncryptionKey,
+		aeadResponseHeaderPayloadEncryptionIV,
+		requestMaskFun,
+		respMaskFun
+	}
+	// console.log(JSON.stringify(result));
+	return result;
 }
 
-function lengthMask(nonce) {
+
+class ChunkSizeParser {
+	constructor(nonce, data) {
+		this.nonce = nonce;
+		this.data = data;
+		const shaObj = new jsSHA("SHAKE128", "ARRAYBUFFER");
+		shaObj.update(nonce);
+		const maskHEX = shaObj.getHash("HEX", { outputLen: 128 })
+		console.log(maskHEX);
+		const maskBuffer = Buffer.from(maskHEX, "hex");
+		this.maskBuffer = maskBuffer;
+	}
+	encode() {
+
+	}
+
+	decode() {
+
+	}
+}
+/**
+ * get real size for request 
+ * @param {*} nonce 
+ * @returns 
+ */
+function chunkSizeParser(nonce) {
 	const shaObj = new jsSHA("SHAKE128", "ARRAYBUFFER");
 	shaObj.update(nonce);
 	const maskHEX = shaObj.getHash("HEX", { outputLen: 128 })
@@ -540,16 +653,16 @@ function groupBufferBy4byte(authIDKey) {
  * 
  * @param {import("@cloudflare/workers-types").Socket} remoteSocket 
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket 
- * @param {ArrayBuffer} vlessResponseHeader 
+ * @param {{vmessResponseHeader: Buffer, respMaskFun: ()=> number}} vlessResponseHeader The VLESS response header.
  * @param {(() => Promise<void>) | null} retry
  * @param {*} log 
  */
-async function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, retry, log) {
+async function remoteSocketToWS(remoteSocket, webSocket, { vmessResponseHeader, respMaskFun }, retry, log) {
 	// remote--> ws
 	let remoteChunkCount = 0;
 	let chunks = [];
 	/** @type {ArrayBuffer | null} */
-	let vlessHeader = vlessResponseHeader;
+	let vmessHeader = vmessResponseHeader;
 	let hasIncomingData = false; // check if remoteSocket has incoming data
 	await remoteSocket.readable
 		.pipeTo(
@@ -569,16 +682,30 @@ async function remoteSocketToWS(remoteSocket, webSocket, vlessResponseHeader, re
 							'webSocket.readyState is not open, maybe close'
 						);
 					}
-					if (vlessHeader) {
-						webSocket.send(await new Blob([vlessHeader, chunk]).arrayBuffer());
-						vlessHeader = null;
+					if (vmessHeader) {
+						const realSize = chunk.length;
+						const mask = respMaskFun();
+						const size = mask ^ realSize;
+						const sizeBuffer = new ArrayBuffer(2);
+						new DataView(sizeBuffer).setInt16(0, size, false);
+						const respBuffer = Buffer.concat([vmessHeader, Buffer.from(sizeBuffer), chunk]);
+						console.log(respBuffer.toString("hex"));
+						webSocket.send(respBuffer);
+						vmessHeader = null;
 					} else {
 						// seems no need rate limit this, CF seems fix this??..
 						// if (remoteChunkCount > 20000) {
 						// 	// cf one package is 4096 byte(4kb),  4096 * 20000 = 80M
 						// 	await delay(1);
 						// }
-						webSocket.send(chunk);
+						const realSize = chunk.length;
+						const mask = respMaskFun();
+						const size = mask ^ realSize;
+						const sizeBuffer = new ArrayBuffer(2);
+						new DataView(sizeBuffer).setInt16(0, size, false);
+						const respBuffer = Buffer.concat([Buffer.from(sizeBuffer), chunk]);
+						console.log(respBuffer.toString("hex"));
+						webSocket.send(respBuffer);
 					}
 				},
 				close() {
