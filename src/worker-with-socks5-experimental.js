@@ -6,6 +6,18 @@ import { connect } from 'cloudflare:sockets';
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
 let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
+
+// To speficy byo, all needed is just to append the server addr
+// capsuled by the pair of this tag (e.g. _BYO_[2606:4700:4700::1111]_BYO_, in which case '[2606:4700:4700::1111]' will route Cloudflare's traffic)
+// to the end of HTTP path, with our byoTriggerFlag (supposing we are taking "byoOn" as our byoTriggerFlag here)
+// (e.g. "https://example.com/path"  => "https://example.com/path/byoOn/[2606:4700:4700::1111]" ) .
+// Once byo's speficied as showcased before, all CF traffic would be routed by the given byo, 
+// which otherwise would be sent to the endpoint specified in the following code.
+
+const byoTriggerFlag    = 'byoOn';
+
+const defaultCfEndpoint = '';
+
 let proxyIP = '';
 
 // The user name and password do not contain special characters
@@ -30,7 +42,16 @@ export default {
 	async fetch(request, env, ctx) {
 		try {
 			userID = env.UUID || userID;
-			proxyIP = env.PROXYIP || proxyIP;
+
+			const url = new URL(request.url);
+			let _internal_byo_regex = '_0_\/.*'.replaceAll('_0_',byoTriggerFlag);
+			_internal_byo_regex = new RegExp(_internal_byo_regex, 'g');
+			if ( url.pathname.includes(byoTriggerFlag) ) {
+				proxyIP = ((url.pathname.match(_internal_byo_regex)[0]).replaceAll(byoTriggerFlag + '/',''));
+			} else {
+				proxyIP = env.PROXYIP || defaultCfEndpoint;
+			}
+
 			socks5Address = env.SOCKS5 || socks5Address;
 			if (socks5Address) {
 				try {
@@ -58,6 +79,11 @@ export default {
 						});
 					}
 					default:
+						if ( url.pathname.includes(userID) & url.pathname.includes('debug') ) {
+							let _debugString = proxyIP ? proxyIP : 'undefined';
+							return new Response('Debugging...\n\n' + '	currentRelayEndpoint: ' + _debugString, { status: 404 });//TODEL
+						} // SO FAR SO GOOD
+
 						return new Response('Not found', { status: 404 });
 				}
 			} else {
