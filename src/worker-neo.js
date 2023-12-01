@@ -3,17 +3,25 @@
 // How to generate your own UUID:
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
 // [Linux] Run uuidgen in terminal
-export let globalConfig = {
+export const globalConfig = {
 	userID: 'd342d11e-d424-4583-b36e-524ab1f0afa4',
 
-	// Time to wait before an outbound Websocket connection is established, in ms.
+	/**
+	 * Time to wait before an outbound Websocket connection is considered timeout, in ms.
+	 * */
 	openWSOutboundTimeout: 10000,
 
-	// Since Cloudflare Worker does not support UDP outbound, we may try DNS over TCP.
-	// Set to an empty string to disable UDP to TCP forwarding for DNS queries.
+	/**
+	 * Since Cloudflare Worker does not support UDP outbound, we may try DNS over TCP.
+	 * Set to an empty string to disable UDP to TCP forwarding for DNS queries.
+	 * @type {string}
+	 */
 	dnsTCPServer: "8.8.4.4",
 
-	// The order controls where to send the traffic after the previous one fails
+	/**
+	 * The order controls where to send the traffic after the previous one fails.
+	 * @type {Outbound[]}
+	 */
 	outbounds: [
 		{
 			protocol: "freedom"	// Compulsory, outbound locally.
@@ -21,48 +29,162 @@ export let globalConfig = {
 	]
 };
 
+/**
+ * Defines a Cloudflare Worker compatible TCP connection.
+ * @typedef {Object} CloudflareTCPConnection
+ * @property {ReadableStream<Uint8Array>} readable the readable side of the TCP socket.
+ * @property {WritableStream<Uint8Array>} writable the writable side of the TCP socket, accepts Uint8Array only.
+ * @property {Promise<void>} closed - This promise is resolved when the socket is closed and is rejected if the socket encounters an error.
+ */
+
+/**
+ * @typedef {Object} NodeJSUDPRemoteInfo
+ * @property {string} address
+ * @property {'IPv4' | 'IPv6'} family
+ * @property {number} port
+ * @property {number} size
+ */
+
+/**
+ * Defines a NodeJS compatible UDP API.
+ * @typedef {Object} NodeJSUDP
+ * @property {(datagram: any, offset: number, length: number, port: number, address: string, sendDoneCallback: (err: Error | null, bytes: number) => void) => void} send
+ * @property {() => void} close
+ * @property {(handler: (msg: Uint8Array, rinfo: NodeJSUDPRemoteInfo) => void) => void} onmessage
+ * @property {(handler: (err: Error) => void) => void} onerror
+ */
+
 // If you use this file as an ES module, you should set all fields below.
-export let platformAPI = {
+export const platformAPI = {
 	/** 
- 	* A wrapper for the TCP API, should return a Cloudflare Worker compatible socket.
-	* The result is wrapped in a Promise, as in some platforms, the socket creation is async.
-	* See: https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/
- 	* @type {(host: string, port: number) => Promise<
-	*    {
-	*      readable: ReadableStream, 
-	*      writable: {getWriter: () => {write: (data) => void, releaseLock: () => void}},
-	*      closed: {Promise<void>}
-	*    }>
-	*  }
- 	*/
+	 * A wrapper for the TCP API, should return a Cloudflare Worker compatible socket.
+	 * The result is wrapped in a Promise, as in some platforms, the socket creation is async.
+	 * See: https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/
+	 * @type {(host: string, port: number) => Promise<CloudflareTCPConnection>}
+	 */
 	connect: null,
 
 	/** 
- 	* A wrapper for the Websocket API.
- 	* @type {(url: string) => WebSocket} returns a WebSocket, should be compatile with the standard WebSocket API.
- 	*/
+	 * A wrapper for the Websocket API.
+	 * @type {(url: string) => WebSocket} returns a WebSocket, should be compatile with the standard WebSocket API.
+	 */
 	newWebSocket: null,
 
 	/** 
- 	* A wrapper for the UDP API, should return a NodeJS compatible UDP socket.
-	* The result is wrapped in a Promise, as in some platforms, the socket creation is async.
- 	* @type {(isIPv6: boolean) => Promise<
-	*    {
-	*      send: (datagram: any, offset: number, length: number, port: number, address: string, sendDoneCallback: (err: Error | null, bytes: number) => void) => void, 
-	*      close: () => void,
-	*      onmessage: (handler: (msg: Buffer, rinfo: RemoteInfo) => void) => void,
-	*      onerror: (handler: (err: Error) => void) => void,
-	*    }>
-	*  }
- 	*/
+	 * A wrapper for the UDP API, should return a NodeJS compatible UDP socket.
+	 * The result is wrapped in a Promise, as in some platforms, the socket creation is async.
+	 * @type {(isIPv6: boolean) => Promise<NodeJSUDP>
+	 *  }
+	 */
 	associate: null,
 }
 
 /**
+ * The base type of all outbound definitions.
+ * @typedef {{
+ * 	protocol: string,
+ *  settings?: {}
+ * }} Outbound
+ */
+
+/**
+ * Represents a local outbound.
+ * @typedef {Outbound & {
+ * 	protocol: 'freedom',
+ * 	settings: undefined,
+ * }} FreedomOutbound
+ */
+
+/**
+ * @typedef {{[key: number]: number}} PortMap
+ */
+
+/**
+ * Represents a forwarding outbound.
+ * First, the destination port of the request will be mapped according to portMap.
+ * If none matches, the destination port remains unchanged.
+ * Then, the request stream will be redirected to the given address.
+ * @typedef {Outbound & {
+ * 	protocol: 'forward',
+ * 	address: string,
+ * 	portMap?: PortMap
+ * }} ForwardOutbound
+ */
+
+/**
+ * @typedef {{
+ * 	address: string,
+ * 	port: number,
+ * 	users?: {
+ * 		user: string,
+ * 		pass: string,
+ * 	}[]
+ * }} Socks5Server
+ */
+
+/**
+ * Represents a socks5 outbound.
+ * @typedef {Outbound & {
+ * 	protocol: 'socks',
+ * 	settings: {
+ * 		servers: Socks5Server[]
+ * 	}
+ * }} Socks5Outbound
+ */
+
+/**
+ * @typedef {{
+ * 	address: string,
+ * 	port: number,
+ * 	users?: {
+ * 		id: string,
+ * 	}[]
+ * }} VlessServer
+ */
+
+/**
+ * Represents a Vless WebSocket outbound.
+ * @typedef {Outbound & {
+ * 	protocol: 'vless',
+ * 	settings: {
+ * 		vnext: VlessServer[]
+ * 	},
+ * 	streamSettings: StreamSettings
+ * }} VlessWsOutbound
+ */
+
+/**
+ * @typedef {Object} StreamSettings
+ * @property {'ws'} network
+ * @property {'none' | 'tls'} security
+ * @property {{
+ * 	path?: string,
+ * 	headers ?: {
+ * 		Host: string
+ * 	}
+ * }} wsSettings
+ * @property {{
+ * 	serverName: string,
+ * 	allowInsecure: boolean,
+ * }} [tlsSettings]
+ */
+
+/**
+ * @typedef {{
+ * 	protocol: string,
+ * 	address?: string,
+ * 	port?: number,
+ * 	portMap?: PortMap,
+ * 	user?: string,
+ * 	pass?: string,
+ * 	streamSettings?: StreamSettings,
+ * }} OutboundInstance
+ */
+
+/**
  * Foreach globalConfig.outbounds, start with {index: 0, serverIndex: 0}
  * @param {{index: number, serverIndex: number}} curPos
- * @returns {{protocol: string, address: string, port: number, user: string, pass: string,
- *  portMap: {Number: number}}}
+ * @returns {OutboundInstance?}
  */
 function getOutbound(curPos) {
 	if (curPos.index >= globalConfig.outbounds.length) {
@@ -70,46 +192,58 @@ function getOutbound(curPos) {
 		return null;
 	}
 
-	const outbound = globalConfig.outbounds.at(curPos.index);
+	const outbound = globalConfig.outbounds[curPos.index];
 	let serverCount = 0;
-	/** @type {[{}]} */
-	let servers;
-	/** @type {{address: string, port: number}} */
-	let curServer;
-	let retVal = { protocol: outbound.protocol };
+
+	/** @type {OutboundInstance} */
+	const retVal = { protocol: outbound.protocol };
 	switch (outbound.protocol) {
 		case 'freedom':
 			break;
 
-		case 'forward':
-			retVal.address = outbound.address;
-			retVal.portMap = outbound.portMap;
+		case 'forward': {
+			/** @type {ForwardOutbound} */
+			// @ts-ignore: type casting
+			const forwardOutbound = outbound;
+			retVal.address = forwardOutbound.address;
+			retVal.portMap = forwardOutbound.portMap;
 			break;
+		}
 
-		case 'socks':
-			servers = outbound.settings.vnext;
+		case 'socks': {
+			/** @type {Socks5Outbound} */
+			// @ts-ignore: type casting
+			const socks5Outbound = outbound;
+			const servers = socks5Outbound.settings.servers;
 			serverCount = servers.length;
-			curServer = servers.at(curPos.serverIndex);
+
+			const curServer = servers[curPos.serverIndex];
 			retVal.address = curServer.address;
 			retVal.port = curServer.port;
 
 			if (curServer.users && curServer.users.length > 0) {
-				const firstUser = curServer.users.at(0);
+				const firstUser = curServer.users[0];
 				retVal.user = firstUser.user;
 				retVal.pass = firstUser.pass;
 			}
 			break;
+		}
 
-		case 'vless':
-			servers = outbound.settings.vnext;
+		case 'vless': {
+			/** @type {VlessWsOutbound} */
+			// @ts-ignore: type casting
+			const vlessOutbound = outbound;
+			const servers = vlessOutbound.settings.vnext;
 			serverCount = servers.length;
-			curServer = servers.at(curPos.serverIndex);
+
+			const curServer = servers[curPos.serverIndex];
 			retVal.address = curServer.address;
 			retVal.port = curServer.port;
 
-			retVal.pass = curServer.users.at(0).id;
-			retVal.streamSettings = outbound.streamSettings;
+			retVal.pass = curServer.users[0].id;
+			retVal.streamSettings = vlessOutbound.streamSettings;
 			break;
+		}
 
 		default:
 			throw new Error(`Unknown outbound protocol: ${outbound.protocol}`);
@@ -125,6 +259,10 @@ function getOutbound(curPos) {
 	return retVal;
 }
 
+/**
+ * @param {string} protocolName
+ * @returns {boolean} true if the given protocol supports UDP outbound.
+ */
 function canOutboundUDPVia(protocolName) {
 	switch(protocolName) {
 		case 'freedom':
@@ -139,11 +277,11 @@ function canOutboundUDPVia(protocolName) {
  * Setup the config (uuid & outbounds) from environmental variables.
  * This is the simplest case and should be preferred where possible.
  * @param {{
- *  UUID: string, 
- *  PROXYIP: string,	// E.g. 114.51.4.0
- *  PORTMAP: string,	// E.g. {443:8443}
- *  VLESS: string,		// E.g. vless://uuid@domain.name:port?type=ws&security=tls
- *  SOCKS5: string		// E.g. user:pass@host:port or host:port
+ *  UUID?: string, 
+ *  PROXYIP?: string,	// E.g. 114.51.4.0
+ *  PORTMAP?: string,	// E.g. {443:8443}
+ *  VLESS?: string,		// E.g. vless://uuid@domain.name:port?type=ws&security=tls
+ *  SOCKS5?: string		// E.g. user:pass@host:port or host:port
  * }} env
  */
 export function setConfigFromEnv(env) {
@@ -156,7 +294,8 @@ export function setConfigFromEnv(env) {
 	];
 
 	if (env.PROXYIP) {
-		let forward = {
+		/** @type {ForwardOutbound} */
+		const forward = {
 			protocol: "forward",
 			address: env.PROXYIP
 		};
@@ -181,7 +320,8 @@ export function setConfigFromEnv(env) {
 				descriptiveText
 			} = parseVlessString(env.VLESS);
 
-			let vless = {
+			/** @type {VlessServer} */
+			const vless = {
 				"address": remoteHost,
 				"port": remotePort,
 				"users": [
@@ -191,7 +331,9 @@ export function setConfigFromEnv(env) {
 				]
 			};
 
-			let streamSettings = {
+			// TODO: Validate vless here
+			/** @type {StreamSettings} */
+			const streamSettings = {
 				"network": queryParams['type'],
 				"security": queryParams['security'],
 			}
@@ -212,16 +354,18 @@ export function setConfigFromEnv(env) {
 				};
 			}
 
-			globalConfig['outbounds'].push({
+			/** @type {VlessWsOutbound} */
+			const vlessOutbound = {
 				protocol: "vless",
 				settings: {
 					"vnext": [ vless ]
 				},
 				streamSettings: streamSettings
-			});
+			};
+			globalConfig['outbounds'].push(vlessOutbound);
 		} catch (err) {
 			/** @type {Error} */
-			let e = err;
+			const e = err;
 			console.log(e.toString());
 		}
 	}
@@ -237,7 +381,8 @@ export function setConfigFromEnv(env) {
 				port,
 			} = socks5AddressParser(env.SOCKS5);
 
-			let socks = {
+			/** @type {Socks5Server} */
+			const socks = {
 				"address": hostname,
 				"port": port
 			}
@@ -254,7 +399,7 @@ export function setConfigFromEnv(env) {
 			globalConfig['outbounds'].push({
 				protocol: "socks",
 				settings: {
-					"vnext": [ socks ]
+					"servers": [ socks ]
 				}
 			});
 		} catch (err) {
@@ -268,9 +413,9 @@ export function setConfigFromEnv(env) {
 // Cloudflare Workers entry
 export default {
 	/**
-	 * @param {import("@cloudflare/workers-types").Request} request
+	 * @param {Request} request
 	 * @param {{UUID: string, PROXYIP: string}} env
-	 * @param {import("@cloudflare/workers-types").ExecutionContext} ctx
+	 * @param {ExecutionContext} ctx
 	 * @returns {Promise<Response>}
 	 */
 	async fetch(request, env, ctx) {
@@ -299,7 +444,7 @@ export default {
 						return new Response('Not found', { status: 404 });
 				}
 			} else {
-				/** @type {import("@cloudflare/workers-types").WebSocket[]} */
+				/** @type {WebSocket[]} */
 				// @ts-ignore
 				const webSocketPair = new WebSocketPair();
 				const [client, webSocket] = Object.values(webSocketPair);
@@ -365,6 +510,10 @@ try {
 }
 
 /**
+ * @typedef {(info: string, event?: string) => void} LogFunction
+ */
+
+/**
  * If you use this file as an ES module, you call this function whenever your Websocket server accepts a new connection.
  * 
  * @param {WebSocket} webSocket The established websocket connection to the client, must be an accepted
@@ -374,7 +523,8 @@ try {
  */
 export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 	let logPrefix = '';
-	const log = (/** @type {string} */ info, /** @type {string | undefined} */ event) => {
+	/** @type {LogFunction} */
+	const log = (info, event) => {
 		console.log(`[${logPrefix}] ${info}`, event || '');
 	};
 
@@ -390,7 +540,8 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 
 	// This source stream only contains raw traffic from the client
 	// The vless header is stripped and parsed first.
-	const fromClientTraffic = readableWebSocketStream.pipeThrough(new TransformStream({
+	/** @type {TransformStream<Uint8Array, Uint8Array>} */
+	const vlessHeaderProcessor = new TransformStream({
 		start() {
 		},
 		transform(chunk, controller) {
@@ -414,9 +565,10 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 		},
 		flush(controller){
 		}
-	}));
+	});
+	const fromClientTraffic = readableWebSocketStream.pipeThrough(vlessHeaderProcessor);
 
-	/** @type {WritableStream | null}*/
+	/** @type {WritableStream<Uint8Array> | null}*/
 	let remoteTrafficSink = null;
 
 	// ws --> remote
@@ -457,16 +609,23 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 }
 
 /**
+ * @typedef {{
+ * 	readableStream: ReadableStream<Uint8Array>,
+ * 	writableStream: WritableStream<Uint8Array>,
+ * }} OutboundConnection
+ */
+
+/**
  * Handles outbound connections.
  * @param {{isUDP: boolean, addressType: number, addressRemote: string, portRemote: number}} vlessRequest
  * @param {Uint8Array} rawClientData The raw client data to write.
- * @param {import("@cloudflare/workers-types").WebSocket} webSocket The WebSocket to pass the remote socket to.
- * @param {{header: Uint8Array}} vlessResponse Contains information to produce the vless reponse, such as the header.
- * @param {function} log The logging function.
- * @returns {Promise<WritableStream | null>} a non-null fulfill indicates the success connection to the destination or the remote proxy server
+ * @param {WebSocket} webSocket The WebSocket to pass the remote socket to.
+ * @param {{header: Uint8Array}} vlessResponse Contains information to produce the vless response, such as the header.
+ * @param {LogFunction} log The logger function.
+ * @returns a non-null fulfill indicates the success connection to the destination or the remote proxy server
  */
 async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessResponse, log) {
-	let curOutBoundPtr = {index: 0, serverIndex: 0};
+	const curOutBoundPtr = {index: 0, serverIndex: 0};
 
 	// Check if we should forward UDP DNS requests to a designated TCP DNS server.
 	// The vless packing of UDP datagrams is identical to the one used in TCP DNS protocol,
@@ -489,6 +648,9 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 		writer.releaseLock();
 	}
 
+	/**
+	 * @returns {Promise<OutboundConnection>}
+	 */
 	async function direct() {
 		if (enforceUDP) {
 			// TODO: Check what will happen if addressType == VlessAddrType.DomainName and that domain only resolves to a IPv6
@@ -519,6 +681,11 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 		};
 	}
 
+	/**
+	 * @param {string} proxyServer
+	 * @param {PortMap} [portMap]
+	 * @returns {Promise<OutboundConnection>}
+	 */
 	async function forward(proxyServer, portMap) {
 		let portDest = vlessRequest.portRemote;
 		if (typeof portMap === "object" && portMap[vlessRequest.portRemote] !== undefined) {
@@ -537,6 +704,13 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 
 	// TODO: known problem, if we send an unreachable request to a valid socks5 server, it will wait indefinitely
 	// TODO: Add support for proxying UDP via socks5 on runtimes that support UDP outbound
+	/**
+	 * @param {string} address
+	 * @param {number} port
+	 * @param {string} user
+	 * @param {string} pass
+	 * @returns {Promise<OutboundConnection>}
+	 */
 	async function socks5(address, port, user, pass) {
 		const tcpSocket = await platformAPI.connect(address, port);
 		tcpSocket.closed.catch(error => log('[socks] tcpSocket closed with error: ', error.message));
@@ -563,10 +737,11 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 	 * In the case of UDP, a 16-bit big-endian length field is prepended to each UDP datagram and then send through the streams.
 	 * The first message exchange still applies.
 	 * 
-	 * @param {string} address 
-	 * @param {number} port 
-	 * @param {string} uuid 
-	 * @param {{network: string, security: string}} streamSettings 
+	 * @param {string} address
+	 * @param {number} port
+	 * @param {string} uuid
+	 * @param {StreamSettings} streamSettings
+	 * @returns {Promise<OutboundConnection>}
 	 */
 	async function vless(address, port, uuid, streamSettings) {
 		try {
@@ -603,6 +778,7 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 			return null;
 		}
 
+		/** @type {WritableStream<Uint8Array>} */
 		const writableStream = new WritableStream({
 			async write(chunk, controller) {
 				wsToVlessServer.send(chunk);
@@ -645,7 +821,7 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 		};
 	}
 	
-	/** @returns {Promise<{readableStream: ReadableStream, writableStream: WritableStream} | null>} */
+	/** @returns {Promise<OutboundConnection | null>} */
 	async function connectAndWrite() {
 		const outbound = getOutbound(curOutBoundPtr);
 		if (outbound == null) {
@@ -675,7 +851,7 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 	}
 
 	// Try each outbound method until we find a working one.
-	/** @type {{readableStream: ReadableStream, writableStream: WritableStream} | null} */
+	/** @type {OutboundConnection | null} */
 	let destRWPair = null;
 	while (curOutBoundPtr.index < globalConfig.outbounds.length) {
 		if (destRWPair == null) {
@@ -702,11 +878,12 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
  * Make a source out of a UDP socket, wrap each datagram with vless UDP packing.
  * Each receive datagram will be prepended with a 16-bit big-endian length field.
  * 
- * @param {*} udpClient
- * @param {(info: string)=> void} log
- * @returns {ReadableStream} Datagrams received will be wrapped and made available in this stream.
+ * @param {NodeJSUDP} udpClient
+ * @param {LogFunction} log
+ * @returns {ReadableStream<Uint8Array>} Datagrams received will be wrapped and made available in this stream.
  */
 function makeReadableUDPStream(udpClient, log) {
+	/** @type {ReadableStream<Uint8Array>} */
 	return new ReadableStream({
 		start(controller) {
 			udpClient.onmessage((message, info) => {
@@ -732,25 +909,23 @@ function makeReadableUDPStream(udpClient, log) {
  * Make a sink out of a UDP socket, the input stream assumes valid vless UDP packing.
  * Each datagram to be sent should be prepended with a 16-bit big-endian length field.
  * 
- * @param {*} udpClient 
- * @param {string} addressRemote 
- * @param {port} portRemote 
- * @param {(info: string)=> void} log
- * @returns {WritableStream} write to this stream will send datagrams via UDP.
+ * @param {NodeJSUDP} udpClient
+ * @param {string} addressRemote
+ * @param {number} portRemote
+ * @param {LogFunction} log
+ * @returns {WritableStream<ArrayBuffer | Uint8Array>} write to this stream will send datagrams via UDP.
  */
 function makeWritableUDPStream(udpClient, addressRemote, portRemote, log) {
 	/** @type {Uint8Array} */
 	let leftoverData = new Uint8Array(0);
 
+	/** @type {WritableStream<ArrayBuffer | Uint8Array>} */
 	return new WritableStream({
-		/** @param {ArrayBuffer} chunk */
 		write(chunk, controller) {
 			let byteArray = new Uint8Array(chunk);
 			if (leftoverData.byteLength > 0) {
 				// If we have any leftover data from previous chunk, merge it first
-				byteArray = new Uint8Array(leftoverData.byteLength + chunk.byteLength);
-				byteArray.set(leftoverData, 0);
-				byteArray.set(new Uint8Array(chunk), leftoverData.byteLength);
+				byteArray = joinUint8Array(leftoverData, byteArray);
 			}
 
 			let i = 0;
@@ -790,9 +965,12 @@ function makeWritableUDPStream(udpClient, addressRemote, portRemote, log) {
 	});
 }
 
-function safeCloseUDP(socket) {
+/**
+ * @param {NodeJSUDP} udpClient
+ */
+function safeCloseUDP(udpClient) {
 	try {
-		socket.close();
+		udpClient.close();
 	} catch (error) {
 		console.error('safeCloseUDP error', error);
 	}
@@ -802,16 +980,18 @@ function safeCloseUDP(socket) {
  * Make a source out of a WebSocket connection.
  * A ReadableStream should be created before performing any kind of write operation.
  * 
- * @param {import("@cloudflare/workers-types").WebSocket} webSocketServer
+ * @param {WebSocket} webSocketServer
  * @param {Uint8Array} earlyData Data received before the ReadableStream was created
  * @param {(firstChunk : Uint8Array) => Uint8Array} headStripper In some protocol like Vless, 
  *  a header is prepended to the first data chunk, it is necessary to strip that header.
- * @param {(info: string)=> void} log
- * @returns {ReadableStream} a source of Uint8Array chunks
+ * @param {LogFunction} log
+ * @returns {ReadableStream<Uint8Array>} a source of Uint8Array chunks
  */
 function makeReadableWebSocketStream(webSocketServer, earlyData, headStripper, log) {
 	let readableStreamCancel = false;
 	let headStripped = false;
+
+	/** @type {ReadableStream<Uint8Array>} */
 	const stream = new ReadableStream({
 		start(controller) {
 			if (earlyData) {
@@ -906,7 +1086,7 @@ function processVlessHeader(
 	const version = vlessBuffer.slice(0, 1);
 	let isValidUser = false;
 	let isUDP = false;
-	if (stringify(vlessBuffer.slice(1, 17)) === userID) {
+	if (uuidFromBytesSafe(vlessBuffer.slice(1, 17)) === userID) {
 		isValidUser = true;
 	}
 	if (!isValidUser) {
@@ -921,10 +1101,9 @@ function processVlessHeader(
 
 	const command = vlessBuffer.slice(18 + optLength, 18 + optLength + 1)[0];
 
-	if (command === VlessCmd.TCP) {
-	} else if (command === VlessCmd.UDP) {
+	if (command === VlessCmd.UDP) {
 		isUDP = true;
-	} else {
+	} else if (command !== VlessCmd.TCP) {
 		return {
 			hasError: true,
 			message: `Invalid command type: ${command}, only accepts: ${JSON.stringify(VlessCmd)}`,
@@ -934,7 +1113,7 @@ function processVlessHeader(
 	// port is big-Endian in raw data etc 80 == 0x0050
 	const portRemote = (vlessBuffer[portIndex] << 8) | vlessBuffer[portIndex + 1];
 
-	let addressIndex = portIndex + 2;
+	const addressIndex = portIndex + 2;
 	const addressBuffer = vlessBuffer.slice(addressIndex, addressIndex + 1);
 
 	const addressType = addressBuffer[0];
@@ -953,7 +1132,7 @@ function processVlessHeader(
 				vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength)
 			);
 			break;
-		case VlessAddrType.IPv6:
+		case VlessAddrType.IPv6: {
 			addressLength = 16;
 			const ipv6Bytes = vlessBuffer.slice(addressValueIndex, addressValueIndex + addressLength);
 			// 2001:0db8:85a3:0000:0000:8a2e:0370:7334
@@ -965,6 +1144,7 @@ function processVlessHeader(
 			addressValue = ipv6.join(':');
 			// seems no need add [] for ipv6
 			break;
+		}
 		default:
 			return {
 				hasError: true,
@@ -991,16 +1171,17 @@ function processVlessHeader(
 
 /**
  * Stream data from the remote destination (any) to the client side (Websocket)
- * @param {ReadableStream} remoteSocketReader from the remote destination
- * @param {import("@cloudflare/workers-types").WebSocket} webSocket to the client side
+ * @param {ReadableStream<Uint8Array>} remoteSocketReader from the remote destination
+ * @param {WebSocket} webSocket to the client side
  * @param {{header: Uint8Array}} vlessResponse Contains information to produce the vless reponse, such as the header.
- * @param {*} log 
+ * @param {LogFunction} log 
  * @returns {Promise<boolean>} has hasIncomingData
  */
 async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponse, log) {
 	// This promise fulfills if:
 	// 1. There is any incoming data
 	// 2. The remoteSocketReader closes without any data
+	/** @type {Promise<boolean>} */
 	const toRemotePromise = new Promise((resolve) => {
 		let headerSent = false;
 		let hasIncomingData = false;
@@ -1031,7 +1212,7 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponse, lo
 		.pipeTo(new WritableStream({
 			start() {
 			},
-			async write(chunk, controller) {
+			write(chunk, controller) {
 				// remoteChunkCount++;
 				if (webSocket.readyState !== WS_READY_STATE_OPEN) {
 					controller.error(
@@ -1097,11 +1278,46 @@ function isValidUUID(uuid) {
 	return uuidRegex.test(uuid);
 }
 
+/**
+ * Convert ArrayBuffer to a UUID string and check it against isValidUUID()
+ * @param {ArrayBufferLike} buffer
+ */
+function uuidFromBytesSafe(buffer, offset = 0) {
+	const uuid = uuidStrFromBytes(buffer, offset);
+	if (!isValidUUID(uuid)) {
+		throw TypeError("Stringified UUID is invalid");
+	}
+	return uuid;
+}
+
+/**
+ * Convert ArrayBuffer to a UUID string
+ * @param {ArrayBufferLike} buffer
+ * @returns {string} UUID in lower-case
+ */
+export function uuidStrFromBytes(buffer, offset = 0) {
+	const bytes = new Uint8Array(buffer);
+	let uuid = '';
+
+	for (let i = 0; i < 16; i++) {
+		let byteHex = bytes[i + offset].toString(16).toLowerCase();
+		if (byteHex.length === 1) {
+			byteHex = '0' + byteHex; // Ensure byte is always represented by two characters
+		}
+		uuid += byteHex;
+		if (i === 3 || i === 5 || i === 7 || i === 9) {
+			uuid += '-';
+		}
+	}
+
+	return uuid;
+}
+
 const WS_READY_STATE_OPEN = 1;
 const WS_READY_STATE_CLOSING = 2;
 /**
  * Normally, WebSocket will not has exceptions when close.
- * @param {import("@cloudflare/workers-types").WebSocket} socket
+ * @param {WebSocket} socket
  */
 function safeCloseWebSocket(socket) {
 	try {
@@ -1120,35 +1336,20 @@ function safeCloseWebSocket(socket) {
  * @returns {Uint8Array} the merged Uint8Array
  */
 export function joinUint8Array(array1, array2) {
-	let result = new Uint8Array(array1.byteLength + array2.byteLength);
+	const result = new Uint8Array(array1.byteLength + array2.byteLength);
 	result.set(array1);
 	result.set(array2, array1.byteLength);
 	return result;
 }
 
-const byteToHex = [];
-for (let i = 0; i < 256; ++i) {
-	byteToHex.push((i + 256).toString(16).slice(1));
-}
-function unsafeStringify(arr, offset = 0) {
-	return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
-}
-function stringify(arr, offset = 0) {
-	const uuid = unsafeStringify(arr, offset);
-	if (!isValidUUID(uuid)) {
-		throw TypeError("Stringified UUID is invalid");
-	}
-	return uuid;
-}
-
 /**
- * @param {{readable: ReadableStream, writable: {getWriter: () => {write: (data) => void, releaseLock: () => void}}}} socket
+ * @param {CloudflareTCPConnection} socket
  * @param {string} username
  * @param {string} password
  * @param {number} addressType
  * @param {string} addressRemote
  * @param {number} portRemote
- * @param {function} log The logging function.
+ * @param {LogFunction} log The logging function.
  */
 async function socks5Connect(socket, username, password, addressType, addressRemote, portRemote, log) {
 	const writer = socket.writable.getWriter();
@@ -1229,6 +1430,7 @@ async function socks5Connect(socket, username, password, addressType, addressRem
 	// 1--> ipv4  addressLength =4
 	// 2--> domain name
 	// 3--> ipv6  addressLength =16
+	/** @type {Uint8Array?} */
 	let DSTADDR;	// DSTADDR = ATYP + DST.ADDR
 	switch (addressType) {
 		case 1:
@@ -1276,8 +1478,8 @@ async function socks5Connect(socket, username, password, addressType, addressRem
  * @param {string} address
  */
 function socks5AddressParser(address) {
-	let [latter, former] = address.split("@").reverse();
-	let username, password, hostname, port;
+	const [latter, former] = address.split("@").reverse();
+	let username, password;
 	if (former) {
 		const formers = former.split(":");
 		if (formers.length !== 2) {
@@ -1286,11 +1488,11 @@ function socks5AddressParser(address) {
 		[username, password] = formers;
 	}
 	const latters = latter.split(":");
-	port = Number(latters.pop());
+	const port = Number(latters.pop());
 	if (isNaN(port)) {
 		throw new Error('Invalid SOCKS address format');
 	}
-	hostname = latters.join(":");
+	const hostname = latters.join(":");
 	const regex = /^\[.*\]$/;
 	if (hostname.includes(":") && !regex.test(hostname)) {
 		throw new Error('Invalid SOCKS address format');
@@ -1373,24 +1575,26 @@ function makeVlessReqHeader(command, destType, destAddr, destPort, uuid) {
 
 	// Address
 	switch (destType) {
-		case VlessAddrType.IPv4:
+		case VlessAddrType.IPv4: {
 			const octetsIPv4 = destAddr.split('.');
 			for (let i = 0; i < 4; i++) {
 				vlessHeader[22 + i] = parseInt(octetsIPv4[i]);
 			}
 			break;
+		}
 		case VlessAddrType.DomainName:
 			vlessHeader[22] = addressEncoded.length;
 			vlessHeader.set(addressEncoded, 23);
 			break;
-		case VlessAddrType.IPv6:
-			const groupsIPv6 = ipv6.split(':');
+		case VlessAddrType.IPv6: {
+			const groupsIPv6 = destAddr.replace(/\[|\]/g, '').split(':');
 			for (let i = 0; i < 8; i++) {
 			  const hexGroup = parseInt(groupsIPv6[i], 16);
 			  vlessHeader[i * 2 + 22] = hexGroup >> 8;
 			  vlessHeader[i * 2 + 23] = hexGroup & 0xFF;
 			}
 			break;
+		}
 		default:
 			throw new Error(`Unknown address type: ${destType}`);
 	}
@@ -1398,6 +1602,10 @@ function makeVlessReqHeader(command, destType, destAddr, destPort, uuid) {
 	return vlessHeader;
 }
 
+/**
+ * @param {string} address Domain name, HTTP request Hostname, and the SNI of the remote host.
+ * @param {StreamSettings} streamSettings
+ */
 function checkVlessConfig(address, streamSettings) {
 	if (streamSettings.network !== 'ws') {
 		throw new Error(`Unsupported outbound stream method: ${streamSettings.network}, has to be ws (Websocket)`);
@@ -1416,6 +1624,10 @@ function checkVlessConfig(address, streamSettings) {
 	}
 }
 
+/**
+ * Parse a Vless URL into its components.
+ * @param {string} url
+ */
 function parseVlessString(url) {
 	const regex = /^(.+):\/\/(.+?)@(.+?):(\d+)(\?[^#]*)?(#.*)?$/;
 	const match = url.match(regex);
