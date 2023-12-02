@@ -77,6 +77,15 @@ export const platformAPI = {
 	 *  }
 	 */
 	associate: null,
+
+	/**
+	 * An optional processor to process the incoming WebSocket request and its response.
+	 * @type { null | ((logger: LogFunction) => {
+	 * 	request: TransformStream<Uint8Array, Uint8Array>,
+	 * 	response: TransformStream<Uint8Array, Uint8Array>,
+	 * })}
+	 */
+	processor: null,
 }
 
 /**
@@ -536,6 +545,15 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 
 	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyData, null, log);
 
+	/** @type {null | TransformStream<Uint8Array, Uint8Array>} */
+	let vlessResponseProcessor = null;
+	let vlessTrafficData = readableWebSocketStream;
+	if (platformAPI.processor != null) {
+		const processor = platformAPI.processor(log);
+		vlessResponseProcessor = processor.response;
+		vlessTrafficData = readableWebSocketStream.pipeThrough(processor.request);
+	}
+
 	let vlessHeader = null;
 
 	// This source stream only contains raw traffic from the client
@@ -566,7 +584,8 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 		flush(controller){
 		}
 	});
-	const fromClientTraffic = readableWebSocketStream.pipeThrough(vlessHeaderProcessor);
+
+	const fromClientTraffic = vlessTrafficData.pipeThrough(vlessHeaderProcessor);
 
 	/** @type {WritableStream<Uint8Array> | null}*/
 	let remoteTrafficSink = null;
@@ -587,12 +606,10 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 			}
 
 			// ["version", "length of additional info"]
-			const vlessResponse = {
-				header: new Uint8Array([vlessHeader.vlessVersion[0], 0]),
-			}
+			const vlessResponseHeader = new Uint8Array([vlessHeader.vlessVersion[0], 0]);
 	
 			// Need to ensure the outbound proxy (if any) is ready before proceeding.
-			remoteTrafficSink = await handleOutBound(vlessHeader, chunk, webSocket, vlessResponse, log);
+			remoteTrafficSink = await handleOutBound(vlessHeader, chunk, webSocket, vlessResponseHeader, vlessResponseProcessor, log);
 			// log('Outbound established!');
 		},
 		close() {
@@ -620,11 +637,12 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
  * @param {{isUDP: boolean, addressType: number, addressRemote: string, portRemote: number}} vlessRequest
  * @param {Uint8Array} rawClientData The raw client data to write.
  * @param {WebSocket} webSocket The WebSocket to pass the remote socket to.
- * @param {{header: Uint8Array}} vlessResponse Contains information to produce the vless response, such as the header.
+ * @param {Uint8Array} vlessResponseHeader Contains information to produce the vless response, such as the header.
+ * @param {null | TransformStream<Uint8Array, Uint8Array>} vlessResponseProcessor an optional TransformStream to process the Vless response.
  * @param {LogFunction} log The logger function.
  * @returns a non-null fulfill indicates the success connection to the destination or the remote proxy server
  */
-async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessResponse, log) {
+async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessResponseHeader, vlessResponseProcessor, log) {
 	const curOutBoundPtr = {index: 0, serverIndex: 0};
 
 	// Check if we should forward UDP DNS requests to a designated TCP DNS server.
@@ -812,7 +830,7 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 		};
 
 		const readableStream = makeReadableWebSocketStream(wsToVlessServer, null, headerStripper, log);
-		const vlessReqHeader = makeVlessReqHeader(vlessRequest.isUDP ? VlessCmd.UDP : VlessCmd.TCP, vlessRequest.addressType, vlessRequest.addressRemote, vlessRequest.portRemote, uuid, rawClientData);
+		const vlessReqHeader = makeVlessReqHeader(vlessRequest.isUDP ? VlessCmd.UDP : VlessCmd.TCP, vlessRequest.addressType, vlessRequest.addressRemote, vlessRequest.portRemote, uuid);
 		// Send the first packet (header + rawClientData), then strip the response header with headerStripper
 		await writeFirstChunk(writableStream, joinUint8Array(vlessReqHeader, rawClientData));
 		return {
@@ -859,7 +877,7 @@ async function handleOutBound(vlessRequest, rawClientData, webSocket, vlessRespo
 		} 
 		
 		if (destRWPair != null) {
-			const hasIncomingData = await remoteSocketToWS(destRWPair.readableStream, webSocket, vlessResponse, log);
+			const hasIncomingData = await remoteSocketToWS(destRWPair.readableStream, webSocket, vlessResponseHeader, vlessResponseProcessor, log);
 			if (hasIncomingData) {
 				return destRWPair.writableStream;
 			}
@@ -1173,11 +1191,12 @@ function processVlessHeader(
  * Stream data from the remote destination (any) to the client side (Websocket)
  * @param {ReadableStream<Uint8Array>} remoteSocketReader from the remote destination
  * @param {WebSocket} webSocket to the client side
- * @param {{header: Uint8Array}} vlessResponse Contains information to produce the vless reponse, such as the header.
+ * @param {Uint8Array} vlessResponseHeader The Vless response header.
+ * @param {null | TransformStream<Uint8Array, Uint8Array>} vlessResponseProcessor an optional TransformStream to process the Vless response.
  * @param {LogFunction} log 
  * @returns {Promise<boolean>} has hasIncomingData
  */
-async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponse, log) {
+async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHeader, vlessResponseProcessor, log) {
 	// This promise fulfills if:
 	// 1. There is any incoming data
 	// 2. The remoteSocketReader closes without any data
@@ -1187,7 +1206,9 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponse, lo
 		let hasIncomingData = false;
 	
 		// Add the response header and monitor if there is any traffic coming from the remote host.
-		remoteSocketReader.pipeThrough(new TransformStream({
+
+		/** @type {TransformStream<Uint8Array, Uint8Array>} */
+		const vlessResponseHeaderPrepender = new TransformStream({
 			start() {
 			},
 			transform(chunk, controller) {
@@ -1196,7 +1217,7 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponse, lo
 				resolve(true);
 
 				if (!headerSent) {
-					controller.enqueue(joinUint8Array(vlessResponse.header, chunk));
+					controller.enqueue(joinUint8Array(vlessResponseHeader, chunk));
 					headerSent = true;
 				} else {
 					controller.enqueue(chunk);
@@ -1208,8 +1229,10 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponse, lo
 				// The connection has been closed, resolve the promise anyway.
 				resolve(hasIncomingData);
 			}
-		}))
-		.pipeTo(new WritableStream({
+		})
+
+		/** @type {WritableStream<Uint8Array>} */
+		const toClientWsSink = new WritableStream({
 			start() {
 			},
 			write(chunk, controller) {
@@ -1236,7 +1259,13 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponse, lo
 			// abort(reason) {
 			// 	console.error(`remoteSocket.readable aborts`, reason);
 			// },
-		}))
+		});
+
+		const vlessResponseWithHeader = remoteSocketReader.pipeThrough(vlessResponseHeaderPrepender);
+		const processedVlessResponse = vlessResponseProcessor == null ? vlessResponseWithHeader :
+			vlessResponseWithHeader.pipeThrough(vlessResponseProcessor);
+
+		processedVlessResponse.pipeTo(toClientWsSink)
 		.catch((error) => {
 			console.error(
 				`remoteSocketToWS has exception, readyState = ${webSocket.readyState} :`,
