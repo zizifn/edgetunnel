@@ -80,9 +80,10 @@ export const platformAPI = {
 
 	/**
 	 * An optional processor to process the incoming WebSocket request and its response.
+	 * The response processor may need to be created multiple times before truly utilization.
 	 * @type { null | ((logger: LogFunction) => {
 	 * 	request: TransformStream<Uint8Array, Uint8Array>,
-	 * 	response: TransformStream<Uint8Array, Uint8Array>,
+	 * 	response: () => TransformStream<Uint8Array, Uint8Array>,
 	 * })}
 	 */
 	processor: null,
@@ -545,7 +546,7 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
 
 	const readableWebSocketStream = makeReadableWebSocketStream(webSocket, earlyData, null, log);
 
-	/** @type {null | TransformStream<Uint8Array, Uint8Array>} */
+	/** @type {null | (() => TransformStream<Uint8Array, Uint8Array>)} */
 	let vlessResponseProcessor = null;
 	let vlessTrafficData = readableWebSocketStream;
 	if (platformAPI.processor != null) {
@@ -638,7 +639,7 @@ export function vlessOverWSHandler(webSocket, earlyDataHeader) {
  * @param {Uint8Array} rawClientData The raw client data to write.
  * @param {WebSocket} webSocket The WebSocket to pass the remote socket to.
  * @param {Uint8Array} vlessResponseHeader Contains information to produce the vless response, such as the header.
- * @param {null | TransformStream<Uint8Array, Uint8Array>} vlessResponseProcessor an optional TransformStream to process the Vless response.
+ * @param {null | (() => TransformStream<Uint8Array, Uint8Array>)} vlessResponseProcessor an optional TransformStream to process the Vless response.
  * @param {LogFunction} log The logger function.
  * @returns a non-null fulfill indicates the success connection to the destination or the remote proxy server
  */
@@ -1192,7 +1193,7 @@ function processVlessHeader(
  * @param {ReadableStream<Uint8Array>} remoteSocketReader from the remote destination
  * @param {WebSocket} webSocket to the client side
  * @param {Uint8Array} vlessResponseHeader The Vless response header.
- * @param {null | TransformStream<Uint8Array, Uint8Array>} vlessResponseProcessor an optional TransformStream to process the Vless response.
+ * @param {null | (() => TransformStream<Uint8Array, Uint8Array>)} vlessResponseProcessor an optional TransformStream to process the Vless response.
  * @param {LogFunction} log 
  * @returns {Promise<boolean>} has hasIncomingData
  */
@@ -1263,7 +1264,7 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHead
 
 		const vlessResponseWithHeader = remoteSocketReader.pipeThrough(vlessResponseHeaderPrepender);
 		const processedVlessResponse = vlessResponseProcessor == null ? vlessResponseWithHeader :
-			vlessResponseWithHeader.pipeThrough(vlessResponseProcessor);
+			vlessResponseWithHeader.pipeThrough(vlessResponseProcessor());
 
 		processedVlessResponse.pipeTo(toClientWsSink)
 		.catch((error) => {
