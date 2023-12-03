@@ -34,6 +34,7 @@ platformAPI.associate = async (isIPv6) => {
 	const UDPSocket = Deno.listenDatagram({
 		transport: 'udp',
 		port: 0,
+		hostname: isIPv6 ? '[::]' : '0.0.0.0',
 	});
 
 	let messageHandler: null | ((msg: Uint8Array, rinfo: NodeJSUDPRemoteInfo) => void) = null;
