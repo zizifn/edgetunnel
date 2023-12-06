@@ -1160,8 +1160,7 @@ function processVlessHeader(
 				const uint16_val = ipv6Bytes[i*2] << 8 | ipv6Bytes[i*2+1];
 				ipv6.push(uint16_val.toString(16));
 			}
-			addressValue = ipv6.join(':');
-			// seems no need add [] for ipv6
+			addressValue = '[' + ipv6.join(':') + ']';
 			break;
 		}
 		default:
