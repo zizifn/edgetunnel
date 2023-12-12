@@ -1,0 +1,7 @@
+{
+    "main": "index.js",
+    "type": "module",
+    "dependencies": {
+        "ws": "^7.5.9"
+    }
+}
