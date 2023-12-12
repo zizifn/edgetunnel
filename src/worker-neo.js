@@ -1070,7 +1070,7 @@ async function remoteSocketToWS(remoteSocketReader, webSocket, vlessResponseHead
  */
 function base64ToUint8Array(base64Str) {
 	if (!base64Str) {
-		return null;
+		return new Uint8Array(0);
 	}
 
 	try {
