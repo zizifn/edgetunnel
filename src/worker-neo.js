@@ -813,7 +813,7 @@ function makeReadableWebSocketStream(webSocketServer, earlyData, headStripper, l
 	/** @type {ReadableStream<Uint8Array>} */
 	const stream = new ReadableStream({
 		start(controller) {
-			if (earlyData) {
+			if (earlyData && earlyData.byteLength > 0) {
 				controller.enqueue(earlyData);
 			}
 
