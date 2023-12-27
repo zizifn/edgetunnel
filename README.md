@@ -1,3 +1,4 @@
+# Cloudflare Worker 2 Vless & Sub
 这是一个基于 Cloudflare Worker 平台的脚本，在原版的基础上修改了显示 VLESS 配置信息转换为订阅内容。使用该脚本，你可以方便地将 VLESS 配置信息使用在线配置转换到 Clash 或 Singbox 等工具中。
 
 ## 使用方法
@@ -16,6 +17,7 @@
 
 4. 自定义订阅地址：
    - 如果你想使用搭建自己的订阅内容，可以参考 [WorkerVless2sub GitHub 仓库](https://github.com/cmliu/WorkerVless2sub) 中的部署说明自行搭建。
+   - 注意，如果您使用了自己的订阅地址，要求订阅生成器的 域名 和 `[YOUR-WORKER-URL]`的域名 不同属一个上级域名，否则会出现异常。您可以在 `sub` 变量内直接填入 workers.dev 分配到的域名。
 
 # 感谢
 [zizifn](https://github.com/zizifn/edgetunnel)
