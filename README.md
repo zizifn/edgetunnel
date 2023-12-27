@@ -4,13 +4,15 @@
 1. 部署 Cloudflare Worker：
    - 在 Cloudflare Worker 控制台中创建一个新的 Worker。
    - 将 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/worker.js) 的内容粘贴到 Worker 编辑器中。
+   - 将第 7 行 `userID` 修改成你自己的 **UUID** 。
 
 2. 配置订阅生成器地址：
    - 打开 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/worker.js) 文件，在第 12 行找到 `sub` 变量，将其修改为你的订阅生成器地址。
-   - 例如：`let sub = 'your-sub-generator.com';`
+   - 例如 `let sub = 'your-sub-generator.com';`，注意不要带https等协议信息和符号。
 
 3. 默认访问订阅内容：
    - 访问 `https://[YOUR-WORKER-URL]/[YOUR-UUID]` 即可获取订阅内容。
+   - 例如 `https://worker.google.com/d342d11e-d424-4583-b36e-524ab1f0afa4` 是你的订阅地址。
 
 4. 自定义订阅地址：
    - 如果你想使用搭建自己的订阅内容，可以参考 [WorkerVless2sub GitHub 仓库](https://github.com/cmliu/WorkerVless2sub) 中的部署说明自行搭建。
