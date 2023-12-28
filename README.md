@@ -19,5 +19,8 @@
    - 如果你想使用搭建自己的订阅内容，可以参考 [WorkerVless2sub GitHub 仓库](https://github.com/cmliu/WorkerVless2sub) 中的部署说明自行搭建。
    - 注意，如果您使用了自己的订阅地址，要求订阅生成器的 域名 和 `[YOUR-WORKER-URL]`的域名 不同属一个上级域名，否则会出现异常。您可以在 `sub` 变量内直接填入 workers.dev 分配到的域名。
 
+## 已适配自适应订阅内容
+   - clash.meta
+
 # 感谢
 [zizifn](https://github.com/zizifn/edgetunnel)
