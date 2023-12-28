@@ -806,32 +806,83 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
   `;
 	} else if (sub && userAgent.includes('clash')) {
 	  // 如果sub不为空且UA为clash，则发起特定请求
-	  if (typeof fetch === 'function') {
-		try {
-		  const response = await fetch(`https://v.id9.cc/sub?target=clash&url=https%3A%2F%2F${hostName}%2F${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash%2Fconfig%2FACL4SSR_Online.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
-		  const content = await response.text();
-		  return content;
-		} catch (error) {
-		  console.error('Error fetching content:', error);
-		  return `Error fetching content: ${error.message}`;
+	  	if (typeof fetch === 'function') {
+			try {
+				const response = await fetch(`https://v.id9.cc/sub?target=clash&url=https%3A%2F%2F${hostName}%2F${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash%2Fconfig%2FACL4SSR_Online.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
+				const content = await response.text();
+				return content;
+			} catch (error) {
+				console.error('Error fetching content:', error);
+				return `Error fetching content: ${error.message}`;
+			}
+	  	} else {
+			return 'Error: fetch is not available in this environment.';//
+	  	}
+	} else if (sub && userAgent.includes('sing-box')) {
+		// 如果sub不为空且UA为sing-box，则发起特定请求
+		let singBoxVersion = null;
+	
+		// 提取sing-box版本号
+		const match = userAgent.match(/sing-box (\d+\.\d+\.\d+)/);
+		if (match) {
+		  singBoxVersion = match[1];
 		}
-	  } else {
-		return 'Error: fetch is not available in this environment.';
-	  }
-	} else {
-	  // 如果sub不为空且UA，则发起一般请求
-	  if (typeof fetch === 'function') {
-		try {
-		  const response = await fetch(`https://${sub}/sub?host=${hostName}&uuid=${userID}`);
-		  const content = await response.text();
-		  return content;
-		} catch (error) {
-		  console.error('Error fetching content:', error);
-		  return `Error fetching content: ${error.message}`;
+	
+		if (singBoxVersion && compareVersions(singBoxVersion, '1.8.0') >= 0) {
+		    // 如果 sing-box 版本是 1.8.0 或更高
+		  	if (typeof fetch === 'function') {
+				try {
+				const response = await fetch(`https://sing-box-subscribe.vercel.app/config/https:/${hostName}/${userID}`);
+				const content = await response.text();
+				return content;
+				} catch (error) {
+				console.error('获取内容时出错:', error);
+				return `获取内容时出错: ${error.message}`;
+				}
+		  	} else {
+			return '错误: 在此环境中不支持 fetch。';
+		  	}
+		} else {
+		  	// 如果 sing-box 版本低于 1.8.0
+		  	if (typeof fetch === 'function') {
+				try {
+			 		const response = await fetch(`https://sub2singbox.fuck.cloudns.biz/config/https:/${hostName}/${userID}`);
+			  		const content = await response.text();
+			  		return content;
+				} catch (error) {
+					console.error('获取内容时出错:', error);
+					return `获取内容时出错: ${error.message}`;
+				}
+		  	} else {
+				return '错误: 在此环境中不支持 fetch。';
+		  	}
 		}
-	  } else {
-		return 'Error: fetch is not available in this environment.';
-	  }
+	  	} else {
+	  	// 如果sub不为空且UA，则发起一般请求
+	  	if (typeof fetch === 'function') {
+			try {
+		  		const response = await fetch(`https://${sub}/sub?host=${hostName}&uuid=${userID}`);
+		  		const content = await response.text();
+		  		return content;
+			} catch (error) {
+		  		console.error('Error fetching content:', error);
+		  		return `Error fetching content: ${error.message}`;
+			}
+	  	} else {
+			return 'Error: fetch is not available in this environment.';
+	  	}
 	}
-  }
+}
   
+  // 辅助函数用于比较版本号
+function compareVersions(version1, version2) {
+	const parts1 = version1.split('.').map(Number);
+	const parts2 = version2.split('.').map(Number);
+  
+	for (let i = 0; i < 3; i++) {
+	  if (parts1[i] < parts2[i]) return -1;
+	  if (parts1[i] > parts2[i]) return 1;
+	}
+  
+	return 0;
+}
