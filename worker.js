@@ -32,7 +32,7 @@ export default {
 	 */
 	async fetch(request, env, ctx) {
 		try {
-			const userAgent = request.headers.get('User-Agent');
+			const userAgent = request.headers.get('User-Agent').toLowerCase();
 			userID = env.UUID || userID;
 			proxyIP = env.PROXYIP || proxyIP;
 			socks5Address = env.SOCKS5 || socks5Address;
