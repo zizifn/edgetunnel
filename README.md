@@ -21,8 +21,8 @@
 
 ## 已适配自适应订阅内容
    - v2rayN
-   - clash.meta
-   - sing-box
+   - clash.meta（clash-verge，ClashX Meta）
+   - sing-box（SFI）
 
 # 感谢
-[zizifn](https://github.com/zizifn/edgetunnel)
+[zizifn](https://github.com/zizifn/edgetunnel)，[Stanley-baby](https://github.com/Stanley-baby)
