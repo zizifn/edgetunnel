@@ -21,6 +21,7 @@
 
 ## 已适配自适应订阅内容
    - clash.meta
+   - sing-box
 
 # 感谢
 [zizifn](https://github.com/zizifn/edgetunnel)
