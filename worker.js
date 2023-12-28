@@ -9,7 +9,7 @@ let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 let proxyIP = 'cdn.anycast.eu.org';// 小白勿动，该地址并不影响你的网速，这是给CF代理使用的。
 
 //let sub = '';// 留空则显示原版内容
-let sub = 'sub.ssrc.cf';// 内置优选订阅生成器，可自行搭建 https://github.com/cmliu/WorkerVless2sub
+let sub = 'sub.fxxk.dedyn.io';// 内置优选订阅生成器，可自行搭建 https://github.com/cmliu/WorkerVless2sub
 
 // The user name and password do not contain special characters
 // Setting the address will ignore proxyIP
@@ -32,6 +32,7 @@ export default {
 	 */
 	async fetch(request, env, ctx) {
 		try {
+			const userAgent = request.headers.get('User-Agent');
 			userID = env.UUID || userID;
 			proxyIP = env.PROXYIP || proxyIP;
 			socks5Address = env.SOCKS5 || socks5Address;
@@ -52,7 +53,7 @@ export default {
           case '/':
             return new Response(JSON.stringify(request.cf), { status: 200 });
           case `/${userID}`: {
-            const vlessConfig = await getVLESSConfig(userID, request.headers.get('Host'), sub);
+            const vlessConfig = await getVLESSConfig(userID, request.headers.get('Host'), sub, userAgent);
             return new Response(`${vlessConfig}`, {
               status: 200,
               headers: {
@@ -766,56 +767,71 @@ function socks5AddressParser(address) {
 }
 
 /**
- * 
- * @param {string} userID 
+ * @param {string} userID
  * @param {string | null} hostName
  * @param {string} sub
+ * @param {string} userAgent
  * @returns {Promise<string>}
  */
-async function getVLESSConfig(userID, hostName, sub) {
-  // 如果sub为空，则显示原始内容
-  if (!sub) {
-    const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`;
+async function getVLESSConfig(userID, hostName, sub, userAgent) {
+	// 如果sub为空，则显示原始内容
+	if (!sub) {
+	  const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`;
   
-    return `
-################################################################
-v2ray
----------------------------------------------------------------
-${vlessMain}
----------------------------------------------------------------
-################################################################
-clash-meta
----------------------------------------------------------------
-- type: vless
-  name: ${hostName}
-  server: ${hostName}
-  port: 443
-  uuid: ${userID}
-  network: ws
-  tls: true
-  udp: false
-  sni: ${hostName}
-  client-fingerprint: chrome
-  ws-opts:
-    path: "/?ed=2048"
-    headers:
-      host: ${hostName}
----------------------------------------------------------------
-################################################################
-`;
-  } else {
-    // 如果sub不为空，则发起网络请求获取内容
-    if (typeof fetch === 'function') {
-      try {
-        const response = await fetch(`https://${sub}/sub?host=${hostName}&uuid=${userID}`);
-        const content = await response.text();
-        return content;
-      } catch (error) {
-        console.error('Error fetching content:', error);
-        return `Error fetching content: ${error.message}`;
-      }
-    } else {
-      return 'Error: fetch is not available in this environment.';
-    }
+	  return `
+  ################################################################
+  v2ray
+  ---------------------------------------------------------------
+  ${vlessMain}
+  ---------------------------------------------------------------
+  ################################################################
+  clash-meta
+  ---------------------------------------------------------------
+  - type: vless
+	name: ${hostName}
+	server: ${hostName}
+	port: 443
+	uuid: ${userID}
+	network: ws
+	tls: true
+	udp: false
+	sni: ${hostName}
+	client-fingerprint: chrome
+	ws-opts:
+	  path: "/?ed=2048"
+	  headers:
+		host: ${hostName}
+  ---------------------------------------------------------------
+  ################################################################
+  `;
+	} else if (sub && userAgent.includes('clash')) {
+	  // 如果sub不为空且UA为clash，则发起特定请求
+	  if (typeof fetch === 'function') {
+		try {
+		  const response = await fetch(`https://v.id9.cc/sub?target=clash&url=https%3A%2F%2F${hostName}%2F${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash%2Fconfig%2FACL4SSR_Online.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
+		  const content = await response.text();
+		  return content;
+		} catch (error) {
+		  console.error('Error fetching content:', error);
+		  return `Error fetching content: ${error.message}`;
+		}
+	  } else {
+		return 'Error: fetch is not available in this environment.';
+	  }
+	} else {
+	  // 如果sub不为空且UA，则发起一般请求
+	  if (typeof fetch === 'function') {
+		try {
+		  const response = await fetch(`https://${sub}/sub?host=${hostName}&uuid=${userID}`);
+		  const content = await response.text();
+		  return content;
+		} catch (error) {
+		  console.error('Error fetching content:', error);
+		  return `Error fetching content: ${error.message}`;
+		}
+	  } else {
+		return 'Error: fetch is not available in this environment.';
+	  }
+	}
   }
-}
+  
