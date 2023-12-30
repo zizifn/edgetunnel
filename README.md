@@ -25,4 +25,4 @@
    - sing-box（SFI）
 
 # 感谢
-[zizifn](https://github.com/zizifn/edgetunnel)，[Stanley-baby](https://github.com/Stanley-baby)
+[zizifn](https://github.com/zizifn/edgetunnel)，[Stanley-baby](https://github.com/Stanley-baby)、[ACL4SSR](https://github.com/ACL4SSR)
