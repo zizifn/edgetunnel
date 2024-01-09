@@ -10,6 +10,7 @@ let proxyIP = 'proxyip.fuck.cloudns.biz';// 小白勿动，该地址并不影响
 
 //let sub = '';// 留空则显示原版内容
 let sub = 'sub.fxxk.dedyn.io';// 内置优选订阅生成器，可自行搭建 https://github.com/cmliu/WorkerVless2sub
+let subconverter = 'api.v1.mk';// clash订阅转换后端，目前使用肥羊的订阅转换功能
 
 // The user name and password do not contain special characters
 // Setting the address will ignore proxyIP
@@ -808,7 +809,7 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 	  // 如果sub不为空且UA为clash，则发起特定请求
 	  	if (typeof fetch === 'function') {
 			try {
-				const response = await fetch(`https://v.id9.cc/sub?target=clash&url=https%3A%2F%2F${hostName}%2F${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2Fcmliu%2Fedgetunnel%2Fmain%2FClash%2Fconfig%2FACL4SSR_Online_Full_MultiMode.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
+				const response = await fetch(`https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${hostName}%2F${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2Fcmliu%2Fedgetunnel%2Fmain%2FClash%2Fconfig%2FACL4SSR_Online_Full_MultiMode.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
 				const content = await response.text();
 				return content;
 			} catch (error) {
