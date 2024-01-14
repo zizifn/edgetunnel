@@ -19,7 +19,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
  
 3. 配置订阅生成器地址：
    - 打开 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/worker.js) 文件，在第 12 行找到 `sub` 变量，将其修改为你的订阅生成器地址。
-   - 例如 `let sub = 'sub.fxxk.dedyn.io';`，注意不要带https等协议信息和符号，也可以使用默认内置的订阅器。
+   - 例如 `let sub = 'sub.cmliucdn.tk';`，注意不要带https等协议信息和符号，也可以使用默认内置的订阅器。
 
 4. 自定义订阅地址：
    - 如果你想使用搭建自己的订阅内容，可以参考 [WorkerVless2sub GitHub 仓库](https://github.com/cmliu/WorkerVless2sub) 中的部署说明自行搭建。
