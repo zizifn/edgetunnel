@@ -10,7 +10,7 @@ let proxyIP = 'proxyip.fuck.cloudns.biz';// 小白勿动，该地址并不影响
 
 //let sub = '';// 留空则显示原版内容
 let sub = 'sub.cmliucdn.tk';// 内置优选订阅生成器，可自行搭建 https://github.com/cmliu/WorkerVless2sub
-let subconverter = 'api.v1.mk';// clash订阅转换后端，目前使用肥羊的订阅转换功能
+let subconverter = 'api.v1.mk';// clash订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
 
 // The user name and password do not contain special characters
 // Setting the address will ignore proxyIP
@@ -809,7 +809,7 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 	  // 如果sub不为空且UA为clash，则发起特定请求
 	  	if (typeof fetch === 'function') {
 			try {
-				const response = await fetch(`https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${hostName}%2F${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2Fcmliu%2Fedgetunnel%2Fmain%2FClash%2Fconfig%2FACL4SSR_Online_Full_MultiMode.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
+				const response = await fetch(`https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2Fcmliu%2Fedgetunnel%2Fmain%2FClash%2Fconfig%2FACL4SSR_Online_Full_MultiMode.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
 				const content = await response.text();
 				return content;
 			} catch (error) {
@@ -821,44 +821,19 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 	  	}
 	} else if (sub && userAgent.includes('sing-box')) {
 		// 如果sub不为空且UA为sing-box，则发起特定请求
-		let singBoxVersion = null;
-	
-		// 提取sing-box版本号
-		const match = userAgent.match(/sing-box (\d+\.\d+\.\d+)/);
-		if (match) {
-		  singBoxVersion = match[1];
-		}
-	
-		if (singBoxVersion && compareVersions(singBoxVersion, '1.8.0') >= 0) {
-		    // 如果 sing-box 版本是 1.8.0 或更高
-		  	if (typeof fetch === 'function') {
-				try {
-				const response = await fetch(`https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${hostName}%2F${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2Fcmliu%2Fedgetunnel%2Fmain%2FClash%2Fconfig%2FACL4SSR_Online_Full_MultiMode.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
+		if (typeof fetch === 'function') {
+			try {
+				const response = await fetch(`https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2Fcmliu%2Fedgetunnel%2Fmain%2FClash%2Fconfig%2FACL4SSR_Online_Full_MultiMode.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
 				const content = await response.text();
 				return content;
-				} catch (error) {
+			} catch (error) {
 				console.error('获取内容时出错:', error);
 				return `获取内容时出错: ${error.message}`;
-				}
-		  	} else {
-			return '错误: 在此环境中不支持 fetch。';
-		  	}
+			}
 		} else {
-		  	// 如果 sing-box 版本低于 1.8.0
-		  	if (typeof fetch === 'function') {
-				try {
-			 		const response = await fetch(`https://sub2singbox.fuck.cloudns.biz/config/https:/${hostName}/${userID}`);
-			  		const content = await response.text();
-			  		return content;
-				} catch (error) {
-					console.error('获取内容时出错:', error);
-					return `获取内容时出错: ${error.message}`;
-				}
-		  	} else {
-				return '错误: 在此环境中不支持 fetch。';
-		  	}
+			return '错误: 在此环境中不支持 fetch。';
 		}
-	  	} else {
+	} else {
 	  	// 如果sub不为空且UA，则发起一般请求
 	  	if (typeof fetch === 'function') {
 			try {
@@ -874,16 +849,4 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 	  	}
 	}
 }
-  
-  // 辅助函数用于比较版本号
-function compareVersions(version1, version2) {
-	const parts1 = version1.split('.').map(Number);
-	const parts2 = version2.split('.').map(Number);
-  
-	for (let i = 0; i < 3; i++) {
-	  if (parts1[i] < parts2[i]) return -1;
-	  if (parts1[i] > parts2[i]) return 1;
-	}
-  
-	return 0;
-}
+
