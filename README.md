@@ -28,7 +28,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 
 ## 已适配自适应订阅内容
    - [v2rayN](https://github.com/2dust/v2rayN)
-   - clash.meta（C[lash Nyanpasu](https://github.com/keiko233/clash-nyanpasu)，[clash-verge](https://github.com/zzzgydi/clash-verge/tree/main)，ClashX Meta）
+   - clash.meta（[Clash Nyanpasu](https://github.com/keiko233/clash-nyanpasu)，[clash-verge](https://github.com/zzzgydi/clash-verge/tree/main)，ClashX Meta）
    - sing-box（SFI）
 
 ![image](https://github.com/cmliu/edgetunnel/assets/24787744/6e07c034-f0ef-4ae2-9fef-be13ef993f77)
