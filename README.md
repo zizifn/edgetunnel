@@ -15,15 +15,18 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
    - **如果你是小白，那么你的 workers 绑定`自定义域`之后即可直接起飞，不用再往下看了！！！**
 
 <details>
-<summary><code><strong>「 我不是小白！我要开启高端玩法！ 」</strong></code></summary>
- 
-3. 配置订阅生成器地址：
-   - 打开 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/worker.js) 文件，在第 12 行找到 `sub` 变量，将其修改为你的订阅生成器地址。
-   - 例如 `let sub = 'sub.cmliucdn.tk';`，注意不要带https等协议信息和符号，也可以使用默认内置的订阅器。
+<summary><code><strong>「 我不是小白！我真的真的不是小白！我要玩花活！我要开启高端玩法！ 」</strong></code></summary>
 
-4. 自定义订阅地址：
-   - 如果你想使用搭建自己的订阅内容，可以参考 [WorkerVless2sub GitHub 仓库](https://github.com/cmliu/WorkerVless2sub) 中的部署说明自行搭建。
-   - 注意，如果您使用了自己的订阅地址，要求订阅生成器的 域名 和 `[YOUR-WORKER-URL]`的域名 不同属一个顶级域名，否则会出现异常。您可以在 `sub` 变量内直接填入 workers.dev 分配到的域名。
+3. 使用自己的`优选域名`/`优选IP`的订阅内容：
+   - 如果你想使用自己的优选域名或者是自己的优选IP，可以参考 [WorkerVless2sub GitHub 仓库](https://github.com/cmliu/WorkerVless2sub) 中的部署说明自行搭建。
+   - 打开 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/worker.js) 文件，在第 12 行找到 `sub` 变量，将其修改为你部署的订阅生成器地址。例如 `let sub = 'sub.cmliucdn.tk';`，注意不要带https等协议信息和符号。
+   - 注意，如果您使用了自己的订阅地址，要求订阅生成器的 `sub`域名 和 `[YOUR-WORKER-URL]`的域名 不同属一个顶级域名，否则会出现异常。您可以在 `sub` 变量赋值为 workers.dev 分配到的域名。
+
+4. 解决转换订阅的隐私问题：
+   - 搭建反代订阅转换工具，通过随机化服务器地址和节点账号密码，解决用户转换订阅的隐私问题。
+   - 可以参考[不良林psub项目](https://github.com/bulianglin/psub)自行搭建，视频原理以及教程 https://youtu.be/X7CC5jrgazo
+   - 注意，如果您使用了反代订阅转换工具，要求订阅转换工具的 `subconverter`域名 和 `[YOUR-WORKER-URL]`的域名 不同属一个顶级域名，否则会出现异常。您可以在 `subconverter` 变量赋值为 workers.dev 分配到的域名，注意不要带https等协议信息和符号。
+
 </details>
 
 ## 已适配自适应订阅内容
