@@ -4,14 +4,14 @@ import { connect } from 'cloudflare:sockets';
 
 // How to generate your own UUID:
 // [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
-let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
+let userID = '90cd4a77-141a-43c9-991b-08263cfe9c10';
 
 let proxyIP = 'proxyip.fuck.cloudns.biz';// 小白勿动，该地址并不影响你的网速，这是给CF代理使用的。
 
 //let sub = '';// 留空则显示原版内容
 let sub = 'sub.cmliucdn.tk';// 内置优选订阅生成器，可自行搭建 https://github.com/cmliu/WorkerVless2sub
 let subconverter = 'api.v1.mk';// clash订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
-
+let subconfig = "https://raw.githubusercontent.com/cmliu/edgetunnel/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini"; //订阅配置文件
 // The user name and password do not contain special characters
 // Setting the address will ignore proxyIP
 // Example:  user:pass@host:port  or  host:port
@@ -809,7 +809,7 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 	  // 如果sub不为空且UA为clash，则发起特定请求
 	  	if (typeof fetch === 'function') {
 			try {
-				const response = await fetch(`https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2Fcmliu%2Fedgetunnel%2Fmain%2FClash%2Fconfig%2FACL4SSR_Online_Full_MultiMode.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
+				const response = await fetch(`https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
 				const content = await response.text();
 				return content;
 			} catch (error) {
@@ -819,11 +819,11 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 	  	} else {
 			return 'Error: fetch is not available in this environment.';//
 	  	}
-	} else if (sub && userAgent.includes('sing-box')) {
+	} else if (sub && userAgent.includes('sing-box') || userAgent.includes('singbox')) {
 		// 如果sub不为空且UA为sing-box，则发起特定请求
 		if (typeof fetch === 'function') {
 			try {
-				const response = await fetch(`https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2Fcmliu%2Fedgetunnel%2Fmain%2FClash%2Fconfig%2FACL4SSR_Online_Full_MultiMode.ini&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
+				const response = await fetch(`https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
 				const content = await response.text();
 				return content;
 			} catch (error) {
@@ -849,4 +849,3 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 	  	}
 	}
 }
-
