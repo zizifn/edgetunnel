@@ -6,12 +6,12 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 ## 使用方法
 1. 部署 Cloudflare Worker：
    - 在 Cloudflare Worker 控制台中创建一个新的 Worker。
-   - 将 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/worker.js) 的内容粘贴到 Worker 编辑器中。
+   - 将 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/_worker.js) 的内容粘贴到 Worker 编辑器中。
    - 将第 7 行 `userID` 修改成你自己的 **UUID** 。
 
 2. 访问订阅内容：
    - 访问 `https://[YOUR-WORKER-URL]/[YOUR-UUID]` 即可获取订阅内容。
-   - 例如 `https://vless.google.workers.dev/d342d11e-d424-4583-b36e-524ab1f0afa4` 就是你的订阅地址。
+   - 例如 `https://vless.google.workers.dev/90cd4a77-141a-43c9-991b-08263cfe9c10` 就是你的订阅地址。
    - **如果你是小白，那么你的 workers 绑定`自定义域`之后即可直接起飞，不用再往下看了！！！**
 
 <details>
@@ -19,7 +19,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 
 3. 使用自己的`优选域名`/`优选IP`的订阅内容：
    - 如果你想使用自己的优选域名或者是自己的优选IP，可以参考 [WorkerVless2sub GitHub 仓库](https://github.com/cmliu/WorkerVless2sub) 中的部署说明自行搭建。
-   - 打开 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/worker.js) 文件，在第 12 行找到 `sub` 变量，将其修改为你部署的订阅生成器地址。例如 `let sub = 'sub.cmliucdn.tk';`，注意不要带https等协议信息和符号。
+   - 打开 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/_worker.js) 文件，在第 12 行找到 `sub` 变量，将其修改为你部署的订阅生成器地址。例如 `let sub = 'sub.cmliucdn.tk';`，注意不要带https等协议信息和符号。
    - 注意，如果您使用了自己的订阅地址，要求订阅生成器的 `sub`域名 和 `[YOUR-WORKER-URL]`的域名 不同属一个顶级域名，否则会出现异常。您可以在 `sub` 变量赋值为 workers.dev 分配到的域名。
 
 4. 解决转换订阅的隐私问题：
