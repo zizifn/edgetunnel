@@ -29,6 +29,9 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 
 </details>
 
+## Star 星星走起
+[![Stargazers over time](https://starchart.cc/cmliu/edgetunnel.svg?variant=adaptive)](https://starchart.cc/cmliu/edgetunnel)
+
 ## 已适配自适应订阅内容
    - [v2rayN](https://github.com/2dust/v2rayN)
    - clash.meta（[Clash Nyanpasu](https://github.com/keiko233/clash-nyanpasu)，[clash-verge](https://github.com/zzzgydi/clash-verge/tree/main)，ClashX Meta）
@@ -37,7 +40,6 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 ![image](https://github.com/cmliu/edgetunnel/assets/24787744/6e07c034-f0ef-4ae2-9fef-be13ef993f77)
 ![image](https://github.com/cmliu/edgetunnel/assets/24787744/7c932cfa-3908-412a-ba47-c2be081486ed)
 ![6f373c39a75ed704a83f8936a81a44e9](https://github.com/cmliu/edgetunnel/assets/24787744/82ca7357-5c85-4618-8fc3-931d1e60ea5a)
-
 
 # 感谢
 [zizifn](https://github.com/zizifn/edgetunnel)，[3Kmfi6HP](https://github.com/3Kmfi6HP/EDtunnel)，[Stanley-baby](https://github.com/Stanley-baby)、[ACL4SSR](https://github.com/ACL4SSR)
