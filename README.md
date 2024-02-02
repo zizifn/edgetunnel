@@ -38,7 +38,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 
 2. 访问订阅内容：
    - 访问 `https://[YOUR-PAGES-URL]/[YOUR-UUID]` 即可获取订阅内容。
-   - 例如 `https://vless.google.pages.dev/90cd4a77-141a-43c9-991b-08263cfe9c10` 就是你的订阅地址。
+   - 例如 `https://edgetunnel.pages.dev/90cd4a77-141a-43c9-991b-08263cfe9c10` 就是你的订阅地址。
 
 3. 给Pages绑定 CNAME自定义域：
    - 在 Pages控制台的 `自定义域`选项卡，下方点击 `设置自定义域`。
