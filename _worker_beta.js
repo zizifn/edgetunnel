@@ -816,7 +816,7 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 	  // 如果sub不为空且UA为clash，则发起特定请求
 	  	if (typeof fetch === 'function') {
 			try {
-				const response = await fetch(`https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}%26edgetunnel%3Dcmliu%26Rproxyip%3D${Rproxyip}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
+				const response = await fetch(`https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}%26edgetunnel%3Dcmliu%26proxyip%3D${Rproxyip}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
 				const content = await response.text();
 				return content;
 			} catch (error) {
@@ -830,7 +830,7 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 		// 如果sub不为空且UA为sing-box，则发起特定请求
 		if (typeof fetch === 'function') {
 			try {
-				const response = await fetch(`https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}%26edgetunnel%3Dcmliu%26Rproxyip%3D${Rproxyip}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
+				const response = await fetch(`https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}%26edgetunnel%3Dcmliu%26proxyip%3D${Rproxyip}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
 				const content = await response.text();
 				return content;
 			} catch (error) {
@@ -844,7 +844,7 @@ async function getVLESSConfig(userID, hostName, sub, userAgent) {
 	  	// 如果sub不为空且UA，则发起一般请求
 	  	if (typeof fetch === 'function') {
 			try {
-		  		const response = await fetch(`https://${sub}/sub?host=${hostName}&uuid=${userID}&edgetunnel=cmliu&Rproxyip=${Rproxyip}`);
+		  		const response = await fetch(`https://${sub}/sub?host=${hostName}&uuid=${userID}&edgetunnel=cmliu&proxyip=${Rproxyip}`);
 		  		const content = await response.text();
 		  		return content;
 			} catch (error) {
