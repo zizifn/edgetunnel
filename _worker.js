@@ -780,7 +780,7 @@ function socks5AddressParser(address) {
  * @param {string} userAgent
  * @returns {Promise<string>}
  */
-async function getVLESSConfig(userID, hostName, sub, userAgent) {
+async function getVLESSConfig(userID, hostName, sub, userAgent, proxyIP) {
 	if (!proxyIP || proxyIP === '') RproxyIP = "true";
 	// 如果sub为空，则显示原始内容
 	if (!sub) {
