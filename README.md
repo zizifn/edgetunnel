@@ -3,6 +3,13 @@
 
 Telegram：[@CMLiussss](https://t.me/CMLiussss)
 
+## 风险提示
+当您使用`let sub = 'sub.cmliucdn.tk';`等非空参数时，您的worker节点配置将通过指定的订阅生成器创建完整的节点订阅信息。这种方式确实便捷，但同时意味着您的节点配置信息将被分享给订阅服务提供者。
+
+如果您对此存有顾虑，可以通过将`let sub = '';`设置为空值，以保持您的edgetunnel节点配置的私密性。但这种方式需要您手动选择优质的IP或域名，却更能保障你的信息安全；
+
+另外，您也可以选择自行部署 [WorkerVless2sub 订阅生成服务](https://github.com/cmliu/WorkerVless2sub)，这样既可以利用订阅生成器的便利，又能有效控制您的节点信息不被外泄。
+   
 ## Workers 部署方法
 1. 部署 Cloudflare Worker：
    - 在 Cloudflare Worker 控制台中创建一个新的 Worker。
@@ -40,7 +47,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
    - 访问 `https://[YOUR-PAGES-URL]/[YOUR-UUID]` 即可获取订阅内容。
    - 例如 `https://edgetunnel.pages.dev/90cd4a77-141a-43c9-991b-08263cfe9c10` 就是你的订阅地址。
 
-3. 给Pages绑定 CNAME自定义域：
+3. 给 Pages绑定 CNAME自定义域：
    - 在 Pages控制台的 `自定义域`选项卡，下方点击 `设置自定义域`。
    - 填入你的自定义次级域名，注意不要使用你的根域名，例如：
      您分配到的域名是 `fuck.cloudns.biz`，则添加自定义域填入 `lizi.fuck.cloudns.biz`即可；
