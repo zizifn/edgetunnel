@@ -71,7 +71,8 @@ export default {
 					return new Response('Not found', { status: 404 });
 				}
 			} else {
-				if (new RegExp('/proxyip', 'i').test(url.pathname)) proxyIP = url.pathname.split("=")[1];
+				if (new RegExp('/proxyip=', 'i').test(url.pathname)) proxyIP = url.pathname.split("=")[1];
+				else if (new RegExp('/proxyip.', 'i').test(url.pathname)) proxyIP = url.pathname.split("/proxyip.")[1];
 				return await vlessOverWSHandler(request);
 			}
 		} catch (err) {
