@@ -3,12 +3,10 @@
 
 Telegram：[@CMLiussss](https://t.me/CMLiussss)
 
-## 风险提示
-当您使用`let sub = 'sub.cmliussss.workers.dev';`等非空参数时，您的worker节点配置将通过指定的订阅生成器创建完整的节点订阅信息。这种方式确实便捷，但同时意味着您的节点配置信息将被发送给订阅服务的提供者。
-
-如果您对此存有顾虑，可以通过将`let sub = '';`设置为空值，以保持您的edgetunnel节点配置的私密性。但这种方式需要您手动选择优质的IP或域名，却更能保障你的信息安全；
-
-另外，您也可以选择自行部署 [WorkerVless2sub 订阅生成服务](https://github.com/cmliu/WorkerVless2sub)，这样既可以利用订阅生成器的便利，又能有效控制您的节点信息不被外泄。
+# 风险提示
+- 当您使用 `let sub = 'sub.cmliussss.workers.dev';` 等非空参数时，您的worker节点配置将通过指定的订阅生成器创建完整的节点订阅信息。这种方式确实便捷，但同时意味着您的节点配置信息将被发送给订阅服务的提供者。
+- 如果您对此存有顾虑，可以通过将 `let sub = '';` 设置为空值，以保持您的edgetunnel节点配置的私密性。但这种方式需要您自行手动选择优选IP或域名，却更能保障你的信息安全；
+- 另外，您也可以选择自行部署 [WorkerVless2sub 订阅生成服务](https://github.com/cmliu/WorkerVless2sub)，这样既可以利用订阅生成器的便利，又能有效控制您的节点信息不被外泄。
    
 ## Workers 部署方法
 1. 部署 Cloudflare Worker：
