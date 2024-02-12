@@ -16,7 +16,7 @@ let subconfig = "https://raw.githubusercontent.com/cmliu/edgetunnel/main/Clash/c
 // Setting the address will ignore proxyIP
 // Example:  user:pass@host:port  or  host:port
 let socks5Address = '';
-let RproxyIP = !proxyIP ? 'true' : 'false';
+let RproxyIP = 'false';
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
 }
@@ -40,8 +40,9 @@ export default {
 			sub = env.SUB || sub;
 			subconverter = env.SUBAPI || subconverter;
 			subconfig = env.SUBCONFIG || subconfig;
-			RproxyIP = env.RPROXYIP || RproxyIP;
+			//RproxyIP = env.RPROXYIP || !proxyIP ? 'true' : 'false';
 			if (socks5Address) {
+				RproxyIP = env.RPROXYIP || 'false';
 				try {
 					parsedSocks5Address = socks5AddressParser(socks5Address);
 					enableSocks = true;
@@ -50,6 +51,8 @@ export default {
 					console.log(e.toString());
 					enableSocks = false;
 				}
+			} else {
+				RproxyIP = env.RPROXYIP || !proxyIP ? 'true' : 'false';
 			}
 			const upgradeHeader = request.headers.get('Upgrade');
 			const url = new URL(request.url);
@@ -59,7 +62,7 @@ export default {
 				case '/':
 					return new Response(JSON.stringify(request.cf), { status: 200 });
 				case `/${userID}`: {
-					const vlessConfig = await getVLESSConfig(userID, request.headers.get('Host'), sub, userAgent);
+					const vlessConfig = await getVLESSConfig(userID, request.headers.get('Host'), sub, userAgent, RproxyIP);
 					return new Response(`${vlessConfig}`, {
 					status: 200,
 					headers: {
@@ -781,7 +784,7 @@ function socks5AddressParser(address) {
  * @param {string} userAgent
  * @returns {Promise<string>}
  */
-async function getVLESSConfig(userID, hostName, sub, userAgent, proxyIP) {
+async function getVLESSConfig(userID, hostName, sub, userAgent, RproxyIP) {
 	// 如果sub为空，则显示原始内容
 	if (!sub || sub === '') {
 		const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`;
@@ -817,8 +820,7 @@ async function getVLESSConfig(userID, hostName, sub, userAgent, proxyIP) {
 	
 		return `
 	################################################################
-	Subscribe / sub
-	响应式订阅链接, 支持 Base64、clash-meta、sing-box 订阅格式, 您的订阅内容由 ${sub} 提供维护支持.
+	Subscribe / sub 订阅地址, 支持 Base64、clash-meta、sing-box 订阅格式, 您的订阅内容由 ${sub} 提供维护支持, 自动获取ProxyIP: ${RproxyIP}.
 	---------------------------------------------------------------
 	https://${hostName}/${userID}
 	---------------------------------------------------------------
