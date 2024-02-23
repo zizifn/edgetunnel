@@ -85,6 +85,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 | SUB | sub.cmliucdn.tk | 内建域名、IP节点信息的订阅生成器地址 |
 | SUBAPI | api.v1.mk | clash、singbox等 订阅转换后端 |
 | SUBCONFIG | [https://raw.github.../ACL4SSR_Online_Full_MultiMode.ini](https://raw.githubusercontent.com/cmliu/edgetunnel/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini) | clash、singbox等 订阅转换配置文件 |
+| RPROXYIP | false | 设为 true 即可强制获取订阅器分配的ProxyIP(需订阅器支持)|
 
 ## Star 星星走起
 [![Stargazers over time](https://starchart.cc/cmliu/edgetunnel.svg?variant=adaptive)](https://starchart.cc/cmliu/edgetunnel)
