@@ -1,16 +1,17 @@
 # Cloudflare Worker 2 Vless & Sub
 这是一个基于 Cloudflare Worker 平台的脚本，在原版的基础上修改了显示 VLESS 配置信息转换为订阅内容。使用该脚本，你可以方便地将 VLESS 配置信息使用在线配置转换到 Clash 或 Singbox 等工具中。
 
-基础部署视频教程：https://www.youtube.com/watch?v=LeT4jQUh8ok
+- 基础部署视频教程：https://www.youtube.com/watch?v=LeT4jQUh8ok
+- 快速部署视频教程：https://www.youtube.com/watch?v=Ea3wb5G08l4 ***最佳推荐!!!***
 
-Telegram：[@CMLiussss](https://t.me/CMLiussss)
+Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 
 # 风险提示
 - 当您使用 `let sub = 'sub.cmliussss.workers.dev';` 等非空参数时，您的worker节点配置将通过指定的订阅生成器创建完整的节点订阅信息。这种方式确实便捷，但同时意味着您的节点配置信息将被发送给订阅服务的提供者。
 - 如果您对此存有顾虑，可以通过将 `let sub = '';` 设置为空值，以保持您的edgetunnel节点配置的私密性。但这种方式需要您自行手动选择优选IP或域名，却更能保障你的信息安全；
 - 另外，您也可以选择自行部署 [WorkerVless2sub 订阅生成服务](https://github.com/cmliu/WorkerVless2sub)，这样既可以利用订阅生成器的便利，又能有效控制您的节点信息不被外泄。
    
-## Workers 部署方法
+## Workers 部署方法 [视频教程](https://www.youtube.com/watch?v=LeT4jQUh8ok&t=83s)
 1. 部署 Cloudflare Worker：
    - 在 Cloudflare Worker 控制台中创建一个新的 Worker。
    - 将 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/_worker.js) 的内容粘贴到 Worker 编辑器中。
@@ -40,7 +41,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 
 </details>
 
-## Pages 上传 部署方法 **最佳推荐!!!**
+## Pages 上传 部署方法 **最佳推荐!!!** [视频教程](https://www.youtube.com/watch?v=Ea3wb5G08l4)
 1. 部署 Cloudflare Pages：
    - 下载 [worker.zip](https://raw.githubusercontent.com/cmliu/edgetunnel/main/worker.zip) 文件，并点上 Star !!!
    - 在 Cloudflare Pages 控制台中选择 `上传资产`后，为你的项目取名后点击 `创建项目`，然后上传你下载好的 [worker.zip](https://raw.githubusercontent.com/cmliu/edgetunnel/main/worker.zip) 文件后点击 `部署站点`。
@@ -55,7 +56,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 <details>
 <summary><code><strong>「 我自己有域名！我要绑定自己的域名！我已经熟练的掌握域名解析！ 」</strong></code></summary>
    
-3. 给 Pages绑定 CNAME自定义域：
+3. 给 Pages绑定 CNAME自定义域：[视频教程](https://www.youtube.com/watch?v=LeT4jQUh8ok&t=851s)
    - 在 Pages控制台的 `自定义域`选项卡，下方点击 `设置自定义域`。
    - 填入你的自定义次级域名，注意不要使用你的根域名，例如：
      您分配到的域名是 `fuck.cloudns.biz`，则添加自定义域填入 `lizi.fuck.cloudns.biz`即可；
@@ -83,7 +84,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
 
 </details>
 
-## Pages GitHub 部署方法
+## Pages GitHub 部署方法 [视频教程](https://www.youtube.com/watch?v=LeT4jQUh8ok&t=560s)
 1. 部署 Cloudflare Pages：
    - 在 Github 上先 Fork 本项目，并点上 Star !!!
    - 在 Cloudflare Pages 控制台中选择 `连接到 Git`后，选中 `edgetunnel`项目后点击 `开始设置`。
@@ -94,7 +95,7 @@ Telegram：[@CMLiussss](https://t.me/CMLiussss)
    - 访问 `https://[YOUR-PAGES-URL]/[YOUR-UUID]` 即可获取订阅内容。
    - 例如 `https://edgetunnel.pages.dev/90cd4a77-141a-43c9-991b-08263cfe9c10` 就是你的订阅地址。
 
-3. 给 Pages绑定 CNAME自定义域：
+3. 给 Pages绑定 CNAME自定义域：[视频教程](https://www.youtube.com/watch?v=LeT4jQUh8ok&t=851s)
    - 在 Pages控制台的 `自定义域`选项卡，下方点击 `设置自定义域`。
    - 填入你的自定义次级域名，注意不要使用你的根域名，例如：
      您分配到的域名是 `fuck.cloudns.biz`，则添加自定义域填入 `lizi.fuck.cloudns.biz`即可；
