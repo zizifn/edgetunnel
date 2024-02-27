@@ -3,6 +3,7 @@
 
 - 基础部署视频教程：https://www.youtube.com/watch?v=LeT4jQUh8ok
 - 快速部署视频教程：https://www.youtube.com/watch?v=Ea3wb5G08l4 ***最佳推荐!!!***
+- 进阶使用视角教程：https://www.youtube.com/watch?v=s91zjpw3-P8
 
 Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 
@@ -123,15 +124,15 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 </details>
 
 ### 变量说明
-| 变量名 | 示例 | 备注 | 
-|--------|---------|-----|
-| UUID | 90cd4a77-141a-43c9-991b-08263cfe9c10 | Powershell -NoExit -Command "[guid]::NewGuid()"|
-| PROXYIP | proxyip.fxxk.dedyn.io | 备选作为访问CloudFlareCDN站点的代理节点 |
-| SOCKS5  | user:password@127.0.0.1:1080 | 优先作为访问CloudFlareCDN站点的SOCKS5代理 |
-| SUB | sub.cmliussss.workers.dev | 内建域名、IP节点信息的订阅生成器地址 |
-| SUBAPI | api.v1.mk | clash、singbox等 订阅转换后端 |
-| SUBCONFIG | [https://raw.github.../ACL4SSR_Online_Full_MultiMode.ini](https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini) | clash、singbox等 订阅转换配置文件 |
-| RPROXYIP | false | 设为 true 即可强制获取订阅器分配的ProxyIP(需订阅器支持)|
+| 变量名 | 示例 | 备注 | YT |
+|--------|---------|-----|-----|
+| UUID | 90cd4a77-141a-43c9-991b-08263cfe9c10 | Powershell -NoExit -Command "[guid]::NewGuid()"| [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=72s) |
+| PROXYIP | proxyip.fxxk.dedyn.io | 备选作为访问CloudFlareCDN站点的代理节点 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=166s) |
+| SOCKS5  | user:password@127.0.0.1:1080 | 优先作为访问CloudFlareCDN站点的SOCKS5代理 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=826s) |
+| SUB | sub.cmliussss.workers.dev | 内建域名、IP节点信息的订阅生成器地址 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1193s) |
+| SUBAPI | api.v1.mk | clash、singbox等 订阅转换后端 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1446s) |
+| SUBCONFIG | [https://raw.github.../ACL4SSR_Online_Full_MultiMode.ini](https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini) | clash、singbox等 订阅转换配置文件 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1605s) |
+| RPROXYIP | false | 设为 true 即可强制获取订阅器分配的ProxyIP(需订阅器支持)| [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1816s) |
 
 ## Star 星星走起
 [![Stargazers over time](https://starchart.cc/cmliu/edgetunnel.svg?variant=adaptive)](https://starchart.cc/cmliu/edgetunnel)
