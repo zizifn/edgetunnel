@@ -815,7 +815,7 @@ async function getVLESSConfig(userID, hostName, sub, userAgent, RproxyIP) {
 	---------------------------------------------------------------
 	################################################################
 	`;
-	} else if (sub && userAgent.includes('mozilla')) {
+	} else if (sub && userAgent.includes('mozilla') && !userAgent.includes('linux x86')) {
 		const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}`;
 	
 		return `
