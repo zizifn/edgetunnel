@@ -24,6 +24,10 @@ if (!isValidUUID(userID)) {
 let parsedSocks5Address = {}; 
 let enableSocks = false;
 
+// 虚假uuid和hostname，用于发送给配置生成服务
+let fakeUserID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+let fakeHostName = "EXAMPLE.COM";
+
 export default {
 	/**
 	 * @param {import("@cloudflare/workers-types").Request} request
@@ -778,6 +782,10 @@ function socks5AddressParser(address) {
 	}
 }
 
+function revertFakeInfo(content, userID, hostName) {
+	return content.replace(new RegExp(fakeUserID, 'g'), userID).replace(new RegExp(fakeHostName, 'g'), hostName);
+}
+
 /**
  * @param {string} userID
  * @param {string | null} hostName
@@ -857,47 +865,30 @@ async function getVLESSConfig(userID, hostName, sub, userAgent, RproxyIP) {
 	---------------------------------------------------------------
 	################################################################
 	`;
-	} else if (sub && userAgent.includes('clash')) {
-	  // 如果sub不为空且UA为clash，则发起特定请求
-	  	if (typeof fetch === 'function') {
-			try {
-				const response = await fetch(`https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}%26edgetunnel%3Dcmliu%26proxyip%3D${RproxyIP}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
-				const content = await response.text();
-				return content;
-			} catch (error) {
-				console.error('Error fetching content:', error);
-				return `Error fetching content: ${error.message}`;
-			}
-	  	} else {
-			return 'Error: fetch is not available in this environment.';//
-	  	}
-	} else if (sub && userAgent.includes('sing-box') || userAgent.includes('singbox')) {
-		// 如果sub不为空且UA为sing-box，则发起特定请求
-		if (typeof fetch === 'function') {
-			try {
-				const response = await fetch(`https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${hostName}%26uuid%3D${userID}%26edgetunnel%3Dcmliu%26proxyip%3D${RproxyIP}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`);
-				const content = await response.text();
-				return content;
-			} catch (error) {
-				console.error('获取内容时出错:', error);
-				return `获取内容时出错: ${error.message}`;
-			}
-		} else {
-			return '错误: 在此环境中不支持 fetch。';
-		}
-	} else {
-	  	// 如果sub不为空且UA，则发起一般请求
-	  	if (typeof fetch === 'function') {
-			try {
-		  		const response = await fetch(`https://${sub}/sub?host=${hostName}&uuid=${userID}&edgetunnel=cmliu&proxyip=${RproxyIP}`);
-		  		const content = await response.text();
-		  		return content;
-			} catch (error) {
-		  		console.error('Error fetching content:', error);
-		  		return `Error fetching content: ${error.message}`;
-			}
-	  	} else {
+	} else if (sub) {
+		if (typeof fetch != 'function') {
 			return 'Error: fetch is not available in this environment.';
-	  	}
+		}
+    // 如果是使用默认域名，则改成一个workers的域名，订阅器会加上代理
+    if (hostName.includes(".workers.dev") || hostName.includes(".pages.dev")) {
+      fakeHostName = "EXAMPLE.workers.dev";
+    }
+		var content = "";
+		var url = "";
+		if (userAgent.includes('clash')) {
+			url = `https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${fakeHostName}%26uuid%3D${fakeUserID}%26edgetunnel%3Dcmliu%26proxyip%3D${RproxyIP}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`;
+		} else if (userAgent.includes('sing-box') || userAgent.includes('singbox')) {
+			url = `https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${fakeHostName}%26uuid%3D${fakeUserID}%26edgetunnel%3Dcmliu%26proxyip%3D${RproxyIP}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`;
+		} else {
+			url = `https://${sub}/sub?host=${fakeHostName}&uuid=${fakeUserID}&edgetunnel=cmliu&proxyip=${RproxyIP}`;
+		}
+		try {
+			const response = await fetch(url);
+			content = await response.text();
+			return revertFakeInfo(content, userID, hostName);
+		} catch (error) {
+			console.error('Error fetching content:', error);
+			return `Error fetching content: ${error.message}`;
+		}
 	}
 }
