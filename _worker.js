@@ -782,8 +782,15 @@ function socks5AddressParser(address) {
 	}
 }
 
-function revertFakeInfo(content, userID, hostName) {
-	return content.replace(new RegExp(fakeUserID, 'g'), userID).replace(new RegExp(fakeHostName, 'g'), hostName);
+function revertFakeInfo(content, userID, hostName, isBase64) {
+	if (isBase64) {
+		content = atob(content)
+	}
+	content = content.replace(new RegExp(fakeUserID, 'g'), userID).replace(new RegExp(fakeHostName, 'g'), hostName);
+	if (isBase64) {
+		content = btoa(content)
+	}
+	return content;
 }
 
 /**
@@ -873,19 +880,21 @@ async function getVLESSConfig(userID, hostName, sub, userAgent, RproxyIP) {
     if (hostName.includes(".workers.dev") || hostName.includes(".pages.dev")) {
       fakeHostName = "EXAMPLE.workers.dev";
     }
-		var content = "";
-		var url = "";
+		let content = "";
+		let url = "";
+		let isBase64 = false;
 		if (userAgent.includes('clash')) {
 			url = `https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${fakeHostName}%26uuid%3D${fakeUserID}%26edgetunnel%3Dcmliu%26proxyip%3D${RproxyIP}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`;
 		} else if (userAgent.includes('sing-box') || userAgent.includes('singbox')) {
 			url = `https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${fakeHostName}%26uuid%3D${fakeUserID}%26edgetunnel%3Dcmliu%26proxyip%3D${RproxyIP}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`;
 		} else {
 			url = `https://${sub}/sub?host=${fakeHostName}&uuid=${fakeUserID}&edgetunnel=cmliu&proxyip=${RproxyIP}`;
+			isBase64 = true;
 		}
 		try {
 			const response = await fetch(url);
 			content = await response.text();
-			return revertFakeInfo(content, userID, hostName);
+			return revertFakeInfo(content, userID, hostName, isBase64);
 		} catch (error) {
 			console.error('Error fetching content:', error);
 			return `Error fetching content: ${error.message}`;
