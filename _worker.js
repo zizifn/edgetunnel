@@ -783,13 +783,10 @@ function socks5AddressParser(address) {
 }
 
 function revertFakeInfo(content, userID, hostName, isBase64) {
-	if (isBase64) {
-		content = atob(content)
-	}
+	if (isBase64) content = atob(content);//Base64解码
 	content = content.replace(new RegExp(fakeUserID, 'g'), userID).replace(new RegExp(fakeHostName, 'g'), hostName);
-	if (isBase64) {
-		content = btoa(content)
-	}
+	if (isBase64) content = btoa(content);//Base64编码
+
 	return content;
 }
 
@@ -872,14 +869,12 @@ async function getVLESSConfig(userID, hostName, sub, userAgent, RproxyIP) {
 	---------------------------------------------------------------
 	################################################################
 	`;
-	} else if (sub) {
+	} else {
 		if (typeof fetch != 'function') {
 			return 'Error: fetch is not available in this environment.';
 		}
-    // 如果是使用默认域名，则改成一个workers的域名，订阅器会加上代理
-    if (hostName.includes(".workers.dev") || hostName.includes(".pages.dev")) {
-      fakeHostName = "EXAMPLE.workers.dev";
-    }
+		// 如果是使用默认域名，则改成一个workers的域名，订阅器会加上代理
+		if (hostName.includes(".workers.dev") || hostName.includes(".pages.dev")) fakeHostName = "EXAMPLE.workers.dev";
 		let content = "";
 		let url = "";
 		let isBase64 = false;
@@ -892,7 +887,10 @@ async function getVLESSConfig(userID, hostName, sub, userAgent, RproxyIP) {
 			isBase64 = true;
 		}
 		try {
-			const response = await fetch(url);
+			const response = await fetch(url ,{
+			headers: {
+				'User-Agent': 'CF-Workers-edgetunnel/cmliu'
+			}});
 			content = await response.text();
 			return revertFakeInfo(content, userID, hostName, isBase64);
 		} catch (error) {
