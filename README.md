@@ -8,9 +8,10 @@
 Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 
 # 风险提示
-- 当您使用 `let sub = 'sub.cmliussss.workers.dev';` 等非空参数时，您的worker节点配置将通过指定的订阅生成器创建完整的节点订阅信息。这种方式确实便捷，但同时意味着您的节点配置信息将被发送给订阅服务的提供者。
-- 如果您对此存有顾虑，可以通过将 `let sub = '';` 设置为空值，以保持您的edgetunnel节点配置的私密性。但这种方式需要您自行手动选择优选IP或域名，却更能保障你的信息安全；
-- 另外，您也可以选择自行部署 [WorkerVless2sub 订阅生成服务](https://github.com/cmliu/WorkerVless2sub)，这样既可以利用订阅生成器的便利，又能有效控制您的节点信息不被外泄。
+- 已通过提交虚假的节点配置给订阅服务，避免节点配置信息泄露。***[#6](https://github.com/cmliu/edgetunnel/pull/6) 感谢 [fatkun](https://github.com/fatkun)***
+- ~~当您使用 `let sub = 'sub.cmliussss.workers.dev';` 等非空参数时，您的worker节点配置将通过指定的订阅生成器创建完整的节点订阅信息。这种方式确实便捷，但同时意味着您的节点配置信息将被发送给订阅服务的提供者。~~
+- ~~如果您对此存有顾虑，可以通过将 `let sub = '';` 设置为空值，以保持您的edgetunnel节点配置的私密性。但这种方式需要您自行手动选择优选IP或域名，却更能保障你的信息安全；~~
+- 另外，您也可以选择自行部署 [WorkerVless2sub 订阅生成服务](https://github.com/cmliu/WorkerVless2sub)，这样既可以利用订阅生成器的便利，~~又能有效控制您的节点信息不被外泄。~~
    
 ## Workers 部署方法 [视频教程](https://www.youtube.com/watch?v=LeT4jQUh8ok&t=83s)
 1. 部署 Cloudflare Worker：
@@ -146,4 +147,4 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 ![image](https://github.com/cmliu/edgetunnel/assets/24787744/7c932cfa-3908-412a-ba47-c2be081486ed)
 
 # 感谢
-[zizifn](https://github.com/zizifn/edgetunnel)，[3Kmfi6HP](https://github.com/3Kmfi6HP/EDtunnel)，[Stanley-baby](https://github.com/Stanley-baby)、[ACL4SSR](https://github.com/ACL4SSR)、[SHIJS1999](https://github.com/SHIJS1999/cloudflare-worker-vless-ip)
+[zizifn](https://github.com/zizifn/edgetunnel)，[3Kmfi6HP](https://github.com/3Kmfi6HP/EDtunnel)，[Stanley-baby](https://github.com/Stanley-baby)、[ACL4SSR](https://github.com/ACL4SSR)、[SHIJS1999](https://github.com/SHIJS1999/cloudflare-worker-vless-ip)，[fatkun](https://github.com/fatkun)
