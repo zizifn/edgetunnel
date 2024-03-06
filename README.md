@@ -143,8 +143,5 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
    - clash.meta（[Clash Nyanpasu](https://github.com/keiko233/clash-nyanpasu)，[clash-verge](https://github.com/zzzgydi/clash-verge/tree/main)，ClashX Meta）
    - sing-box（SFI）
 
-![image](https://github.com/cmliu/edgetunnel/assets/24787744/6e07c034-f0ef-4ae2-9fef-be13ef993f77)
-![image](https://github.com/cmliu/edgetunnel/assets/24787744/7c932cfa-3908-412a-ba47-c2be081486ed)
-
 # 感谢
 [zizifn](https://github.com/zizifn/edgetunnel)，[3Kmfi6HP](https://github.com/3Kmfi6HP/EDtunnel)，[Stanley-baby](https://github.com/Stanley-baby)、[ACL4SSR](https://github.com/ACL4SSR)、[SHIJS1999](https://github.com/SHIJS1999/cloudflare-worker-vless-ip)，[fatkun](https://github.com/fatkun)
