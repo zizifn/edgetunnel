@@ -27,7 +27,7 @@ let enableSocks = false;
 // 虚假uuid和hostname，用于发送给配置生成服务
 let fakeUserID = generateUUID();
 let fakeHostName = generateRandomString();
-
+let tls = true;
 export default {
 	/**
 	 * @param {import("@cloudflare/workers-types").Request} request
@@ -38,13 +38,12 @@ export default {
 	async fetch(request, env, ctx) {
 		try {
 			const userAgent = request.headers.get('User-Agent').toLowerCase();
-			userID = env.UUID || userID;
+			userID = (env.UUID || userID).toLowerCase();
 			proxyIP = env.PROXYIP || proxyIP;
 			socks5Address = env.SOCKS5 || socks5Address;
 			sub = env.SUB || sub;
 			subconverter = env.SUBAPI || subconverter;
 			subconfig = env.SUBCONFIG || subconfig;
-			//RproxyIP = env.RPROXYIP || !proxyIP ? 'true' : 'false';
 			if (socks5Address) {
 				RproxyIP = env.RPROXYIP || 'false';
 				try {
@@ -60,17 +59,20 @@ export default {
 			}
 			const upgradeHeader = request.headers.get('Upgrade');
 			const url = new URL(request.url);
+			if (url.searchParams.has('notls')) tls = false;
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
 				// const url = new URL(request.url);
-				switch (url.pathname) {
+				switch (url.pathname.toLowerCase()) {
 				case '/':
 					return new Response(JSON.stringify(request.cf), { status: 200 });
 				case `/${userID}`: {
 					const vlessConfig = await getVLESSConfig(userID, request.headers.get('Host'), sub, userAgent, RproxyIP);
 					const now = Date.now();
 					const timestamp = Math.floor(now / 1000);
+					const expire = 4102329600;//2099-12-31
 					const today = new Date(now);
 					today.setHours(0, 0, 0, 0);
+					const UD = Math.floor(((now - today.getTime())/86400000) * 24 * 1099511627776 / 2);
 					if (userAgent && userAgent.includes('mozilla')){
 						return new Response(`${vlessConfig}`, {
 							status: 200,
@@ -85,7 +87,7 @@ export default {
 								"Content-Disposition": "attachment; filename=edgetunnel; filename*=utf-8''edgetunnel",
 								"Content-Type": "text/plain;charset=utf-8",
 								"Profile-Update-Interval": "6",
-								"Subscription-Userinfo": `upload=0; download=${Math.floor(((now - today.getTime())/86400000) * 24 * 1099511627776)}; total=${24 * 1099511627776}; expire=${timestamp}`,
+								"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${24 * 1099511627776}; expire=${expire}`,
 							}
 						});
 					}
@@ -925,8 +927,8 @@ async function getVLESSConfig(userID, hostName, sub, userAgent, RproxyIP) {
 			fakeHostName = `${fakeHostName}.${generateRandomString()}${generateRandomNumber()}.workers.dev`;
 		} else if (hostName.includes(".pages.dev")){
 			fakeHostName = `${fakeHostName}.${generateRandomString()}${generateRandomNumber()}.pages.dev`;
-		} else if (hostName.includes("worker")){
-			fakeHostName = `worker.${fakeHostName}${generateRandomNumber()}.net`;
+		} else if (hostName.includes("worker") || hostName.includes("notls") || tls == false){
+			fakeHostName = `notls.${fakeHostName}${generateRandomNumber()}.net`;
 		} else {
 			fakeHostName = `${fakeHostName}.${generateRandomNumber()}.xyz`
 		}
