@@ -935,7 +935,7 @@ async function getVLESSConfig(userID, hostName, sub, userAgent, RproxyIP) {
 		let content = "";
 		let url = "";
 		let isBase64 = false;
-		if (userAgent.includes('clash')) {
+		if (userAgent.includes('clash') && !userAgent.includes('nekobox')) {
 			url = `https://${subconverter}/sub?target=clash&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${fakeHostName}%26uuid%3D${fakeUserID}%26edgetunnel%3Dcmliu%26proxyip%3D${RproxyIP}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=true&fdn=false&sort=false&new_name=true`;
 		} else if (userAgent.includes('sing-box') || userAgent.includes('singbox')) {
 			url = `https://${subconverter}/sub?target=singbox&url=https%3A%2F%2F${sub}%2Fsub%3Fhost%3D${fakeHostName}%26uuid%3D${fakeUserID}%26edgetunnel%3Dcmliu%26proxyip%3D${RproxyIP}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=true&fdn=false&sort=false&new_name=true`;
