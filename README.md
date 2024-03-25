@@ -27,7 +27,7 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 作者保留随时更新本免责声明的权利，且不另行通知。最新的免责声明版本将会在该项目的 GitHub 页面上发布。
 
 ## 风险提示
-- 通过提交虚假的节点配置给订阅服务，避免节点配置信息泄露。***[#6](https://github.com/cmliu/edgetunnel/pull/6) 感谢 [fatkun](https://github.com/fatkun)***
+- 通过提交虚假的节点配置给订阅服务，避免节点配置信息泄露。
 - 另外，您也可以选择自行部署 [WorkerVless2sub 订阅生成服务](https://github.com/cmliu/WorkerVless2sub)，这样既可以利用订阅生成器的便利。
    
 ## Workers 部署方法 [视频教程](https://www.youtube.com/watch?v=LeT4jQUh8ok&t=83s)
