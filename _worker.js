@@ -57,6 +57,9 @@ export default {
 			} else {
 				RproxyIP = env.RPROXYIP || !proxyIP ? 'true' : 'false';
 			}
+			if (proxyIP.includes(',')) proxyIP = proxyIP.split(",")[Math.floor(Math.random() * proxyIP.split(",").length)];
+			while(proxyIP.includes(' ')) proxyIP = proxyIP.replace(' ', '');
+			//console.log(proxyIP);
 			const upgradeHeader = request.headers.get('Upgrade');
 			const url = new URL(request.url);
 			if (url.searchParams.has('notls')) tls = false;
