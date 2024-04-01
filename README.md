@@ -124,7 +124,7 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 | 变量名 | 示例 | 备注 | YT |
 |--------|---------|-----|-----|
 | UUID | 90cd4a77-141a-43c9-991b-08263cfe9c10 | Powershell -NoExit -Command "[guid]::NewGuid()"| [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=72s) |
-| PROXYIP | proxyip.fxxk.dedyn.io | 备选作为访问CloudFlareCDN站点的代理节点 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=166s) |
+| PROXYIP | proxyip.fxxk.dedyn.io | 备选作为访问CloudFlareCDN站点的代理节点(支持多ProxyIP, ProxyIP之间使用`,`作间隔) | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=166s) |
 | SOCKS5  | user:password@127.0.0.1:1080 | 优先作为访问CloudFlareCDN站点的SOCKS5代理 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=826s) |
 | SUB | sub.cmliussss.workers.dev | 内建域名、IP节点信息的订阅生成器地址 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1193s) |
 | SUBAPI | api.v1.mk | clash、singbox等 订阅转换后端 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1446s) |
