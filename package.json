@@ -4,7 +4,7 @@
   "description": "Delete code, but keep the project for the sake of memories. I'm only create this project for fun, for try new things and for learn by doing. **I'm even not write any outside marketing post for this project. Just for my own fun...** But I feel emotional damage by the community.",
   "main": "index.js",
   "scripts": {
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler publish",
     "dev-vless": "wrangler dev src/worker-vless.js"
   },
   "author": "",
