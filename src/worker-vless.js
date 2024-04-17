@@ -536,13 +536,11 @@ async function handleUDPOutBound(webSocket, vlessResponseHeader, log) {
 		},
 		transform(chunk, controller) {
 			// udp message 2 byte is the the length of udp data
-			// TODO: this should have bug, beacsue maybe udp chunk can be in two websocket message
+			// TODO: this should have bug, because maybe udp chunk can be in two websocket message
 			for (let index = 0; index < chunk.byteLength;) {
 				const lengthBuffer = chunk.slice(index, index + 2);
 				const udpPakcetLength = new DataView(lengthBuffer).getUint16(0);
-				const udpData = new Uint8Array(
-					chunk.slice(index + 2, index + 2 + udpPakcetLength)
-				);
+				const udpData = chunk.slice(index + 2, index + 2 + udpPakcetLength)
 				index = index + 2 + udpPakcetLength;
 				controller.enqueue(udpData);
 			}
