@@ -883,19 +883,19 @@ function 配置信息(UUID, 域名地址) {
 
 	const v2ray = `${协议类型}://${用户ID}@${地址}:${端口}?encryption=${加密方式}&security=${传输层安全[0]}&sni=${SNI}&fp=${指纹}&type=${传输层协议}&host=${伪装域名}&path=${encodeURIComponent(路径)}#${encodeURIComponent(别名)}`;
 	const clash = `- type: ${协议类型}
-	name: ${别名}
-	server: ${地址}
-	port: ${端口}
-	uuid: ${用户ID}
-	network: ${传输层协议}
-	tls: ${传输层安全[1]}
-	udp: false
-	sni: ${SNI}
-	client-fingerprint: ${指纹}
-	ws-opts:
-	  path: "${路径}"
-	  headers:
-	  host: ${伪装域名}`;
+  name: ${别名}
+  server: ${地址}
+  port: ${端口}
+  uuid: ${用户ID}
+  network: ${传输层协议}
+  tls: ${传输层安全[1]}
+  udp: false
+  sni: ${SNI}
+  client-fingerprint: ${指纹}
+  ws-opts:
+    path: "${路径}"
+    headers:
+      host: ${伪装域名}`;
 	return [v2ray,clash];
 }
 
