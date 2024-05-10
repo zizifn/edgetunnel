@@ -141,7 +141,7 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 | ADDNOTLSAPI | [https://raw.github.../addressesapi.txt](https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt) |×| 不解释, 懂得都懂 ||
 | ADDCSV | [https://raw.github.../addressescsv.csv](https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressescsv.csv) |×| 不解释, 懂得都懂 ||
 | DLS | 8 |×| 不解释, 懂得都懂 ||
-| TGTOKEN | 6894123456:XXXXXXXXXX0qExVsBPUhHDAbXXXXXqWXgBA |×| 发送TG通知的机器人token | 
+| TGTOKEN | 6894123456:XXXXXXXXXX0qExVsBPUhHDAbXXX |×| 发送TG通知的机器人token | 
 | TGID | 6946912345 |×| 接收TG通知的账户数字ID | 
 | SUB | VLESS.fxxk.dedyn.io | × | 内建域名、IP节点信息的订阅生成器地址 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1193s) |
 | SUBAPI | api.v1.mk |×| clash、singbox等 订阅转换后端 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1446s) |
