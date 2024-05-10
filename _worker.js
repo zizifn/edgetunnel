@@ -8,15 +8,15 @@ let userID = '90cd4a77-141a-43c9-991b-08263cfe9c10';
 
 let proxyIP = '';// 小白勿动，该地址并不影响你的网速，这是给CF代理使用的。'cdn.xn--b6gac.eu.org, cdn-all.xn--b6gac.eu.org, workers.cloudflare.cyou'
 
-//let sub = '';// 留空则显示原版内容
-let sub = 'vless-4ca.pages.dev';// 内置优选订阅生成器，可自行搭建 https://github.com/cmliu/WorkerVless2sub
+let sub = '';// 留空则使用内置订阅
 let subconverter = 'apiurl.v1.mk';// clash订阅转换后端，目前使用肥羊的订阅转换功能。自带虚假uuid和host订阅。
 let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini"; //订阅配置文件
+
 // The user name and password do not contain special characters
 // Setting the address will ignore proxyIP
 // Example:  user:pass@host:port  or  host:port
 let socks5Address = '';
-let RproxyIP = 'false';
+
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
 }
@@ -27,7 +27,21 @@ let enableSocks = false;
 // 虚假uuid和hostname，用于发送给配置生成服务
 let fakeUserID = generateUUID();
 let fakeHostName = generateRandomString();
-let tls = true;
+let noTLS = 'false'; 
+const expire = 4102329600;//2099-12-31
+let proxyIPs;
+let addresses = [];
+let addressesapi = [];
+let addressesnotls = [];
+let addressesnotlsapi = [];
+let addressescsv = [];
+let DLS = 8;
+let FileName = 'edgetunnel';
+let BotToken ='';
+let ChatID =''; 
+let proxyhosts = [];//本地代理域名池
+let proxyhostsURL = 'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/proxyhosts';//在线代理域名池URL
+let RproxyIP = 'false';
 export default {
 	/**
 	 * @param {import("@cloudflare/workers-types").Request} request
@@ -41,7 +55,7 @@ export default {
 			const userAgent = UA.toLowerCase();
 			userID = (env.UUID || userID).toLowerCase();
 			proxyIP = env.PROXYIP || proxyIP;
-			const proxyIPs = await ADD(proxyIP);
+			proxyIPs = await ADD(proxyIP);
 			proxyIP = proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
 			//console.log(proxyIP);
 			socks5Address = env.SOCKS5 || socks5Address;
@@ -61,9 +75,17 @@ export default {
 			} else {
 				RproxyIP = env.RPROXYIP || !proxyIP ? 'true' : 'false';
 			}
+			if (env.ADD) addresses = await ADD(env.ADD);
+			if (env.ADDAPI) addressesapi = await ADD(env.ADDAPI);
+			if (env.ADDNOTLS) addressesnotls = await ADD(env.ADDNOTLS);
+			if (env.ADDNOTLSAPI) addressesnotlsapi = await ADD(env.ADDNOTLSAPI);
+			if (env.ADDCSV) addressescsv = await ADD(env.ADDCSV);
+			DLS = env.DLS || DLS;
+			BotToken = env.TGTOKEN || BotToken;
+			ChatID = env.TGID || ChatID; 
 			const upgradeHeader = request.headers.get('Upgrade');
 			const url = new URL(request.url);
-			if (url.searchParams.has('notls')) tls = false;
+			if (url.searchParams.has('notls')) noTLS = 'true';
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
 				// const url = new URL(request.url);
 				switch (url.pathname.toLowerCase()) {
@@ -76,30 +98,51 @@ export default {
 					}
 					return new Response(JSON.stringify(request.cf, null, 4), { status: 200 });
 				case `/${userID}`: {
+					await sendMessage(`#获取订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `UA: ${UA}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+					if ((!sub || sub == '') && (addresses.length + addressesapi.length + addressesnotls.length + addressesnotlsapi.length + addressescsv.length) == 0) sub = 'vless-4ca.pages.dev';
 					const vlessConfig = await getVLESSConfig(userID, request.headers.get('Host'), sub, UA, RproxyIP, url);
 					const now = Date.now();
-					const timestamp = Math.floor(now / 1000);
-					const expire = 4102329600;//2099-12-31
+					//const timestamp = Math.floor(now / 1000);
 					const today = new Date(now);
 					today.setHours(0, 0, 0, 0);
 					const UD = Math.floor(((now - today.getTime())/86400000) * 24 * 1099511627776 / 2);
+					let pagesSum = UD;
+					let workersSum = UD;
+					let total = 24 * 1099511627776 ;
+					if (env.CFEMAIL && env.CFKEY){
+						const email = env.CFEMAIL;
+						const key = env.CFKEY;
+						const accountIndex = env.CFID || 0;
+						const accountId = await getAccountId(email, key);
+						if (accountId){
+							const now = new Date()
+							now.setUTCHours(0, 0, 0, 0)
+							const startDate = now.toISOString()
+							const endDate = new Date().toISOString();
+							const Sum = await getSum(accountId, accountIndex, email, key, startDate, endDate);
+							pagesSum = Sum[0];
+							workersSum = Sum[1];
+							total = 102400 ;
+						}
+					}
+					//console.log(`pagesSum: ${pagesSum}\nworkersSum: ${workersSum}\ntotal: ${total}`);
 					if (userAgent && userAgent.includes('mozilla')){
 						return new Response(`${vlessConfig}`, {
 							status: 200,
 							headers: {
 								"Content-Type": "text/plain;charset=utf-8",
 								"Profile-Update-Interval": "6",
-								"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${24 * 1099511627776}; expire=${expire}`,
+								"Subscription-Userinfo": `upload=${pagesSum}; download=${workersSum}; total=${total}; expire=${expire}`,
 							}
 						});
 					} else {
 						return new Response(`${vlessConfig}`, {
 							status: 200,
 							headers: {
-								"Content-Disposition": "attachment; filename=edgetunnel; filename*=utf-8''edgetunnel",
+								"Content-Disposition": `attachment; filename=${FileName}; filename*=utf-8''${encodeURIComponent(FileName)}`,
 								"Content-Type": "text/plain;charset=utf-8",
 								"Profile-Update-Interval": "6",
-								"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${24 * 1099511627776}; expire=${expire}`,
+								"Subscription-Userinfo": `upload=${pagesSum}; download=${workersSum}; total=${total}; expire=${expire}`,
 							}
 						});
 					}
@@ -120,9 +163,6 @@ export default {
 		}
 	},
 };
-
-
-
 
 /**
  * 
@@ -347,10 +387,7 @@ function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
  * @param {string} userID 
  * @returns 
  */
-function processVlessHeader(
-	vlessBuffer,
-	userID
-) {
+function processVlessHeader(vlessBuffer, userID) {
 	if (vlessBuffer.byteLength < 24) {
 		return {
 			hasError: true,
@@ -853,7 +890,7 @@ function generateUUID() {
 }
 
 async function ADD(envadd) {
-	var addtext = envadd.replace(/[	 "'\r\n]+/g, ',').replace(/,+/g, ',');  // 将空格、双引号、单引号和换行符替换为逗号
+	var addtext = envadd.replace(/[	|"'\r\n]+/g, ',').replace(/,+/g, ',');  // 将双引号、单引号和换行符替换为逗号
 	//console.log(addtext);
 	if (addtext.charAt(0) == ',') addtext = addtext.slice(1);
 	if (addtext.charAt(addtext.length -1) == ',') addtext = addtext.slice(0, addtext.length - 1);
@@ -862,8 +899,8 @@ async function ADD(envadd) {
 	return add ;
 }
 
+const 啥啥啥_写的这是啥啊 = 'dmxlc3M=';
 function 配置信息(UUID, 域名地址) {
-	const 啥啥啥_写的这是啥啊 = 'dmxlc3M=';
 	const 协议类型 = atob(啥啥啥_写的这是啥啊);
 	
 	const 别名 = 域名地址;
@@ -920,26 +957,20 @@ async function getVLESSConfig(userID, hostName, sub, UA, RproxyIP, _url) {
 	const v2ray = Config[0];
 	const clash = Config[1];
 	// 如果sub为空，则显示原始内容
-	if ((!sub || sub === '') && !subParams.some(_searchParams => _url.searchParams.has(_searchParams))) {
-		
+	if ( userAgent.includes('mozilla') && !subParams.some(_searchParams => _url.searchParams.has(_searchParams))) {
+		let 订阅器 = `您的订阅内容由 ${sub} 提供维护支持, 自动获取ProxyIP: ${RproxyIP}`;
+		if (!sub || sub == '') {
+			if (!proxyIP || proxyIP =='') {
+				订阅器 = '您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的ProxyIP为空, 推荐您设置 proxyIP/PROXYIP ！！！';
+			} else {
+				订阅器 = `您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的ProxyIP： ${proxyIPs.join(',')}`;
+			}
+		} else if (RproxyIP != 'true'){
+			订阅器 += `, 当前使用的ProxyIP： ${proxyIPs.join(',')}`;
+		}
 		return `
 ################################################################
-v2ray
----------------------------------------------------------------
-${v2ray}
----------------------------------------------------------------
-################################################################
-clash-meta
----------------------------------------------------------------
-${clash}
----------------------------------------------------------------
-################################################################
-`;
-	} else if (sub && userAgent.includes('mozilla') && !subParams.some(_searchParams => _url.searchParams.has(_searchParams))) {
-		
-		return `
-################################################################
-Subscribe / sub 订阅地址, 支持 Base64、clash-meta、sing-box 订阅格式, 您的订阅内容由 ${sub} 提供维护支持, 自动获取ProxyIP: ${RproxyIP}.
+Subscribe / sub 订阅地址, 支持 Base64、clash-meta、sing-box 订阅格式, ${订阅器}
 ---------------------------------------------------------------
 快速自适应订阅地址:
 https://${hostName}/${userID}
@@ -979,20 +1010,62 @@ https://github.com/cmliu/edgetunnel
 		if (typeof fetch != 'function') {
 			return 'Error: fetch is not available in this environment.';
 		}
+
+		const newAddressesapi = await getAddressesapi(addressesapi);
+		const newAddressescsv = await getAddressescsv('TRUE');
+		let newAddressesnotlsapi;
+		let newAddressesnotlscsv;
+
 		// 如果是使用默认域名，则改成一个workers的域名，订阅器会加上代理
 		if (hostName.includes(".workers.dev")){
 			fakeHostName = `${fakeHostName}.${generateRandomString()}${generateRandomNumber()}.workers.dev`;
+			newAddressesnotlsapi = await getAddressesapi(addressesnotlsapi);
+			newAddressesnotlscsv = await getAddressescsv('FALSE');
 		} else if (hostName.includes(".pages.dev")){
 			fakeHostName = `${fakeHostName}.${generateRandomString()}${generateRandomNumber()}.pages.dev`;
-		} else if (hostName.includes("worker") || hostName.includes("notls") || tls == false){
+		} else if (hostName.includes("worker") || hostName.includes("notls") || noTLS == 'true'){
 			fakeHostName = `notls.${fakeHostName}${generateRandomNumber()}.net`;
+			newAddressesnotlsapi = await getAddressesapi(addressesnotlsapi);
+			newAddressesnotlscsv = await getAddressescsv('FALSE');
 		} else {
 			fakeHostName = `${fakeHostName}.${generateRandomNumber()}.xyz`
+		}
+
+		if(hostName.includes('workers.dev') || hostName.includes('pages.dev')) {
+			if (proxyhostsURL && (!proxyhosts || proxyhosts.length == 0)) {
+				try {
+					const response = await fetch(proxyhostsURL); 
+				
+					if (!response.ok) {
+						console.error('获取地址时出错:', response.status, response.statusText);
+						return; // 如果有错误，直接返回
+					}
+				
+					const text = await response.text();
+					const lines = text.split('\n');
+					// 过滤掉空行或只包含空白字符的行
+					const nonEmptyLines = lines.filter(line => line.trim() !== '');
+				
+					proxyhosts = proxyhosts.concat(nonEmptyLines);
+				} catch (error) {
+					console.error('获取地址时出错:', error);
+				}
+			}
+			// 使用Set对象去重
+			proxyhosts = [...new Set(proxyhosts)];
 		}
 
 		let url = `https://${sub}/sub?host=${fakeHostName}&uuid=${fakeUserID}&edgetunnel=cmliu&proxyip=${RproxyIP}`;
 		let isBase64 = true;
 		
+		if (!sub || sub == ""){
+			const 生成本地节点 = await subAddresses(fakeHostName,fakeUserID,noTLS,newAddressesapi,newAddressescsv,newAddressesnotlsapi,newAddressesnotlscsv);
+			const 解码本地节点 = atob(生成本地节点)
+			const 本地节点数组 = 解码本地节点.split('\n');
+			url = 本地节点数组.join('|');
+			//console.log(url);
+		} 
+
 		if (!userAgent.includes(('CF-Workers-SUB').toLowerCase())){
 			if ((userAgent.includes('clash') && !userAgent.includes('nekobox')) || ( _url.searchParams.has('clash') && !userAgent.includes('subconverter'))) {
 				url = `https://${subconverter}/sub?target=clash&url=${encodeURIComponent(url)}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=true&fdn=false&sort=false&new_name=true`;
@@ -1004,16 +1077,348 @@ https://github.com/cmliu/edgetunnel
 		}
 		
 		try {
-			const response = await fetch(url ,{
-			headers: {
-				'User-Agent': `${UA} CF-Workers-edgetunnel/cmliu`
-			}});
-			const content = await response.text();
-			return revertFakeInfo(content, userID, hostName, isBase64);
+			let content;
+			if ((!sub || sub == "") && isBase64 == true) {
+				content = await subAddresses(fakeHostName,fakeUserID,noTLS,newAddressesapi,newAddressescsv,newAddressesnotlsapi,newAddressesnotlscsv);
+			} else {
+				const response = await fetch(url ,{
+					headers: {
+						'User-Agent': `${UA} CF-Workers-edgetunnel/cmliu`
+					}});
+				content = await response.text();
+			}
+			let 输出内容 = revertFakeInfo(content, userID, hostName, isBase64);
+			//console.log(输出内容);
+			return 输出内容;
 		} catch (error) {
 			console.error('Error fetching content:', error);
 			return `Error fetching content: ${error.message}`;
 		}
 
+	}
+}
+
+async function getAccountId(email, key) {
+	try {
+		const url = 'https://api.cloudflare.com/client/v4/accounts';
+		const headers = new Headers({
+			'X-AUTH-EMAIL': email,
+			'X-AUTH-KEY': key
+		});
+		const response = await fetch(url, { headers });
+		const data = await response.json();
+		return data.result[0].id; // 假设我们需要第一个账号ID
+	} catch (error) {
+		return false ;
+	}
+}
+
+async function getSum(accountId, accountIndex, email, key, startDate, endDate) {
+	try {
+		const startDateISO = new Date(startDate).toISOString();
+		const endDateISO = new Date(endDate).toISOString();
+	
+		const query = JSON.stringify({
+			query: `query getBillingMetrics($accountId: String!, $filter: AccountWorkersInvocationsAdaptiveFilter_InputObject) {
+				viewer {
+					accounts(filter: {accountTag: $accountId}) {
+						pagesFunctionsInvocationsAdaptiveGroups(limit: 1000, filter: $filter) {
+							sum {
+								requests
+							}
+						}
+						workersInvocationsAdaptive(limit: 10000, filter: $filter) {
+							sum {
+								requests
+							}
+						}
+					}
+				}
+			}`,
+			variables: {
+				accountId,
+				filter: { datetime_geq: startDateISO, datetime_leq: endDateISO }
+			},
+		});
+	
+		const headers = new Headers({
+			'Content-Type': 'application/json',
+			'X-AUTH-EMAIL': email,
+			'X-AUTH-KEY': key,
+		});
+	
+		const response = await fetch(`https://api.cloudflare.com/client/v4/graphql`, {
+			method: 'POST',
+			headers: headers,
+			body: query
+		});
+	
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+	
+		const res = await response.json();
+	
+		const pagesFunctionsInvocationsAdaptiveGroups = res?.data?.viewer?.accounts?.[accountIndex]?.pagesFunctionsInvocationsAdaptiveGroups;
+		const workersInvocationsAdaptive = res?.data?.viewer?.accounts?.[accountIndex]?.workersInvocationsAdaptive;
+	
+		if (!pagesFunctionsInvocationsAdaptiveGroups && !workersInvocationsAdaptive) {
+			throw new Error('找不到数据');
+		}
+	
+		const pagesSum = pagesFunctionsInvocationsAdaptiveGroups.reduce((a, b) => a + b?.sum.requests, 0);
+		const workersSum = workersInvocationsAdaptive.reduce((a, b) => a + b?.sum.requests, 0);
+	
+		//console.log(`范围: ${startDateISO} ~ ${endDateISO}\n默认取第 ${accountIndex} 项`);
+	
+		return [pagesSum, workersSum ];
+	} catch (error) {
+		return [ 0,0 ];
+	}
+}
+
+async function getAddressesapi(api) {
+	if (!api || api.length === 0) {
+		return [];
+	}
+
+	let newapi = "";
+
+	// 创建一个AbortController对象，用于控制fetch请求的取消
+	const controller = new AbortController();
+
+	const timeout = setTimeout(() => {
+		controller.abort(); // 取消所有请求
+	}, 2000); // 2秒后触发
+
+	try {
+		// 使用Promise.allSettled等待所有API请求完成，无论成功或失败
+		// 对api数组进行遍历，对每个API地址发起fetch请求
+		const responses = await Promise.allSettled(api.map(apiUrl => fetch(apiUrl, {
+			method: 'get', 
+			headers: {
+				'Accept': 'text/html,application/xhtml+xml,application/xml;',
+				'User-Agent': 'CF-Workers-edgetunnel/cmliu'
+			},
+			signal: controller.signal // 将AbortController的信号量添加到fetch请求中，以便于需要时可以取消请求
+		}).then(response => response.ok ? response.text() : Promise.reject())));
+
+		// 遍历所有响应
+		for (const response of responses) {
+			// 检查响应状态是否为'fulfilled'，即请求成功完成
+			if (response.status === 'fulfilled') {
+				// 获取响应的内容
+				const content = await response.value;
+				newapi += content + '\n';
+			}
+		}
+	} catch (error) {
+		console.error(error);
+	} finally {
+		// 无论成功或失败，最后都清除设置的超时定时器
+		clearTimeout(timeout);
+	}
+
+	const newAddressesapi = await ADD(newapi);
+
+	// 返回处理后的结果
+	return newAddressesapi;
+}
+
+async function getAddressescsv(tls) {
+	if (!addressescsv || addressescsv.length === 0) {
+		return [];
+	}
+	
+	let newAddressescsv = [];
+	
+	for (const csvUrl of addressescsv) {
+		try {
+			const response = await fetch(csvUrl);
+		
+			if (!response.ok) {
+				console.error('获取CSV地址时出错:', response.status, response.statusText);
+				continue;
+			}
+		
+			const text = await response.text();// 使用正确的字符编码解析文本内容
+			let lines;
+			if (text.includes('\r\n')){
+				lines = text.split('\r\n');
+			} else {
+				lines = text.split('\n');
+			}
+		
+			// 检查CSV头部是否包含必需字段
+			const header = lines[0].split(',');
+			const tlsIndex = header.indexOf('TLS');
+			const speedIndex = header.length - 1; // 最后一个字段
+		
+			const ipAddressIndex = 0;// IP地址在 CSV 头部的位置
+			const portIndex = 1;// 端口在 CSV 头部的位置
+			const dataCenterIndex = tlsIndex + 1; // 数据中心是 TLS 的后一个字段
+		
+			if (tlsIndex === -1) {
+				console.error('CSV文件缺少必需的字段');
+				continue;
+			}
+		
+			// 从第二行开始遍历CSV行
+			for (let i = 1; i < lines.length; i++) {
+				const columns = lines[i].split(',');
+		
+				// 检查TLS是否为"TRUE"且速度大于DLS
+				if (columns[tlsIndex].toUpperCase() === tls && parseFloat(columns[speedIndex]) > DLS) {
+					const ipAddress = columns[ipAddressIndex];
+					const port = columns[portIndex];
+					const dataCenter = columns[dataCenterIndex];
+			
+					const formattedAddress = `${ipAddress}:${port}#${dataCenter}`;
+					newAddressescsv.push(formattedAddress);
+				}
+			}
+		} catch (error) {
+			console.error('获取CSV地址时出错:', error);
+			continue;
+		}
+	}
+	
+	return newAddressescsv;
+}
+
+function subAddresses(host,UUID,noTLS,newAddressesapi,newAddressescsv,newAddressesnotlsapi,newAddressesnotlscsv) {
+	const regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[.*\]):?(\d+)?#?(.*)?$/;
+	addresses = addresses.concat(newAddressesapi);
+	addresses = addresses.concat(newAddressescsv);
+	let notlsresponseBody ;
+	if (noTLS == 'true'){
+		addressesnotls = addressesnotls.concat(newAddressesnotlsapi);
+		addressesnotls = addressesnotls.concat(newAddressesnotlscsv);
+		const uniqueAddressesnotls = [...new Set(addressesnotls)];
+
+		notlsresponseBody = uniqueAddressesnotls.map(address => {
+			let port = "80";
+			let addressid = address;
+		
+			const match = addressid.match(regex);
+			if (!match) {
+				if (address.includes(':') && address.includes('#')) {
+					const parts = address.split(':');
+					address = parts[0];
+					const subParts = parts[1].split('#');
+					port = subParts[0];
+					addressid = subParts[1];
+				} else if (address.includes(':')) {
+					const parts = address.split(':');
+					address = parts[0];
+					port = parts[1];
+				} else if (address.includes('#')) {
+					const parts = address.split('#');
+					address = parts[0];
+					addressid = parts[1];
+				}
+			
+				if (addressid.includes(':')) {
+					addressid = addressid.split(':')[0];
+				}
+			} else {
+				address = match[1];
+				port = match[2] || port;
+				addressid = match[3] || address;
+			}
+
+			let 伪装域名 = host ;
+			let 最终路径 = '/?ed=2560' ;
+			let 节点备注 = '';
+			
+			if(proxyhosts.length > 0 && (伪装域名.includes('.workers.dev') || 伪装域名.includes('pages.dev'))) {
+				最终路径 = `/${伪装域名}${最终路径}`;
+				伪装域名 = proxyhosts[Math.floor(Math.random() * proxyhosts.length)];
+				节点备注 = ` 已启用临时域名中转服务，请尽快绑定自定义域！`;
+			}
+
+			const vlessLink = `vless://${UUID}@${address}:${port}?encryption=none&security=&type=ws&host=${伪装域名}&path=${encodeURIComponent(最终路径)}#${encodeURIComponent(addressid + 节点备注)}`;
+	
+			return vlessLink;
+
+		}).join('\n');
+
+	}
+
+	// 使用Set对象去重
+	const uniqueAddresses = [...new Set(addresses)];
+
+	const responseBody = uniqueAddresses.map(address => {
+		let port = "443";
+		let addressid = address;
+
+		const match = addressid.match(regex);
+		if (!match) {
+			if (address.includes(':') && address.includes('#')) {
+				const parts = address.split(':');
+				address = parts[0];
+				const subParts = parts[1].split('#');
+				port = subParts[0];
+				addressid = subParts[1];
+			} else if (address.includes(':')) {
+				const parts = address.split(':');
+				address = parts[0];
+				port = parts[1];
+			} else if (address.includes('#')) {
+				const parts = address.split('#');
+				address = parts[0];
+				addressid = parts[1];
+			}
+		
+			if (addressid.includes(':')) {
+				addressid = addressid.split(':')[0];
+			}
+		} else {
+			address = match[1];
+			port = match[2] || port;
+			addressid = match[3] || address;
+		}
+		
+		let 伪装域名 = host ;
+		let 最终路径 = '/?ed=2560' ;
+		let 节点备注 = '';
+		
+		if(proxyhosts.length > 0 && (伪装域名.includes('.workers.dev') || 伪装域名.includes('pages.dev'))) {
+			最终路径 = `/${伪装域名}${最终路径}`;
+			伪装域名 = proxyhosts[Math.floor(Math.random() * proxyhosts.length)];
+			节点备注 = ` 已启用临时域名中转服务，请尽快绑定自定义域！`;
+		}
+		
+		const 协议类型 = atob(啥啥啥_写的这是啥啊);
+		const vlessLink = `${协议类型}://${UUID}@${address}:${port}?encryption=none&security=tls&sni=${伪装域名}&fp=random&type=ws&host=${伪装域名}&path=${encodeURIComponent(最终路径)}#${encodeURIComponent(addressid + 节点备注)}`;
+			
+		return vlessLink;
+	}).join('\n');
+
+	let base64Response = responseBody; // 重新进行 Base64 编码
+	if(noTLS == 'true') base64Response += `\nnotlsresponseBody`
+	return btoa(base64Response);
+}
+
+async function sendMessage(type, ip, add_data = "") {
+	if ( BotToken !== '' && ChatID !== ''){
+		let msg = "";
+		const response = await fetch(`http://ip-api.com/json/${ip}?lang=zh-CN`);
+		if (response.status == 200) {
+			const ipInfo = await response.json();
+			msg = `${type}\nIP: ${ip}\n国家: ${ipInfo.country}\n<tg-spoiler>城市: ${ipInfo.city}\n组织: ${ipInfo.org}\nASN: ${ipInfo.as}\n${add_data}`;
+		} else {
+			msg = `${type}\nIP: ${ip}\n<tg-spoiler>${add_data}`;
+		}
+	
+		let url = "https://api.telegram.org/bot"+ BotToken +"/sendMessage?chat_id=" + ChatID + "&parse_mode=HTML&text=" + encodeURIComponent(msg);
+		return fetch(url, {
+			method: 'get',
+			headers: {
+				'Accept': 'text/html,application/xhtml+xml,application/xml;',
+				'Accept-Encoding': 'gzip, deflate, br',
+				'User-Agent': 'Mozilla/5.0 Chrome/90.0.4430.72'
+			}
+		});
 	}
 }
