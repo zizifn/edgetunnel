@@ -158,6 +158,26 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 
 **注意: 同时填入`CFEMAIL`和`CFKEY`才会启用显示请求使用量，但是不推荐使用！没必要给一个Worker项目这么高的权限！后果自负！！！**
 
+## 实用小技巧
+
+**该项目部署的节点可通过节点PATH(路径)的方式，使用指定的`PROXYIP`或`SOCKS5`!!!**
+
+- 指定 `PROXYIP` 案例
+   ```url
+   /proxyip=proxyip.fxxk.dedyn.io
+   /?proxyip=proxyip.fxxk.dedyn.io
+   /proxyip.fxxk.dedyn.io (仅限于域名开头为'proxyip.'的域名)
+   ```
+
+- 指定 `SOCKS5` 案例
+   ```url
+   /socks5=user:password@127.0.0.1:1080
+   /?socks5=user:password@127.0.0.1:1080
+   /socks://dXNlcjpwYXNzd29yZA==@127.0.0.1:1080
+   /socks5://user:password@127.0.0.1:1080
+   ```
+
+
 ## Star 星星走起
 [![Stargazers over time](https://starchart.cc/cmliu/edgetunnel.svg?variant=adaptive)](https://starchart.cc/cmliu/edgetunnel)
 
