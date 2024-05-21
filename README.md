@@ -3,7 +3,7 @@
 
 - 基础部署视频教程：https://www.youtube.com/watch?v=LeT4jQUh8ok
 - 快速部署视频教程：https://www.youtube.com/watch?v=59THrmJhmAw ***最佳推荐!!!***
-- 进阶使用视角教程：https://www.youtube.com/watch?v=s91zjpw3-P8
+- 进阶使用视频教程：https://www.youtube.com/watch?v=s91zjpw3-P8
 
 Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 
@@ -190,4 +190,4 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 
 
 # 感谢
-[zizifn](https://github.com/zizifn/edgetunnel)、[3Kmfi6HP](https://github.com/3Kmfi6HP/EDtunnel)、[Stanley-baby](https://github.com/Stanley-baby)、[ACL4SSR](https://github.com/ACL4SSR/ACL4SSR/tree/master/Clash/config)、[SHIJS1999](https://github.com/SHIJS1999/cloudflare-worker-vless-ip)
+[zizifn](https://github.com/zizifn/edgetunnel)、[3Kmfi6HP](https://github.com/3Kmfi6HP/EDtunnel)、[Stanley-baby](https://github.com/Stanley-baby)、[ACL4SSR](https://github.com/ACL4SSR/ACL4SSR/tree/master/Clash/config)、[SHIJS1999](https://github.com/SHIJS1999/cloudflare-worker-vless-ip)、[肥羊订阅转换](https://suburl.v1.mk)
