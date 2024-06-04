@@ -1,5 +1,5 @@
-# Cloudflare Worker 2 Vless & Sub
-这是一个基于 Cloudflare Worker 平台的脚本，在原版的基础上修改了显示 VLESS 配置信息转换为订阅内容。使用该脚本，你可以方便地将 VLESS 配置信息使用在线配置转换到 Clash 或 Singbox 等工具中。
+# edgetunnel
+这是一个基于 CF Worker 平台的脚本，在原版的基础上修改了显示 VLESS 配置信息转换为订阅内容。使用该脚本，你可以方便地将 VLESS 配置信息使用在线配置转换到 Clash 或 Singbox 等工具中。
 
 - 基础部署视频教程：https://www.youtube.com/watch?v=LeT4jQUh8ok
 - 快速部署视频教程：https://www.youtube.com/watch?v=59THrmJhmAw ***最佳推荐!!!***
@@ -31,8 +31,8 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 - 另外，您也可以选择自行部署 [WorkerVless2sub 订阅生成服务](https://github.com/cmliu/WorkerVless2sub)，这样既可以利用订阅生成器的便利。
    
 ## Workers 部署方法 [视频教程](https://www.youtube.com/watch?v=LeT4jQUh8ok&t=83s)
-1. 部署 Cloudflare Worker：
-   - 在 Cloudflare Worker 控制台中创建一个新的 Worker。
+1. 部署 CF Worker：
+   - 在 CF Worker 控制台中创建一个新的 Worker。
    - 将 [worker.js](https://github.com/cmliu/edgetunnel/blob/main/_worker.js) 的内容粘贴到 Worker 编辑器中。
    - 将第 7 行 `userID` 修改成你自己的 **UUID** 。
 
@@ -45,7 +45,7 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 
 3. 给 workers绑定 自定义域： 
    - 在 workers控制台的 `触发器`选项卡，下方点击 `添加自定义域`。
-   - 填入你已转入 CloudFlare 域名解析服务的次级域名，例如:`vless.google.com`后 点击`添加自定义域`，等待证书生效即可。
+   - 填入你已转入 CF 域名解析服务的次级域名，例如:`vless.google.com`后 点击`添加自定义域`，等待证书生效即可。
    - **如果你是小白，你现在可以直接起飞，不用再往下看了！！！**
 
 <details>
@@ -59,9 +59,9 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 </details>
 
 ## Pages 上传 部署方法 **最佳推荐!!!** [视频教程](https://www.youtube.com/watch?v=59THrmJhmAw)
-1. 部署 Cloudflare Pages：
+1. 部署 CF Pages：
    - 下载 [worker.zip](https://raw.githubusercontent.com/cmliu/edgetunnel/main/worker.zip) 文件，并点上 Star !!!
-   - 在 Cloudflare Pages 控制台中选择 `上传资产`后，为你的项目取名后点击 `创建项目`，然后上传你下载好的 [worker.zip](https://raw.githubusercontent.com/cmliu/edgetunnel/main/worker.zip) 文件后点击 `部署站点`。
+   - 在 CF Pages 控制台中选择 `上传资产`后，为你的项目取名后点击 `创建项目`，然后上传你下载好的 [worker.zip](https://raw.githubusercontent.com/cmliu/edgetunnel/main/worker.zip) 文件后点击 `部署站点`。
    - 部署完成后点击 `继续处理站点` 后，选择 `设置` > `环境变量` > **制作**为生产环境定义变量 > `添加变量`。
      变量名称填写**UUID**，值则为你的UUID，后点击 `保存`即可。
    - 返回 `部署` 选项卡，在右下角点击 `创建新部署` 后，重新上传 [worker.zip](https://raw.githubusercontent.com/cmliu/edgetunnel/main/worker.zip) 文件后点击 `保存并部署` 即可。
@@ -80,7 +80,7 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
    - 在 Pages控制台的 `自定义域`选项卡，下方点击 `设置自定义域`。
    - 填入你的自定义次级域名，注意不要使用你的根域名，例如：
      您分配到的域名是 `fuck.cloudns.biz`，则添加自定义域填入 `lizi.fuck.cloudns.biz`即可；
-   - 按照 Cloudflare 的要求将返回你的域名DNS服务商，添加 该自定义域 `lizi`的 CNAME记录 `edgetunnel.pages.dev` 后，点击 `激活域`即可。
+   - 按照 CF 的要求将返回你的域名DNS服务商，添加 该自定义域 `lizi`的 CNAME记录 `edgetunnel.pages.dev` 后，点击 `激活域`即可。
    - **如果你是小白，那么你的 pages 绑定`自定义域`之后即可直接起飞，不用再往下看了！！！**
    - 
 </details>
@@ -97,9 +97,9 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 </details>
 
 ## Pages GitHub 部署方法 [视频教程](https://www.youtube.com/watch?v=LeT4jQUh8ok&t=560s)
-1. 部署 Cloudflare Pages：
+1. 部署 CF Pages：
    - 在 Github 上先 Fork 本项目，并点上 Star !!!
-   - 在 Cloudflare Pages 控制台中选择 `连接到 Git`后，选中 `edgetunnel`项目后点击 `开始设置`。
+   - 在 CF Pages 控制台中选择 `连接到 Git`后，选中 `edgetunnel`项目后点击 `开始设置`。
    - 在 `设置构建和部署`页面下方，选择 `环境变量（高级）`后并 `添加变量`
      变量名称填写**UUID**，值则为你的UUID，后点击 `保存并部署`即可。
 
@@ -114,7 +114,7 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
    - 在 Pages控制台的 `自定义域`选项卡，下方点击 `设置自定义域`。
    - 填入你的自定义次级域名，注意不要使用你的根域名，例如：
      您分配到的域名是 `fuck.cloudns.biz`，则添加自定义域填入 `lizi.fuck.cloudns.biz`即可；
-   - 按照 Cloudflare 的要求将返回你的域名DNS服务商，添加 该自定义域 `lizi`的 CNAME记录 `edgetunnel.pages.dev` 后，点击 `激活域`即可。
+   - 按照 CF 的要求将返回你的域名DNS服务商，添加 该自定义域 `lizi`的 CNAME记录 `edgetunnel.pages.dev` 后，点击 `激活域`即可。
    - **如果你是小白，那么你的 pages 绑定`自定义域`之后即可直接起飞，不用再往下看了！！！**
 
 <details>
@@ -133,8 +133,8 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 | 变量名 | 示例 | 必填 | 备注 | YT |
 |--------|---------|-|-----|-----|
 | UUID | 90cd4a77-141a-43c9-991b-08263cfe9c10 |√| Powershell -NoExit -Command "[guid]::NewGuid()"| [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=72s) |
-| PROXYIP | proxyip.fxxk.dedyn.io |×| 备选作为访问CloudFlareCDN站点的代理节点(支持多ProxyIP, ProxyIP之间使用`,`或 换行 作间隔) | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=166s) |
-| SOCKS5  | user:password@127.0.0.1:1080 |×| 优先作为访问CloudFlareCDN站点的SOCKS5代理 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=826s) |
+| PROXYIP | proxyip.fxxk.dedyn.io |×| 备选作为访问CFCDN站点的代理节点(支持多ProxyIP, ProxyIP之间使用`,`或 换行 作间隔) | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=166s) |
+| SOCKS5  | user:password@127.0.0.1:1080 |×| 优先作为访问CFCDN站点的SOCKS5代理 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=826s) |
 | ADD | icook.tw:2053#官方优选域名 |×| 本地优选TLS域名/优选IP(支持多元素之间`,`或 换行 作间隔) ||
 | ADDAPI | [https://raw.github.../addressesapi.txt](https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressesapi.txt) |×| 不解释, 懂得都懂 ||
 | ADDNOTLS | icook.hk:8080#官方优选域名 |×| 本地优选noTLS域名/优选IP(支持多元素之间`,`或 换行 作间隔) ||
