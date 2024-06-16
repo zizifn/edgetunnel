@@ -10,7 +10,7 @@ let proxyIP = '';// 小白勿动，该地址并不影响你的网速，这是给
 
 let sub = '';// 留空则使用内置订阅
 let subconverter = 'url.v1.mk';// clash订阅转换后端，目前使用肥羊的订阅转换功能。自带虚假uuid和host订阅。
-let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini"; //订阅配置文件
+let subconfig = "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online.ini"; //订阅配置文件
 
 // The user name and password do not contain special characters
 // Setting the address will ignore proxyIP
@@ -96,6 +96,7 @@ export default {
 			ChatID = env.TGID || ChatID; 
 			const upgradeHeader = request.headers.get('Upgrade');
 			const url = new URL(request.url);
+			if (url.searchParams.has('sub') && url.searchParams.get('sub') !== '') sub = url.searchParams.get('sub');
 			if (url.searchParams.has('notls')) noTLS = 'true';
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
 				// const url = new URL(request.url);
@@ -117,7 +118,10 @@ export default {
 						if (request.headers.get('Host').includes(".workers.dev")) {
 							sub = 'workervless2sub-f1q.pages.dev'; 
 							subconfig = 'https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online.ini';
-						} else sub = 'vless-4ca.pages.dev';
+						} else {
+							sub = 'vless-4ca.pages.dev';
+							subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini";
+						}
 					} 
 					const vlessConfig = await getVLESSConfig(userID, request.headers.get('Host'), sub, UA, RproxyIP, url);
 					const now = Date.now();
@@ -173,7 +177,6 @@ export default {
 				proxyIP = url.searchParams.get('proxyip') || proxyIP;
 				if (new RegExp('/proxyip=', 'i').test(url.pathname)) proxyIP = url.pathname.toLowerCase().split('/proxyip=')[1];
 				else if (new RegExp('/proxyip.', 'i').test(url.pathname)) proxyIP = `proxyip.${url.pathname.toLowerCase().split("/proxyip.")[1]}`;
-				else if (!proxyIP || proxyIP == '') proxyIP = 'proxyip.fxxk.dedyn.io';
 				
 				socks5Address = url.searchParams.get('socks5') || socks5Address;
 				if (new RegExp('/socks5=', 'i').test(url.pathname)) socks5Address = url.pathname.split('5=')[1];
@@ -340,7 +343,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 	async function connectAndWrite(address, port, socks = false) {
 		/** @type {import("@cloudflare/workers-types").Socket} */
 		log(`connected to ${address}:${port}`);
-		if (/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(address)) address = `${atob('d3d3Lg==')}${address}${atob('LmlwLjA5MDIyNy54eXo=')}`;
+		//if (/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(address)) address = `${atob('d3d3Lg==')}${address}${atob('LmlwLjA5MDIyNy54eXo=')}`;
 		// 如果指定使用 SOCKS5 代理，则通过 SOCKS5 协议连接；否则直接连接
 		const tcpSocket = socks ? await socks5Connect(addressType, address, port, log)
 			: connect({
@@ -366,6 +369,7 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 			tcpSocket = await connectAndWrite(addressRemote, portRemote, true);
 		} else {
 			// 否则，尝试使用预设的代理 IP（如果有）或原始地址重试连接
+			if (!proxyIP || proxyIP == '') proxyIP = atob('cHJveHlpcC5meHhrLmRlZHluLmlv');
 			tcpSocket = await connectAndWrite(proxyIP || addressRemote, portRemote);
 		}
 		// 无论重试是否成功，都要关闭 WebSocket（可能是为了重新建立连接）
@@ -1064,7 +1068,7 @@ function socks5AddressParser(address) {
 		throw new Error('无效的 SOCKS 地址格式：IPv6 地址必须用方括号括起来，如 [2001:db8::1]');
 	}
 
-	if (/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(hostname)) hostname = `${atob('d3d3Lg==')}${hostname}${atob('LmlwLjA5MDIyNy54eXo=')}`;
+	//if (/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(hostname)) hostname = `${atob('d3d3Lg==')}${hostname}${atob('LmlwLjA5MDIyNy54eXo=')}`;
 	// 返回解析后的结果
 	return {
 		username,  // 用户名，如果没有则为 undefined
@@ -1234,7 +1238,8 @@ async function getVLESSConfig(userID, hostName, sub, UA, RproxyIP, _url) {
 				订阅器 = `您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的ProxyIP： ${proxyIPs.join(',')}`;
 			}
 		} else if (RproxyIP != 'true'){
-			订阅器 += `, 当前使用的ProxyIP： ${proxyIPs.join(',')}`;
+			if (enableSocks) 订阅器 += `, 当前使用的Socks5： ${parsedSocks5Address.hostname}:${String(parsedSocks5Address.port)}`;
+			else 订阅器 += `, 当前使用的ProxyIP： ${proxyIPs.join(', ')}`;
 		}
 		return `
 ################################################################
@@ -1242,9 +1247,9 @@ Subscribe / sub 订阅地址, 支持 Base64、clash-meta、sing-box 订阅格式
 ---------------------------------------------------------------
 快速自适应订阅地址:
 https://${proxyhost}${hostName}/${userID}
+https://${proxyhost}${hostName}/${userID}?sub
 
 Base64订阅地址:
-https://${proxyhost}${hostName}/${userID}?sub
 https://${proxyhost}${hostName}/${userID}?b64
 https://${proxyhost}${hostName}/${userID}?base64
 
