@@ -5,7 +5,7 @@
 - 快速部署视频教程：https://www.youtube.com/watch?v=59THrmJhmAw ***最佳推荐!!!***
 - 进阶使用视频教程：https://www.youtube.com/watch?v=s91zjpw3-P8
 
-Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
+Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)，**感谢[Alice Networks](https://alicenetworks.net/)提供的云服务器维持[CM订阅转换服务](https://sub.fxxk.dedyn.io/)！**
 
 # 免责声明
 
@@ -144,7 +144,7 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 | TGTOKEN | 6894123456:XXXXXXXXXX0qExVsBPUhHDAbXXX |×| 发送TG通知的机器人token | 
 | TGID | 6946912345 |×| 接收TG通知的账户数字ID | 
 | SUB | VLESS.fxxk.dedyn.io | × | 内建域名、IP节点信息的订阅生成器地址 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1193s) |
-| SUBAPI | api.v1.mk |×| clash、singbox等 订阅转换后端 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1446s) |
+| SUBAPI | subapi.fxxk.dedyn.io |×| clash、singbox等 订阅转换后端 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1446s) |
 | SUBCONFIG | [https://raw.github.../ACL4SSR_Online_Full_MultiMode.ini](https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini) |×| clash、singbox等 订阅转换配置文件 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1605s) |
 | RPROXYIP | false |×| 设为 true 即可强制获取订阅器分配的ProxyIP(需订阅器支持)| [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1816s) |
 | URL302 | https://t.me/CMLiussss |×| 主页302跳转(支持多url, url之间使用`,`或 换行 作间隔, 小白别用) |  |
@@ -190,4 +190,4 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)
 
 
 # 感谢
-[zizifn](https://github.com/zizifn/edgetunnel)、[3Kmfi6HP](https://github.com/3Kmfi6HP/EDtunnel)、[Stanley-baby](https://github.com/Stanley-baby)、[ACL4SSR](https://github.com/ACL4SSR/ACL4SSR/tree/master/Clash/config)、[SHIJS1999](https://github.com/SHIJS1999/cloudflare-worker-vless-ip)、[肥羊订阅转换](https://suburl.v1.mk)
+[zizifn](https://github.com/zizifn/edgetunnel)、[3Kmfi6HP](https://github.com/3Kmfi6HP/EDtunnel)、[Stanley-baby](https://github.com/Stanley-baby)、[ACL4SSR](https://github.com/ACL4SSR/ACL4SSR/tree/master/Clash/config)、[SHIJS1999](https://github.com/SHIJS1999/cloudflare-worker-vless-ip)、<a href="https://alicenetworks.net/"><img src="https://alicenetworks.net/templates/lagom2/assets/img/logo/logo_big.194980063.png" width="150" height="75" alt="Alice Networks LTD"/></a>，
