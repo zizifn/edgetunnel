@@ -132,25 +132,25 @@ Telegram交流群：[@CMLiussss](https://t.me/CMLiussss)，**感谢[Alice Networ
 ## 变量说明
 | 变量名 | 示例 | 必填 | 备注 | YT |
 |--------|---------|-|-----|-----|
-| UUID | 90cd4a77-141a-43c9-991b-08263cfe9c10 |√| Powershell -NoExit -Command "[guid]::NewGuid()"| [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=72s) |
-| PROXYIP | proxyip.fxxk.dedyn.io |×| 备选作为访问CFCDN站点的代理节点(支持多ProxyIP, ProxyIP之间使用`,`或 换行 作间隔) | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=166s) |
-| SOCKS5  | user:password@127.0.0.1:1080 |×| 优先作为访问CFCDN站点的SOCKS5代理 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=826s) |
-| ADD | icook.tw:2053#官方优选域名 |×| 本地优选TLS域名/优选IP(支持多元素之间`,`或 换行 作间隔) ||
-| ADDAPI | [https://raw.github.../addressesapi.txt](https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressesapi.txt) |×| 不解释, 懂得都懂 ||
-| ADDNOTLS | icook.hk:8080#官方优选域名 |×| 本地优选noTLS域名/优选IP(支持多元素之间`,`或 换行 作间隔) ||
-| ADDNOTLSAPI | [https://raw.github.../addressesapi.txt](https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt) |×| 不解释, 懂得都懂 ||
-| ADDCSV | [https://raw.github.../addressescsv.csv](https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressescsv.csv) |×| 不解释, 懂得都懂 ||
-| DLS | 8 |×| 不解释, 懂得都懂 ||
-| TGTOKEN | 6894123456:XXXXXXXXXX0qExVsBPUhHDAbXXX |×| 发送TG通知的机器人token | 
-| TGID | 6946912345 |×| 接收TG通知的账户数字ID | 
-| SUB | VLESS.fxxk.dedyn.io | × | 内建域名、IP节点信息的订阅生成器地址 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1193s) |
-| SUBAPI | subapi.fxxk.dedyn.io |×| clash、singbox等 订阅转换后端 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1446s) |
-| SUBCONFIG | [https://raw.github.../ACL4SSR_Online_Full_MultiMode.ini](https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini) |×| clash、singbox等 订阅转换配置文件 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1605s) |
-| RPROXYIP | false |×| 设为 true 即可强制获取订阅器分配的ProxyIP(需订阅器支持)| [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1816s) |
-| URL302 | https://t.me/CMLiussss |×| 主页302跳转(支持多url, url之间使用`,`或 换行 作间隔, 小白别用) |  |
-| URL | https://t.me/CMLiussss |×| 主页伪装(支持多url, url之间使用`,`或 换行 作间隔, 乱设容易触发反诈) |  |
-| CFEMAIL | admin@gmail.com |×| CF账户邮箱(与`CFKEY`都填上后, 订阅信息将显示请求使用量, 小白别用) |  |
-| CFKEY | c6a944b5c956b6c18c2352880952bced8b85e |×| CF账户Global API Key(与`CFEMAIL`都填上后, 订阅信息将显示请求使用量, 小白别用) |  |
+| UUID | `90cd4a77-141a-43c9-991b-08263cfe9c10` |✅| Powershell -NoExit -Command "[guid]::NewGuid()"| [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=72s) |
+| PROXYIP | `proxyip.fxxk.dedyn.io` |❌| 备选作为访问CFCDN站点的代理节点(支持多ProxyIP, ProxyIP之间使用`,`或 换行 作间隔) | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=166s) |
+| SOCKS5  | `user:password@127.0.0.1:1080` |❌| 优先作为访问CFCDN站点的SOCKS5代理 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=826s) |
+| ADD | `icook.tw:2053#官方优选域名` |❌| 本地优选TLS域名/优选IP(支持多元素之间`,`或 换行 作间隔) ||
+| ADDAPI | [https://raw.github.../addressesapi.txt](https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressesapi.txt) |❌| 优选IP的API地址(支持多元素之间`,`或 换行 作间隔) ||
+| ADDNOTLS | `icook.hk:8080#官方优选域名` |❌| 本地优选noTLS域名/优选IP(支持多元素之间`,`或 换行 作间隔) ||
+| ADDNOTLSAPI | [https://raw.github.../addressesapi.txt](https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt) |❌| 优选IP的API地址(支持多元素之间`,`或 换行 作间隔) ||
+| ADDCSV | [https://raw.github.../addressescsv.csv](https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressescsv.csv) |❌| iptest测速结果(支持多元素, 元素之间使用`,`作间隔) ||
+| DLS | `8` |❌| `ADDCSV`测速结果满足速度下限 ||
+| TGTOKEN | `6894123456:XXXXXXXXXX0qExVsBPUhHDAbXXX` |❌| 发送TG通知的机器人token | 
+| TGID | `6946912345` |❌| 接收TG通知的账户数字ID | 
+| SUB | `VLESS.fxxk.dedyn.io` | ❌ | 内建域名、IP节点信息的订阅生成器地址 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1193s) |
+| SUBAPI | `SUBAPI.fxxk.dedyn.io` |❌| clash、singbox等 订阅转换后端 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1446s) |
+| SUBCONFIG | [https://raw.github.../ACL4SSR_Online_Full_MultiMode.ini](https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini) |❌| clash、singbox等 订阅转换配置文件 | [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1605s) |
+| RPROXYIP | `false` |❌| 设为 true 即可强制获取订阅器分配的ProxyIP(需订阅器支持)| [Video](https://www.youtube.com/watch?v=s91zjpw3-P8&t=1816s) |
+| URL302 | `https://t.me/CMLiussss` |❌| 主页302跳转(支持多url, url之间使用`,`或 换行 作间隔, 小白别用) |  |
+| URL | `https://t.me/CMLiussss` |❌| 主页伪装(支持多url, url之间使用`,`或 换行 作间隔, 乱设容易触发反诈) |  |
+| CFEMAIL | `admin@gmail.com` |❌| CF账户邮箱(与`CFKEY`都填上后, 订阅信息将显示请求使用量, 小白别用) |  |
+| CFKEY | `c6a944b5c956b6c18c2352880952bced8b85e` |❌| CF账户Global API Key(与`CFEMAIL`都填上后, 订阅信息将显示请求使用量, 小白别用) |  |
 
 **注意: 填入`SOCKS5`后将不再启用`PROXYIP`！请二选一使用！！！**
 
