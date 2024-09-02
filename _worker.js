@@ -30,6 +30,7 @@ let fakeHostName ;
 let noTLS = 'false'; 
 const expire = 4102329600;//2099-12-31
 let proxyIPs;
+let socks5s;
 let addresses = [];
 let addressesapi = [];
 let addressesnotls = [];
@@ -68,6 +69,10 @@ export default {
 			proxyIP = proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
 			//console.log(proxyIP);
 			socks5Address = env.SOCKS5 || socks5Address;
+			socks5s = await ADD(socks5Address);
+			socks5Address = socks5s[Math.floor(Math.random() * socks5s.length)];
+			socks5Address = socks5Address.split('//')[1] || socks5Address;
+			
 			sub = env.SUB || sub;
 			subconverter = env.SUBAPI || subconverter;
 			if( subconverter.includes("http://") ){
@@ -1237,14 +1242,20 @@ async function getVLESSConfig(userID, hostName, sub, UA, RproxyIP, _url) {
 
 	if ( userAgent.includes('mozilla') && !subParams.some(_searchParams => _url.searchParams.has(_searchParams))) {
 		let 订阅器 = `您的订阅内容由 ${sub} 提供维护支持, 自动获取ProxyIP: ${RproxyIP}`;
+		const newSocks5s = socks5s.map(socks5Address => {
+			if (socks5Address.includes('@')) return socks5Address.split('@')[1];
+			else if (socks5Address.includes('//')) return socks5Address.split('//')[1];
+			else return socks5Address;
+		});
 		if (!sub || sub == '') {
 			if (!proxyIP || proxyIP =='') {
-				订阅器 = '您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的ProxyIP为空, 推荐您设置 proxyIP/PROXYIP ！！！';
+				if (enableSocks) 订阅器 += `您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的Socks5: ${newSocks5s.join(', ')}`;
+				else 订阅器 = '您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的ProxyIP为空, 推荐您设置 proxyIP/PROXYIP ！！！';
 			} else {
 				订阅器 = `您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的ProxyIP: ${proxyIPs.join(', ')}`;
 			}
 		} else if (RproxyIP != 'true'){
-			if (enableSocks) 订阅器 += `, 当前使用的Socks5: ${parsedSocks5Address.hostname}:${String(parsedSocks5Address.port)}`;
+			if (enableSocks) 订阅器 += `, 当前使用的Socks5: ${newSocks5s.join(', ')}`;
 			else 订阅器 += `, 当前使用的ProxyIP: ${proxyIPs.join(', ')}`;
 		}
 		return `
