@@ -31,6 +31,7 @@ let noTLS = 'false';
 const expire = 4102329600;//2099-12-31
 let proxyIPs;
 let socks5s;
+let go2Socks5s = [];
 let addresses = [];
 let addressesapi = [];
 let addressesnotls = [];
@@ -62,7 +63,7 @@ export default {
 			const fakeUserIDMD5 = await MD5MD5(`${userID}${timestamp}`);
 			fakeUserID = fakeUserIDMD5.slice(0, 8) + "-" + fakeUserIDMD5.slice(8, 12) + "-" + fakeUserIDMD5.slice(12, 16) + "-" + fakeUserIDMD5.slice(16, 20) + "-" + fakeUserIDMD5.slice(20);
 			fakeHostName = fakeUserIDMD5.slice(6, 9) + "." + fakeUserIDMD5.slice(13, 19);
-			console.log(`虚假UUID: ${fakeUserID}`); // 打印fakeID
+			//console.log(`虚假UUID: ${fakeUserID}`); // 打印fakeID
 
 			proxyIP = env.PROXYIP || proxyIP;
 			proxyIPs = await ADD(proxyIP);
@@ -105,6 +106,13 @@ export default {
 			DLS = env.DLS || DLS;
 			BotToken = env.TGTOKEN || BotToken;
 			ChatID = env.TGID || ChatID; 
+			if( env.GO2SOCKS5 ) {
+				const go2Socks5 = env.GO2SOCKS5;
+				var addGo2Socks5 = go2Socks5.replace(/[\r\n]+/g, '\n').replace(/,+/g, '\n');
+				if (addGo2Socks5.charAt(0) == '\n') addGo2Socks5 = addGo2Socks5.slice(1);
+				if (addGo2Socks5.charAt(addGo2Socks5.length - 1) == '\n') addGo2Socks5 = addGo2Socks5.slice(0, addGo2Socks5.length - 1);
+				go2Socks5s = addGo2Socks5.split('\n');
+			}
 			const upgradeHeader = request.headers.get('Upgrade');
 			const url = new URL(request.url);
 			if (url.searchParams.has('sub') && url.searchParams.get('sub') !== '') sub = url.searchParams.get('sub');
@@ -345,6 +353,14 @@ async function vlessOverWSHandler(request) {
  * @returns {Promise<void>} 异步操作的 Promise
  */
 async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
+	async function useSocks5Pattern(address) {
+		if ( go2Socks5s.includes(atob('YWxsIGlu')) ) return true;
+		return go2Socks5s.some(pattern => {
+			let regexPattern = pattern.replace(/\*/g, '.*');
+			let regex = new RegExp(`^${regexPattern}$`, 'i');
+			return regex.test(address);
+		});
+	}
 	/**
 	 * 连接远程服务器并写入数据
 	 * @param {string} address 要连接的地址
@@ -394,8 +410,10 @@ async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portR
 		remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, null, log);
 	}
 
+	let useSocks = false;
+	if( go2Socks5s.length > 0 && enableSocks ) useSocks = await useSocks5Pattern(addressRemote);
 	// 首次尝试连接远程服务器
-	let tcpSocket = await connectAndWrite(addressRemote, portRemote);
+	let tcpSocket = await connectAndWrite(addressRemote, portRemote, useSocks);
 
 	// 当远程 Socket 就绪时，将其传递给 WebSocket
 	// 建立从远程服务器到 WebSocket 的数据流，用于将远程服务器的响应发送回客户端
@@ -1164,7 +1182,7 @@ const 啥啥啥_写的这是啥啊 = 'dmxlc3M=';
 function 配置信息(UUID, 域名地址) {
 	const 协议类型 = atob(啥啥啥_写的这是啥啊);
 	
-	const 别名 = 域名地址;
+	const 别名 = FileName;
 	let 地址 = 域名地址;
 	let 端口 = 443;
 
@@ -1180,14 +1198,14 @@ function 配置信息(UUID, 域名地址) {
 	const 指纹 = 'randomized';
 
 	if (域名地址.includes('.workers.dev')){
-		地址 = 'www.wto.org';
+		地址 = 'visa.cn';
 		端口 = 80 ;
 		传输层安全 = ['',false];
 	}
 
 	const v2ray = `${协议类型}://${用户ID}@${地址}:${端口}?encryption=${加密方式}&security=${传输层安全[0]}&sni=${SNI}&fp=${指纹}&type=${传输层协议}&host=${伪装域名}&path=${encodeURIComponent(路径)}#${encodeURIComponent(别名)}`;
 	const clash = `- type: ${协议类型}
-  name: ${别名}
+  name: ${FileName}
   server: ${地址}
   port: ${端口}
   uuid: ${用户ID}
@@ -1242,26 +1260,37 @@ async function getVLESSConfig(userID, hostName, sub, UA, RproxyIP, _url) {
 	}
 
 	if ( userAgent.includes('mozilla') && !subParams.some(_searchParams => _url.searchParams.has(_searchParams))) {
-		let 订阅器 = `您的订阅内容由 ${sub} 提供维护支持, 自动获取ProxyIP: ${RproxyIP}`;
 		const newSocks5s = socks5s.map(socks5Address => {
 			if (socks5Address.includes('@')) return socks5Address.split('@')[1];
 			else if (socks5Address.includes('//')) return socks5Address.split('//')[1];
 			else return socks5Address;
 		});
+
+		let socks5List = '';
+		if( go2Socks5s.length > 0 && enableSocks ) socks5List = `SOCKS5（白名单）: \n  ${go2Socks5s.join('\n  ')}\n`
+
+		let 订阅器 = '';
 		if (!sub || sub == '') {
-			if (!proxyIP || proxyIP =='') {
-				if (enableSocks) 订阅器 += `您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的Socks5: ${newSocks5s.join(', ')}`;
-				else 订阅器 = '您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的ProxyIP为空, 推荐您设置 proxyIP/PROXYIP ！！！';
-			} else {
-				订阅器 = `您的订阅内容由 内置 addresses/ADD 参数提供, 当前使用的ProxyIP: ${proxyIPs.join(', ')}`;
-			}
-		} else if (RproxyIP != 'true'){
-			if (enableSocks) 订阅器 += `, 当前使用的Socks5: ${newSocks5s.join(', ')}`;
-			else 订阅器 += `, 当前使用的ProxyIP: ${proxyIPs.join(', ')}`;
+			if (enableSocks) 订阅器 += `CFCDN（访问方式）: Socks5\n  ${newSocks5s.join('\n  ')}\n${socks5List}`;
+			else if (!proxyIP || proxyIP =='') 订阅器 += `CFCDN（访问方式）: ProxyIP\n  ${proxyIPs.join('\n  ')}\n`;
+			else 订阅器 += `CFCDN（访问方式）: 无法访问, 需要您设置 proxyIP/PROXYIP ！！！\n`;
+			订阅器 += `\n您的订阅内容由 内置 addresses/ADD* 参数变量提供\n`;
+			if (addresses.length > 0) 订阅器 += `ADD（TLS优选域名&IP）: \n  ${addresses.join('\n  ')}\n`;
+			if (addressesnotls.length > 0) 订阅器 += `ADDNOTLS（noTLS优选域名&IP）: \n  ${addressesnotls.join('\n  ')}\n`;
+			if (addressesapi.length > 0) 订阅器 += `ADDAPI（TLS优选域名&IP 的 API）: \n  ${addressesapi.join('\n  ')}\n`;
+			if (addressesnotlsapi.length > 0) 订阅器 += `ADDNOTLSAPI（noTLS优选域名&IP 的 API）: \n  ${addressesnotlsapi.join('\n  ')}\n`;
+			if (addressescsv.length > 0) 订阅器 += `ADDCSV（IPTest测速csv文件 限速 ${DLS} ）: \n  ${addressescsv.join('\n  ')}\n`;
+		} else {
+			if (enableSocks) 订阅器 += `CFCDN（访问方式）: Socks5\n  ${newSocks5s.join('\n  ')}\n${socks5List}`;
+			else if (!proxyIP || proxyIP =='') 订阅器 += `CFCDN（访问方式）: ProxyIP\n  ${proxyIPs.join('\n  ')}\n`;
+			else if (RproxyIP == 'true') 订阅器 += `CFCDN（访问方式）: 自动获取ProxyIP\n`;
+			else 订阅器 += `CFCDN（访问方式）: 无法访问, 需要您设置 proxyIP/PROXYIP ！！！\n`
+			订阅器 += `\nSUB（优选订阅生成器）: ${sub}`;
 		}
+
 		return `
 ################################################################
-Subscribe / sub 订阅地址, 支持 Base64、clash-meta、sing-box 订阅格式, ${订阅器}
+Subscribe / sub 订阅地址, 支持 Base64、clash-meta、sing-box 订阅格式
 ---------------------------------------------------------------
 快速自适应订阅地址:
 https://${proxyhost}${hostName}/${userID}
@@ -1277,6 +1306,18 @@ https://${proxyhost}${hostName}/${userID}?clash
 singbox订阅地址:
 https://${proxyhost}${hostName}/${userID}?sb
 https://${proxyhost}${hostName}/${userID}?singbox
+---------------------------------------------------------------
+################################################################
+${FileName} 配置信息
+---------------------------------------------------------------
+HOST: ${hostName}
+UUID: ${userID}
+FKID: ${fakeUserID}
+UA: ${UA}
+
+${订阅器}
+SUBAPI（订阅转换后端）: ${subProtocol}://${subconverter}
+SUBCONFIG（订阅转换配置文件）: ${subconfig}
 ---------------------------------------------------------------
 ################################################################
 v2ray
