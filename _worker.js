@@ -31,7 +31,9 @@ let noTLS = 'false';
 const expire = 4102329600;//2099-12-31
 let proxyIPs;
 let socks5s;
-let go2Socks5s = [];
+let go2Socks5s = [
+	'*ttvnw.net'
+];
 let addresses = [];
 let addressesapi = [];
 let addressesnotls = [];
@@ -106,13 +108,7 @@ export default {
 			DLS = env.DLS || DLS;
 			BotToken = env.TGTOKEN || BotToken;
 			ChatID = env.TGID || ChatID; 
-			if( env.GO2SOCKS5 ) {
-				const go2Socks5 = env.GO2SOCKS5;
-				var addGo2Socks5 = go2Socks5.replace(/[\r\n]+/g, '\n').replace(/,+/g, '\n');
-				if (addGo2Socks5.charAt(0) == '\n') addGo2Socks5 = addGo2Socks5.slice(1);
-				if (addGo2Socks5.charAt(addGo2Socks5.length - 1) == '\n') addGo2Socks5 = addGo2Socks5.slice(0, addGo2Socks5.length - 1);
-				go2Socks5s = addGo2Socks5.split('\n');
-			}
+			if(env.GO2SOCKS5) go2Socks5s = await ADD(env.GO2SOCKS5);
 			const upgradeHeader = request.headers.get('Upgrade');
 			const url = new URL(request.url);
 			if (url.searchParams.has('sub') && url.searchParams.get('sub') !== '') sub = url.searchParams.get('sub');
@@ -354,7 +350,7 @@ async function vlessOverWSHandler(request) {
  */
 async function handleTCPOutBound(remoteSocket, addressType, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log,) {
 	async function useSocks5Pattern(address) {
-		if ( go2Socks5s.includes(atob('YWxsIGlu')) ) return true;
+		if ( go2Socks5s.includes(atob('YWxsIGlu')) || go2Socks5s.includes(atob('Kg==')) ) return true;
 		return go2Socks5s.some(pattern => {
 			let regexPattern = pattern.replace(/\*/g, '.*');
 			let regex = new RegExp(`^${regexPattern}$`, 'i');
@@ -1267,12 +1263,16 @@ async function getVLESSConfig(userID, hostName, sub, UA, RproxyIP, _url) {
 		});
 
 		let socks5List = '';
-		if( go2Socks5s.length > 0 && enableSocks ) socks5List = `SOCKS5（白名单）: \n  ${go2Socks5s.join('\n  ')}\n`
+		if( go2Socks5s.length > 0 && enableSocks ) {
+			socks5List = `${decodeURIComponent('SOCKS5%EF%BC%88%E7%99%BD%E5%90%8D%E5%8D%95%EF%BC%89%3A%20')}`;
+			if ( go2Socks5s.includes(atob('YWxsIGlu')) || go2Socks5s.includes(atob('Kg==')) ) socks5List += `${decodeURIComponent('%E6%89%80%E6%9C%89%E6%B5%81%E9%87%8F')}\n`;
+			else socks5List += `\n  ${go2Socks5s.join('\n  ')}\n`;
+		}
 
 		let 订阅器 = '';
 		if (!sub || sub == '') {
 			if (enableSocks) 订阅器 += `CFCDN（访问方式）: Socks5\n  ${newSocks5s.join('\n  ')}\n${socks5List}`;
-			else if (!proxyIP || proxyIP =='') 订阅器 += `CFCDN（访问方式）: ProxyIP\n  ${proxyIPs.join('\n  ')}\n`;
+			else if (proxyIP && proxyIP != '') 订阅器 += `CFCDN（访问方式）: ProxyIP\n  ${proxyIPs.join('\n  ')}\n`;
 			else 订阅器 += `CFCDN（访问方式）: 无法访问, 需要您设置 proxyIP/PROXYIP ！！！\n`;
 			订阅器 += `\n您的订阅内容由 内置 addresses/ADD* 参数变量提供\n`;
 			if (addresses.length > 0) 订阅器 += `ADD（TLS优选域名&IP）: \n  ${addresses.join('\n  ')}\n`;
@@ -1282,7 +1282,7 @@ async function getVLESSConfig(userID, hostName, sub, UA, RproxyIP, _url) {
 			if (addressescsv.length > 0) 订阅器 += `ADDCSV（IPTest测速csv文件 限速 ${DLS} ）: \n  ${addressescsv.join('\n  ')}\n`;
 		} else {
 			if (enableSocks) 订阅器 += `CFCDN（访问方式）: Socks5\n  ${newSocks5s.join('\n  ')}\n${socks5List}`;
-			else if (!proxyIP || proxyIP =='') 订阅器 += `CFCDN（访问方式）: ProxyIP\n  ${proxyIPs.join('\n  ')}\n`;
+			else if (proxyIP && proxyIP != '') 订阅器 += `CFCDN（访问方式）: ProxyIP\n  ${proxyIPs.join('\n  ')}\n`;
 			else if (RproxyIP == 'true') 订阅器 += `CFCDN（访问方式）: 自动获取ProxyIP\n`;
 			else 订阅器 += `CFCDN（访问方式）: 无法访问, 需要您设置 proxyIP/PROXYIP ！！！\n`
 			订阅器 += `\nSUB（优选订阅生成器）: ${sub}`;
