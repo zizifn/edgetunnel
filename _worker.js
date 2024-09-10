@@ -36,6 +36,7 @@ let go2Socks5s = [
 ];
 let addresses = [
 	//当sub为空时启用本地优选域名/优选IP，若不带端口号 TLS默认端口为443，#号后为备注别名
+	/*
 	'Join.my.Telegram.channel.CMLiussss.to.unlock.more.premium.nodes.cf.090227.xyz#加入我的频道t.me/CMLiussss解锁更多优选节点',
 	'visa.cn:443',
 	'www.visa.com:8443',
@@ -49,12 +50,14 @@ let addresses = [
 	'www.wto.org:8443',
 	'chatgpt.com:2087',
 	'icook.hk',
-	//'104.17.0.0#IPv4',
+	'104.17.0.0#IPv4',
 	'[2606:4700::]#IPv6'
+	*/
 ];
 let addressesapi = [];
 let addressesnotls = [
 	//当sub为空且域名带有"worker"字样时启用本地优选域名/优选IP，若不带端口号 noTLS默认端口为80，#号后为备注别名
+	/*
 	'usa.visa.com',
 	'myanmar.visa.com:8080',
 	'www.visa.com.tw:8880',
@@ -62,6 +65,7 @@ let addressesnotls = [
 	'www.visa.com.br:2082',
 	'www.visasoutheasteurope.com:2086',
 	'[2606:4700::1]:2095#IPv6'
+	*/
 ];
 let addressesnotlsapi = [];
 let addressescsv = [];
@@ -156,6 +160,33 @@ export default {
 					return new Response(`${fakeConfig}`, { status: 200 });
 				case `/${userID}`: {
 					await sendMessage(`#获取订阅 ${FileName}`, request.headers.get('CF-Connecting-IP'), `UA: ${UA}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+					if ((!sub || sub == '') && (addresses.length + addressesapi.length + addressesnotls.length + addressesnotlsapi.length + addressescsv.length) == 0){
+						addresses = [
+							'Join.my.Telegram.channel.CMLiussss.to.unlock.more.premium.nodes.cf.090227.xyz#加入我的频道t.me/CMLiussss解锁更多优选节点',
+							'visa.cn:443',
+							'www.visa.com:8443',
+							'cis.visa.com:2053',
+							'africa.visa.com:2083',
+							'www.visa.com.sg:2087',
+							'www.visaeurope.at:2096',
+							'www.visa.com.mt:8443',
+							'qa.visamiddleeast.com',
+							'time.is',
+							'www.wto.org:8443',
+							'chatgpt.com:2087',
+							'icook.hk',
+							//'104.17.0.0#IPv4',
+							'[2606:4700::]#IPv6'
+						];
+						if (request.headers.get('Host').includes(".workers.dev")) addressesnotls = [
+							'usa.visa.com:2095',
+							'myanmar.visa.com:8080',
+							'www.visa.com.tw:8880',
+							'www.visaeurope.ch:2052',
+							'www.visa.com.br:2082',
+							'www.visasoutheasteurope.com:2086'
+						];
+					}
 					const vlessConfig = await getVLESSConfig(userID, request.headers.get('Host'), sub, UA, RproxyIP, url);
 					const now = Date.now();
 					//const timestamp = Math.floor(now / 1000);
