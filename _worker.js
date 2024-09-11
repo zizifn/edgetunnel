@@ -1722,9 +1722,8 @@ function subAddresses(host,UUID,noTLS,newAddressesapi,newAddressescsv,newAddress
 						break;
 					}
 				}
-			} else if (port == "-1") {
-				port = "80";
 			}
+			if (port == "-1") port = "80";
 			
 			let 伪装域名 = host ;
 			let 最终路径 = '/?ed=2560' ;
@@ -1781,9 +1780,8 @@ function subAddresses(host,UUID,noTLS,newAddressesapi,newAddressescsv,newAddress
 					break;
 				}
 			}
-		} else if (port == "-1") {
-			port = "443";
 		}
+		if (port == "-1") port = "443";
 		
 		let 伪装域名 = host ;
 		let 最终路径 = '/?ed=2560' ;
