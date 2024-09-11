@@ -5,7 +5,32 @@ name = "cf-worker-ws-dev-0415" # todo
 #main = "test/worker/worker-connect-test.js"
 main = "src/worker-vless.js"
 
-compatibility_date = "2024-04-15"
+compatibility_date = "2024-09-12"
+
+[[routes]]
+pattern = "speedtest.server2.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "mobile.useinsider.com.server2.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "speedtest.net.server2.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "who.int.server2.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "ookla.com.server2.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "downdetector.com.server2.us.kg"
+custom_domain = true
 
 [vars]
-# UUID = "example_dev_token"
+# UUID = "d342d11e-d424-4583-b36e-524ab1f0afa4"
+# PROXYIP = "1.2.3.4"
+# DNS_RESOLVER_URL = "https://cloudflare-dns.com/dns-query"
+# NODE_ID = "1"
+# API_TOKEN = "example_dev_token"
+# API_HOST = "api.v2board.com"
+UUID = "9706d7a2-0e14-4998-8af7-daec9d74a602"
