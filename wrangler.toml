@@ -1,4 +1,4 @@
-name = "cf-worker-ws-dev-0415" # todo
+name = "server-sg" # todo
 #name = "cf-worker-connect-test" # todo
 #main = "test/worker/cf-cdn-cgi-trace2.js"
 
@@ -6,6 +6,15 @@ name = "cf-worker-ws-dev-0415" # todo
 main = "src/worker-vless.js"
 
 compatibility_date = "2024-04-15"
+[[routes]]
+pattern = "sg1.darmocloud.my.id"
+custom_domain = true
+[[routes]]
+pattern = "quiz.vidio.com.sg1.darmocloud.my.id"
+custom_domain = true
+[[routes]]
+pattern = "quiz.int.vidio.com.sg1.darmocloud.my.id"
+custom_domain = true
 
 [vars]
-# UUID = "example_dev_token"
+UUID = "6a194259-4c51-4621-bbe5-5de7a18eee39"
