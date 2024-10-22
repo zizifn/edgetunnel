@@ -11,7 +11,7 @@ custom_domain = true
 pattern = "quiz.vidio.com.ids.derista.tech"
 custom_domain = true
 [[routes]]
-pattern = "quiz.int.vidio.comids.derista.tech"
+pattern = "quiz.int.vidio.com.ids.derista.tech"
 custom_domain = true
 
 
