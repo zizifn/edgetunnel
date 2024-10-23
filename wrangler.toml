@@ -1,4 +1,4 @@
-name = "cf-worker-ws-dev-0415" # todo
+name = "server-globalssh" # todo
 #name = "cf-worker-connect-test" # todo
 #main = "test/worker/cf-cdn-cgi-trace2.js"
 
@@ -7,5 +7,18 @@ main = "src/worker-vless.js"
 
 compatibility_date = "2024-04-15"
 
+[[routes]]
+pattern = "derista.tech"
+custom_domain = true
+
+[[routes]]
+pattern = "quiz.vidio.com.id.derista.tech"
+custom_domain = true
+
+[[routes]]
+pattern = "quiz.int.vidio.com.id.derista.tech"
+custom_domain = true
+
 [vars]
 # UUID = "example_dev_token"
+UUID = "daff0e61-fd62-443f-a552-2863214a5abd"
