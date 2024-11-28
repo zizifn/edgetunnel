@@ -1,0 +1,5 @@
+{
+  "tasks": {
+    "start": "deno run --allow-net --unstable main.ts"
+  }
+}
