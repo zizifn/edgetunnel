@@ -6,6 +6,24 @@ name = "cf-worker-ws-dev-0415" # todo
 main = "src/worker-vless.js"
 
 compatibility_date = "2024-04-15"
+[[routes]]
+pattern = "server.hilda-vpn.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "investors.spotify.com.server.hilda-vpn.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "onelink.seabank.co.id.server.hilda-vpn.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "quiz.vidio.com.server.hilda-vpn.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "support.zoom.us.server.hilda-vpn.us.kg"
+custom_domain = true
+[[routes]]
+pattern = "104.17.70.206.server.hilda-vpn.us.kg"
+custom_domain = true
 
 [vars]
-# UUID = "example_dev_token"
+# UUID = "de78c064-3599-467a-8a07-1ade473f81e5"
