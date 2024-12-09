@@ -8,6 +8,8 @@ let userID = '5a8ac0b8-acd9-4b12-abe7-a58ec4f96a74';
 
 let proxyIP = '3.1.94.232';
 
+let dohURL = 'https://cloudflare-dns.com/dns-query';
+
 
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
