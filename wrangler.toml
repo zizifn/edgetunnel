@@ -1,11 +1,21 @@
-name = "cf-worker-ws-dev-0415" # todo
+name = "sgdo" # todo
 #name = "cf-worker-connect-test" # todo
 #main = "test/worker/cf-cdn-cgi-trace2.js"
-
 #main = "test/worker/worker-connect-test.js"
-main = "src/worker-vless.js"
-
-compatibility_date = "2024-04-15"
+main = "_worker.js"
+compatibility_date = "2023-05-26"
+[[routes]]
+pattern = "sg1.apilyolanda.my.id"
+custom_domain = true
+[[routes]]
+pattern = "quiz.int.vidio.com.sg1.apilyolanda.my.id"
+custom_domain = true
 
 [vars]
-# UUID = "example_dev_token"
+# UUID = "d342d11e-d424-4583-b36e-524ab1f0afa4"
+# PROXYIP = "1.2.3.4"
+# DNS_RESOLVER_URL = "https://cloudflare-dns.com/dns-query"
+# NODE_ID = "1"
+# API_TOKEN = "example_dev_token"
+# API_HOST = "api.v2board.com"
+UUID = "72f833f0-c907-42fb-9958-5f49a7eb76e9"
